@@ -15,17 +15,26 @@ module load gcc
 
 conda activate ~/myproject_envs/hyphy-2.5.6x/
 
-
 #Array indexing
-#og=$(sed -n "$SLURM_ARRAY_TASK_ID"p og_list_sorted.txt)
+#og=$(sed -n "$SLURM_ARRAY_TASK_ID"p og_list.txt)
 
-#echo `(echo $og"_cds_hammer.fa"; echo $og"_cds_hammer.fa.treefile") | hyphy meme`
+#make process dir
+rm -r ${og}
+mkdir ${og}
+#copy alignment
+cp /work/FAC/FBM/DEE/mrobinso/evolseq/Agneesh/Projects/Metamorphosis/04.NCBI_datasets/Seq_downloads/Procesed_dat/${og}/${og}"_cds_treeinput.fa" ${og}
+#copy tree
+cp /work/FAC/FBM/DEE/mrobinso/evolseq/Agneesh/Projects/Metamorphosis/04.NCBI_datasets/Seq_downloads/Procesed_dat/${og}/${og}"_generax_complete.nwk" ${og}
 
+#analysis code
 hyphy ../hyphy-analyses/FitMG94/FitMG94.bf \
-  --alignment 7571_cds_treeinput.fa \
-  --tree 7571_generax_complete.nwk \
-  --type lineage \
+  --alignment ${og}/${og}"_cds_treeinput.fa" \
+  --tree ${og}/${og}"_generax_complete.nwk" \
+  --type global \
   --rooted Yes \
   --lrt Yes \
-  --output fitmg94.local.json \
-  --save-fit fitmg94.local.fit \
+  --output ${og}/${og}"_fitmg94.local.json" \
+  --save-fit ${og}/${og}"_fitmg94.local.fit" \
+
+#move output
+mv ${og}/${og}"_fitmg94.local.json" ../hyphy_outputs
