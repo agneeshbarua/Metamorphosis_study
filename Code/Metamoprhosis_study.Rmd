@@ -1,5 +1,5 @@
 ---
-title: "Gene_expression_analysis"
+title: "Comparative analysis of post-embryonic development across teleosts"
 output: html_document
 date: "2024-09-04"
 ---
@@ -4744,7 +4744,6 @@ homologous_modules<-readRDS("./RDS/homologous_modules.rds")
 ```
 
 ## Extract homologous gene lists
-
 ```{r}
 #combine all the jaccard similarities
 rbind(
@@ -4873,7 +4872,6 @@ ggarrange(jacc_plots|homo_pres_plots)
 ```
 
 ### Average connectivity of homologus genes
-
 The homologous genes on an average have higher connectivity than the other genes. Therefore, they represent hub genes.
 ```{r}
 homologous_genes<-readRDS("./RDS/homologous_genes.rds")
@@ -5623,7 +5621,6 @@ purrr::map(.x = cols,
 ```
 
 #### Results
-
 ```{r}
 #non_homologous_phylogenetic_res<-readRDS("./05.CAFE5/non_homologous_phylogenetic_res2.rds")
 #homologous_phylogenetic_res <-readRDS("./05.CAFE5/homologous_phylogenetic_res2.rds")
@@ -5788,6 +5785,18 @@ cafe_model_outs %>% mutate(model_type=cafe_model_outs$model_type %>% str_remove_
   theme_linedraw()+
   theme(axis.text.x = element_blank(),
          strip.background = element_rect(fill = "#67980C"))
+```
+
+##### Processes with significant expansion and contractions
+```{r}
+cafe_genefamily_outs %>% drop_na() %>% filter(is_sig=="y") %>% dplyr::count(annot) %>% 
+  mutate(annot=reorder(annot,n)) %>% 
+  ggplot(aes(y=annot, x=n))+
+  geom_col()+
+  geom_text(aes(x=n+1.3, label = n), size=3)+
+  labs(x="Number of genes",
+       y="Module annotation")+
+  theme_bw()
 ```
 
 ##### Expansion and contraction of gene families
@@ -6270,7 +6279,7 @@ The plots can be viewed below.
 
 ```{r, eval=FALSE}
 #Plots for spearman correlation between components
-cafe_cols<-cafe_genefamily_outs %>% janitor::get_dupes(mod) %>% distinct(mod) %>% pull(mod)
+cafe_cols<-cafe_genefamily_outs %>% filter(is_sig=="y") %>% janitor::get_dupes(mod) %>% distinct(mod) %>% pull(mod)
 purrr::map(cafe_cols,gene_copy_comp_trait_comp)->trait_gene_components_plots
 names(trait_gene_components_plots)<-cafe_cols  
 ```
@@ -6520,6 +6529,7 @@ This model essentially checks whether ecological features can predict the positi
 brms_model_ecology<-function(col){
   library(brms)
 #lead the genecopy data
+  cafe_genefamily_outs<-cafe_genefamily_outs %>% filter(is_sig=="y")
 orth_gene_copy %>% filter(Orthogroup %in% (cafe_genefamily_outs %>% filter(mod==col) %>% 
                                              pull(genes))) %>% 
   filter(sp %in% pglmm_tree$tip.label) %>% 
@@ -7512,7 +7522,7 @@ return(list(pca_gene_pca=pca_gene_pca,
 
 #### Ecological characteristics
 
-```{r}
+```{r,eval=FALSE}
 purrr::map(cafe_cols, brms_model_ecology)->model_ecology
 names(model_ecology)<-cafe_cols
 model_ecology %>% saveRDS("./05.Phylogenomics/PGLMM/model_ecology.rds")
@@ -7821,3 +7831,73 @@ accn<-read_csv("./00.Sequences/accessions_genomes.csv",col_names = c("acc","sp")
 
 ncbi_genomes %>% filter(sp %in% accn$sp) %>% write_tsv("./00.Sequences/genes_needed.tsv")
 ```
+
+##### Global dN/dS using MG94 model
+```{r}
+#Parse the JSON file from HyPhy
+fitmg94_json_parse<-function(orth) {
+  f<-read_json(paste0("./10.HyPhy/",orth,"_fitmg94.local.json"))
+  
+  tibble(
+    Orthogroup=orth,
+    omega=f$fits$`Standard MG94`$`Rate Distributions`$`non-synonymous/synonymous rate ratio`,
+    omega_ci_lb=f$fits$`Standard MG94`$`Confidence Intervals`$`non-synonymous/synonymous rate ratio`$LB,
+    omega_ci_ub=f$fits$`Standard MG94`$`Confidence Intervals`$`non-synonymous/synonymous rate ratio`$UB,
+    p_val=f$`test results`$`non-synonymous/synonymous rate ratio`$`p-value`,
+    lrt=f$`test results`$`non-synonymous/synonymous rate ratio`$LRT) %>% 
+    mutate(pval_adj=p.adjust(p_val,method = "BH"))
+}
+
+homologous_genes$genes %>%
+  purrr::map(safely(fitmg94_json_parse)) %>%
+  purrr::map("result") %>%       
+  compact() %>% 
+  list_rbind() %>% mutate(type="homologous")->fitmg94_res_homo
+
+
+(genes_needed %>% distinct(Orthogroup) %>% 
+    filter(!Orthogroup %in% homologous_genes$genes))$Orthogroup %>%
+  purrr::map(safely(fitmg94_json_parse)) %>%
+  purrr::map("result") %>%       
+  compact() %>% 
+  list_rbind() %>% mutate(type="non_homologous")->fitmg94_res_non_homo
+```
+
+###### Distribution of dN/dS between homologous and non-homologous network genes
+```{r}
+rbind(fitmg94_res_homo %>% filter(pval_adj < 0.05) %>% slice_sample(n=400),
+      fitmg94_res_non_homo %>% filter(pval_adj < 0.05) %>% slice_sample(n=400)) %>% 
+  ggplot(aes(x=log2(omega), fill=type))+
+  geom_histogram(bins = 50, color="black", linewidth=0.2, alpha=0.8)+
+  ggsci::scale_fill_bmj()+
+  theme_bw()
+
+rbind(fitmg94_res_homo %>% filter(pval_adj < 0.05) %>% slice_sample(n=400),
+      fitmg94_res_non_homo %>% filter(pval_adj < 0.05) %>% slice_sample(n=400)) %>% 
+  ggplot(aes(x=log2(omega), fill=type))+
+  geom_density(color="black", linewidth=0.2, alpha=0.5)+
+  ggsci::scale_fill_bmj()+
+  theme_bw()
+```
+
+###### Wilcox rank sum test 
+```{r}
+
+test_wil<-function(){
+  
+  rbind(fitmg94_res_homo %>% filter(pval_adj < 0.05) %>% slice_sample(n=200),
+        fitmg94_res_non_homo %>% filter(pval_adj < 0.05) %>% slice_sample(n=200))->test_dat
+  
+  wilcox.test(x=test_dat %>% filter(type=="homologous") %>% pull(omega) %>% log2(),
+              y=test_dat %>% filter(type=="non_homologous") %>% pull(omega) %>% log2(),
+              alternative = "two.sided")->wil.res
+  
+  tibble(pval=wil.res$p.value,
+         test=wil.res$alternative) %>% return()
+  }
+
+
+purrr::map(1:1000, ~test_wil()) %>% list_rbind() %>% mutate(padj=p.adjust(pval,"BH"))->global_sel_diff
+
+```
+
