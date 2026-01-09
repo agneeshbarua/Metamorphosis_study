@@ -7798,7 +7798,7 @@ df %>% filter(mod=="steelblue") %>%
 ```
 
 ## Selection analysis
-
+##### Prepare the datasts for analysis
 ```{r}
 #Prepare data of background 
 #orth %>% filter(sp %in% no_WGD_tree$tip.label & Orthogroup %in% danio_orth_net_in$dge_keep$genes$genes) %>% distinct(Orthogroup) %>% filter(!Orthogroup %in% homologous_genes$genes) %>% slice_sample(n = 2000)->bg_genes
@@ -7899,5 +7899,55 @@ test_wil<-function(){
 
 purrr::map(1:1000, ~test_wil()) %>% list_rbind() %>% mutate(padj=p.adjust(pval,"BH"))->global_sel_diff
 
+```
+
+##### FUBAR
+```{r}
+#Parse HyPhy output
+list.files("./10.HyPhy/FUBAR/") %>% 
+  str_remove_all("_cds_treeinput.fa.FUBAR.json")->og
+
+fubar_json_parse<- function(orth) {
+  f<-read_json(paste0("./10.HyPhy/FUBAR/",orth,"_cds_treeinput.fa.FUBAR.json"),
+               simplifyVector = )
+  headers <- map_chr(f$MLE$headers,1)
+  rows <- f$MLE$content$`0`
+  rows <- purrr::modify(rows, ~ modify(.x, ~ if (is.null(.x)) 0 else .x))
+  sites <- f$`data partitions`$`0`$coverage
+  
+  purrr::map(.x = rows, 
+      ~as_tibble(setNames(as.list(.x), c(headers,"q1","q2")))) %>% list_rbind() %>% 
+    mutate(sites=seq(1:length(sites[[1]])),
+           Orthogroup=orth) %>% 
+    dplyr::select(Orthogroup,sites, everything()) %>% 
+    return()
+}
+
+purrr::map(og,fubar_json_parse) %>% list_rbind()->fubar_res
+
+homologous_genes$genes %>%
+  purrr::map(safely(fubar_json_parse)) %>%
+  purrr::map("result") %>%       
+  compact() %>% 
+  list_rbind() %>% mutate(type="homologous")->fubar_res
+
+(genes_needed %>% distinct(Orthogroup) %>% 
+    filter(!Orthogroup %in% homologous_genes$genes))$Orthogroup  %>%
+  purrr::map(safely(fubar_json_parse)) %>%
+  purrr::map("result") %>%       
+  compact() %>% 
+  list_rbind() %>% mutate(type="non_homologous")->fubar_res_non_homologous
+
+fubar_res_non_homologous %>% mutate(selection=case_when(`Prob[alpha>beta]` > 0.9 ~ "purifying", 
+                                            `Prob[alpha<beta]` > 0.9 ~"diversifying",
+                                            .default = "low evidence")) %>% 
+  dplyr::count(selection) %>% mutate(n.per=((n/sum(n))*100) %>% round(2)) %>% 
+  mutate(selection=reorder(selection,-n.per)) %>% 
+  ggplot(aes(x=selection, y=n.per))+
+  geom_col(aes(fill=selection))+
+  geom_text(aes(label = n.per, y=n.per+1))+
+  scale_fill_manual(values=c("#4F868C","grey80","#D92B04"))+
+  labs(y="Percentage of sites", x="Selection")+
+  theme_bw()->site_freq_non_homologous
 ```
 
