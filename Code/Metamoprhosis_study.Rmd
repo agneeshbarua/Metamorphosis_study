@@ -7948,6 +7948,59 @@ fubar_res_non_homologous %>% mutate(selection=case_when(`Prob[alpha>beta]` > 0.9
   geom_text(aes(label = n.per, y=n.per+1))+
   scale_fill_manual(values=c("#4F868C","grey80","#D92B04"))+
   labs(y="Percentage of sites", x="Selection")+
-  theme_bw()->site_freq_non_homologous
+  theme_bw()->site_freq_non_homol
 ```
 
+##### BUSTED
+
+#### Single cell expression and expression during metamorphosis
+
+#### Single-cell data
+
+```{r}
+library(SingleCellExperiment)
+library(scater)
+library(scuttle)
+
+zhub_dat<-readRDS("./RDS/all_gene_24hpf.rds")
+#Shows the cell types with the highest avaerage expression per module.
+mod_plot_dat<-function(mod){
+danio_genes_modules<-danio_genes_modules %>% 
+  filter(gene %in% cafe_sig$genes) %>%
+  left_join(cafe_sig, by=c("gene"="genes"))
+
+mod_d<-danio_genes_modules %>% filter(module==mod)
+#filter genes per module, them summarise the average expression of across cell types
+zhub_dat %>% filter(gene %in% mod_d$orths) %>% 
+  summarise(mean_logCounts=mean(logCounts), .by = c(zebrafish_anatomy_ontology_class, gene)) %>% 
+  ungroup() %>% mutate(module=mod)->plot_dat
+return(plot_dat)
+}
+
+danio_genes_modules %>% filter(gene %in% homologous_genes$genes) %>% distinct(module) %>% pull(module) %>% as.list()
+cafe_sig<-cafe_genefamily_outs %>% filter(is_sig=="y")
+purrr::map(danio_genes_modules %>% 
+             filter(gene %in% cafe_sig$genes) %>%
+             left_join(cafe_sig, by=c("gene"="genes")) %>% 
+             distinct(module) %>% pull(module) %>% as.list(),
+           mod_plot_dat) %>% list_rbind()->plot_dat_all
+
+
+make_cell_dist_plots<-function(disc){
+  plot_dat_all %>% left_join(danio_genes_modules %>% 
+                               dplyr::select(-c(module,pval,is_sig)), 
+                             by=c("gene"="orths")) %>% filter(annot==disc & gene.y %in% (danio_genes_modules %>%
+                                                                                           filter(annot==disc))$gene) %>% mutate(module=reorder(module,mean_logCounts),                                                                                                                         zebrafish_anatomy_ontology_class=reorder(zebrafish_anatomy_ontology_class,mean_logCounts)) %>% 
+    ggplot(aes(y=zebrafish_anatomy_ontology_class, x=mean_logCounts, fill=mean_logCounts))+
+    facet_wrap(~gene)+
+    geom_col()+
+    scale_fill_gradient(low = "grey90",high = "#AE005E")+
+    labs(title = paste0(disc),
+         x="log2Counts",
+         y="Cell type")+
+    theme_bw()+theme(panel.grid.minor = element_blank()) %>% return()
+}
+
+purrr::map(cafe_sig %>% drop_na() %>%  distinct(annot) %>% pull(annot),make_cell_dist_plots)->make_cell_dist_plots_list
+names(make_cell_dist_plots)<-as.character(cafe_sig %>% drop_na() %>%  distinct(annot) %>% pull(annot))
+```
