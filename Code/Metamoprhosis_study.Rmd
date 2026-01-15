@@ -7953,9 +7953,9 @@ fubar_res_non_homologous %>% mutate(selection=case_when(`Prob[alpha>beta]` > 0.9
 
 ##### BUSTED
 
-#### Single cell expression and expression during metamorphosis
+## Single cell expression and expression during metamorphosis
 
-#### Single-cell data
+### Single-cell data
 
 ```{r}
 library(SingleCellExperiment)
@@ -7998,9 +7998,185 @@ make_cell_dist_plots<-function(disc){
     labs(title = paste0(disc),
          x="log2Counts",
          y="Cell type")+
-    theme_bw()+theme(panel.grid.minor = element_blank()) %>% return()
+    theme_bw()+
+    theme(panel.grid.minor = element_blank()) %>% return()
 }
 
 purrr::map(cafe_sig %>% drop_na() %>%  distinct(annot) %>% pull(annot),make_cell_dist_plots)->make_cell_dist_plots_list
 names(make_cell_dist_plots)<-as.character(cafe_sig %>% drop_na() %>%  distinct(annot) %>% pull(annot))
 ```
+
+```{r}
+######## Single cell PGLMM genes ##########
+umap_gene_exp<-function(stage,process) {  
+  zhub_dat<-readRDS(paste0("../For_submission/Teleost_convergence/RDS/zhub_",stage,"_log.rds"))
+  #danio_conv<-danio_biomart_orth_mods %>% filter(gene %in% (cafe_genefamily_outs %>% 
+   #                                               filter(mod=="black") %>% 
+    #                                              pull(genes)))
+  #danio_conv<-tibble(`Gene name`=c("ndrg4","otx2b"))
+  danio_muscle<-Danio_biomart %>% filter(`Gene stable ID` %in% (danio_genes_modules %>% filter(annot=="Muscle system") %>% pull(orths)))
+  danio_matrix<-Danio_biomart %>% filter(`Gene stable ID` %in% (danio_genes_modules %>% filter(annot=="Extracellular matrix and cartilage development 2") %>% pull(orths)))
+  danio_rna1<-Danio_biomart %>% filter(`Gene stable ID` %in% (danio_genes_modules %>% filter(annot=="RNA processing 1") %>% pull(orths)))
+  danio_rna2<-Danio_biomart %>% filter(`Gene stable ID` %in% (danio_genes_modules %>% filter(annot=="RNA processing 2") %>% pull(orths)))
+  danio_dna<-Danio_biomart %>% filter(`Gene stable ID` %in% (danio_genes_modules %>% filter(annot=="DNA replication") %>% pull(orths)))
+  danio_immune<-Danio_biomart %>% filter(`Gene stable ID` %in% (danio_genes_modules %>% filter(annot=="Immune system") %>% pull(orths)))
+  danio_nutrient<-Danio_biomart %>% filter(`Gene stable ID` %in% (danio_genes_modules %>% filter(annot=="Nutrient absorption") %>% pull(orths)))
+  danio_brush<-Danio_biomart %>% filter(`Gene stable ID` %in% (danio_genes_modules %>% filter(annot=="Brush border epithelium development") %>% pull(orths)))
+  danio_synapse1<-Danio_biomart %>% filter(`Gene stable ID` %in% (danio_genes_modules %>% filter(annot=="Synaptic signalling 1") %>% pull(orths)))
+  danio_synapse2<-Danio_biomart %>% filter(`Gene stable ID` %in% (danio_genes_modules %>% filter(annot=="Synaptic signalling 2") %>% pull(orths)))
+  danio_peroxi<-Danio_biomart %>% filter(`Gene stable ID` %in% (danio_genes_modules %>% filter(annot=="Peroxisome process") %>% pull(orths)))
+  danio_cellcylce<-Danio_biomart %>% filter(`Gene stable ID` %in% (danio_genes_modules %>% filter(annot=="Cell cycle process") %>% pull(orths)))
+  danio_resp<-Danio_biomart %>% filter(`Gene stable ID` %in% (danio_genes_modules %>% filter(annot=="Aerobic respiration") %>% pull(orths)))
+  danio_neuron<-Danio_biomart %>% filter(`Gene stable ID` %in% (danio_genes_modules %>% filter(annot=="Neuron migration and placode development") %>% pull(orths)))
+  danio_tranl1<-Danio_biomart %>% filter(`Gene stable ID` %in% (danio_genes_modules %>% filter(annot=="Translation") %>% pull(orths)))
+  danio_tranl2<-Danio_biomart %>% filter(`Gene stable ID` %in% (danio_genes_modules %>% filter(annot=="Translation 2") %>% pull(orths)))
+  danio_ribo<-Danio_biomart %>% filter(`Gene stable ID` %in% (danio_genes_modules %>% filter(annot=="Ribosome related") %>% pull(orths)))
+  danio_protcat<-Danio_biomart %>% filter(`Gene stable ID` %in% (danio_genes_modules %>% filter(annot=="Protein catabolism") %>% pull(orths)))
+  danio_hormone<-Danio_biomart %>% filter(`Gene stable ID` %in% (danio_genes_modules %>% filter(annot=="Hormone response") %>% pull(orths)))
+  danio_blood<-Danio_biomart %>% filter(`Gene stable ID` %in% (danio_genes_modules %>% filter(annot=="Blood related") %>% pull(orths)))
+  danio_protfold<-Danio_biomart %>% filter(`Gene stable ID` %in% (danio_genes_modules %>% filter(annot=="Protein folding") %>% pull(orths)))
+  #Again you can use a set of genes or all the genes
+  #We show these in the example below. Plots for all genes at all stages is in Figures/Zhub
+  #for_plot<-c("adam17b","adamts12","gstt1a","gstt1b","gstt1b","pax7a","pax7b","pkp3a","pkp3b","osbpl7")
+  
+  rowData(zhub_dat)$marker_class <- ifelse(rownames(zhub_dat) %in% danio_muscle$`Gene name`, "Muscle system",
+                                    ifelse(rownames(zhub_dat) %in% danio_matrix$`Gene name`, "Extracellular matrix and cartilage development 2",
+                                    ifelse(rownames(zhub_dat) %in% danio_rna1$`Gene name`, "RNA processing 1",
+                                    ifelse(rownames(zhub_dat) %in% danio_rna2$`Gene name`, "RNA processing 2",
+                                    ifelse(rownames(zhub_dat) %in% danio_dna$`Gene name`, "DNA replication",
+                                    ifelse(rownames(zhub_dat) %in% danio_immune$`Gene name`, "Immune system",
+                                    ifelse(rownames(zhub_dat) %in% danio_nutrient$`Gene name`, "Nutrient absorption",
+                                    ifelse(rownames(zhub_dat) %in% danio_brush$`Gene name`, "Brush border epithelium development",
+                                    ifelse(rownames(zhub_dat) %in% danio_synapse1$`Gene name`, "Synaptic signalling 1",
+                                    ifelse(rownames(zhub_dat) %in% danio_synapse2$`Gene name`, "Synaptic signalling 2",
+                                    ifelse(rownames(zhub_dat) %in% danio_peroxi$`Gene name`, "Peroxisome process",
+                                    ifelse(rownames(zhub_dat) %in% danio_cellcylce$`Gene name`, "Cell cycle process",
+                                    ifelse(rownames(zhub_dat) %in% danio_resp$`Gene name`, "Aerobic respiration",
+                                    ifelse(rownames(zhub_dat) %in% danio_neuron$`Gene name`, "Neuron migration and placode development",
+                                    ifelse(rownames(zhub_dat) %in% danio_tranl1$`Gene name`, "Translation",
+                                    ifelse(rownames(zhub_dat) %in% danio_tranl2$`Gene name`, "Translation 2",
+                                    ifelse(rownames(zhub_dat) %in% danio_ribo$`Gene name`, "Ribosome related",
+                                    ifelse(rownames(zhub_dat) %in% danio_protcat$`Gene name`, "Protein catabolism",
+                                    ifelse(rownames(zhub_dat) %in% danio_hormone$`Gene name`, "Hormone response",
+                                    ifelse(rownames(zhub_dat) %in% danio_blood$`Gene name`, "Blood related",
+                                    ifelse(rownames(zhub_dat) %in% danio_protfold$`Gene name`, "Protein folding",
+                                           "other")))))))))))))))))))))
+  
+  # UMAP colored by expression for all markers - plotReducedDim
+  plot_list  <- lapply(rownames(zhub_dat)[rowData(zhub_dat)$marker_class == process], function(x){
+    p <- plotReducedDim(zhub_dat, 
+                        dimred = 'X_umap',
+                        colour_by = x,
+                        by_exprs_values = "logcounts",
+                        point_size = 0.4)+
+      scale_colour_viridis_c(option = "D",direction = -1)+
+      xlab("UMAP1")+
+      ylab("UMAP2")+
+      labs(color = x)+
+      theme(axis.text = element_blank(),
+            axis.ticks = element_blank())
+    return(p)
+  })
+  
+  #Use this to make a single plot with all the genes
+  cowplot::plot_grid(plotlist = plot_list) %>% ggsave(filename = paste0("./09.Zhub/gene_UMAP_",stage,"_",process,".pdf"),device = "pdf",
+                                                      width = 20, height = 15, units = "in", limitsize = F)
+  
+  #save individual plots
+  #names(plot_list)<-rownames(zhub_dat)[rowData(zhub_dat)$marker_class == tissue]
+  #for (name in names(plot_list)) {
+  #  plot_file_name <- paste0(name, ".pdf")  # Create file name
+  #  ggsave(filename = paste0("./Plots/Zhub/individual_gene_plots/",stage,"_",name,"_",tissue,".pdf"), 
+  #         plot = plot_list[[name]], 
+  #         device = "pdf",
+  #         width = 4, height = 3, units = "in", limitsize = F)
+  #  }
+  
+}
+
+
+ann_list<-cafe_sig %>% drop_na() %>% distinct(annot) %>% pull(annot)
+
+purrr::map2(.x="24hpf", .y=ann_list,
+            ~umap_gene_exp(stage = .x, process = .y))
+purrr::map2(.x="2dpf", .y=ann_list,
+            ~umap_gene_exp(stage = .x, process = .y))
+purrr::map2(.x="3dpf", .y=ann_list,
+            ~umap_gene_exp(stage = .x, process = .y))
+purrr::map2(.x="5dpf", .y=ann_list,
+            ~umap_gene_exp(stage = .x, process = .y))
+purrr::map2(.x="10dpf", .y=ann_list,
+            ~umap_gene_exp(stage = .x, process = .y))
+
+
+```
+
+
+### Expression during metamorphosis
+```{r}
+meta_exp_cafe_genes <- function(species, orthogroup){
+  
+  make_plot <- function(dge_keep, orthogroup, species, rects = list()) {
+    
+    samp <- dge_keep$samples %>%
+      tibble::rownames_to_column("samples")
+    
+    df <- dge_keep$counts %>%
+      edgeR::cpm(log = TRUE, prior.count = 1e-5, normalized.lib.sizes = TRUE) %>%
+      reshape2::melt() %>%
+      dplyr::rename(orths = Var1, samples = Var2, logCPM = value) %>%
+      left_join(samp, by = "samples") %>%
+      dplyr::rename(stages = group) %>%
+      summarise(mean_logCPM = mean(logCPM, na.rm = TRUE),
+                       .by = c(orths, stages)) %>% group_by(orths) %>%
+      mutate(z.score = (mean_logCPM - mean(mean_logCPM))/sd(mean_logCPM)) %>%
+      ungroup() %>% left_join(orth %>% filter(sp == species) %>%
+          dplyr::select(Orthogroup, orths) %>% mutate(orths = stringr::str_remove(orths, "\\.[0-9]*")),
+        by = "orths")
+    
+    p <- df %>%
+      dplyr::filter(Orthogroup == orthogroup) %>%
+      ggplot(ggplot2::aes(x = stages, y = z.score)) +
+      facet_wrap(~orths) +
+      geom_line(aes(group = orths, color = orths), linewidth = 0.6) +
+      ggsci::scale_color_aaas() +
+      theme_bw() +
+      theme(axis.text.x = ggplot2::element_text(angle = 90, hjust = 1, vjust = 0.5, size = 6))
+    
+    # add the rectangles for the metamorphosis transitions
+    for (r in rects) {
+      p <- p + ggplot2::annotate(
+        geom = "rect",
+        xmin = r$xmin, xmax = r$xmax, ymin = -Inf, ymax = Inf,
+        fill = r$fill %||% "#594BE4",
+        alpha = r$alpha %||% 0.2
+      )
+    }
+    
+    p
+  }
+  
+
+  if (species == "Amphiprion_ocellaris") {
+    make_plot(
+      dge_keep = clown$dge_keep,
+      orth = orthogroup,
+      species = species,
+      rects = list(list(xmin = 4.5, xmax = 5.5, alpha = 0.2, fill = "#594BE4"))
+    )
+    
+  } else if (species == "Epinephelus_malabaricus") {
+    make_plot(
+      dge_keep = grouper$dge_keep,
+      orth = orthogroup,
+      species = species,
+      rects = list(
+        list(xmin = 1.5, xmax = 2.5, alpha = 0.15, fill = "#594BE4"),
+        list(xmin = 5.5, xmax = 6.5, alpha = 0.15, fill = "#594BE4")
+      )
+    )
+    
+  } 
+}
+```
+
