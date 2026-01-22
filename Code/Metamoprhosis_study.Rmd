@@ -273,7 +273,7 @@ module_heatmaps<-function(dat,net,cols,corr_ref_plot){
 
   colnames(dat$counts)<-dat$samples$group
 #heat_dat<-dat$counts %>% reshape2::melt() %>% 
-heat_dat<-cpm(dat$counts, log = T,prior.count = 1e-5,normalized.lib.sizes = T) %>% reshape2::melt() %>% 
+heat_dat<-edgeR::cpm(dat$counts, log = T,prior.count = 1e-5,normalized.lib.sizes = T) %>% reshape2::melt() %>% 
   dplyr::rename(genes = Var1,stages = Var2, logCPM = value) %>% 
   summarise(mean_logCPM = mean(logCPM),.by = c(genes,stages)) %>% group_by(genes) %>% 
   mutate(z.score = (mean_logCPM - mean(mean_logCPM))/sd(mean_logCPM)) %>% ungroup()
@@ -317,6 +317,8 @@ heat<-ggplot(data = heat_plot_dat,aes(x = stages,y = as.factor(mod)))+
 
 #Module lineplots
 module_pres_lineplots<-function(dat,mp_net,orth_exp,plot_mods){
+  dat<-clown_orth_net_in$dge_keep
+  orth_exp<-clown_orth_exp
   colnames(dat$counts)<-dat$samples$group
   heat_dat<-dat$counts %>% reshape2::melt() %>% 
   dplyr::rename(orths = Var1,stages = Var2, logCPM = value) %>% 
@@ -407,12 +409,13 @@ heat_plot_dat<-full_join(heat_plot_dat %>% pivot_wider(names_from = stages,value
   dplyr::select(mod),heat_plot_dat,by = c("mod"))
 heat_plot_dat<-heat_plot_dat %>% mutate(mod = factor(mod,levels = unique(mod)))
 
-heat<-ggplot(data = heat_plot_dat,aes(x = stages,y = as.factor(mod)))+
+heat<-ggplot(data = heat_plot_dat,aes(y = stages,x = as.factor(mod)))+
   geom_tile(aes(fill = mod.z), color = "grey80",) +
   scale_fill_gradientn(colors = (cols(11)), limits = c(-qnt, qnt),
                        breaks = c(-qnt, 0, qnt), labels = c(paste0("<", round(-qnt)), "0", paste0(">", round(qnt))))+
   scale_x_discrete(guide = guide_axis(angle = 90))+
-  theme_minimal()
+  theme_minimal()+
+  theme(panel.background = element_blank())
 return(list(plot=heat, dat=heat_plot_dat, sum=sum))
 }
 
@@ -625,7 +628,7 @@ get_jaccard_estimate<-function(col1,col2,net1,net2){
  
 # Homologous modules line plots
 homo_mods_lines<-function(c1,c2,c3,c4){
-d.clown<-clown_orth_net_in$dge_keep$counts[(clown_orth_net$moduleColors)$moduleColors==c1,] %>% cpm(log = T,prior.count = 1e-5,normalized.lib.sizes = T) %>% 
+d.clown<-clown_orth_net_in$dge_keep$counts[(clown_orth_net$moduleColors)$moduleColors=="orange",] %>% cpm(log = T,prior.count = 1e-5,normalized.lib.sizes = T) %>% 
   reshape2::melt() %>% 
   dplyr::rename(orths = Var1,stages = Var2, logCPM = value) %>% 
   summarise(mean_logCPM = mean(logCPM),.by = c(orths,stages)) %>% group_by(orths) %>% 
@@ -636,29 +639,7 @@ d.clown<-d.clown %>% mutate(z.clipped = case_when(
   T ~ z.score
 )) %>% mutate(sp="clown")
 
-d.goby<-goby_orth_net_in$dge_keep$counts[(goby_orth_net$moduleColors)$moduleColors==c4,] %>% cpm(log = T,prior.count = 1e-5,normalized.lib.sizes = T) %>%
-  reshape2::melt() %>% 
-  dplyr::rename(orths = Var1,stages = Var2, logCPM = value) %>% 
-  summarise(mean_logCPM = mean(logCPM),.by = c(orths,stages)) %>% group_by(orths) %>% 
-  mutate(z.score = (mean_logCPM - mean(mean_logCPM))/sd(mean_logCPM)) %>% ungroup()
-d.goby<-d.goby %>% mutate(z.clipped = case_when(
-  z.score > quantile(d.goby$z.score,0.95) ~ quantile(d.goby$z.score,0.95),
-  z.score < -quantile(d.goby$z.score,0.95) ~ -quantile(d.goby$z.score,0.95),
-  T ~ z.score
-)) %>% mutate(sp="goby")
-
-d.grouper<-grouper_orth_net_in$dge_keep$counts[(grouper_orth_net$moduleColors)$moduleColors==c2,] %>% cpm(log = T,prior.count = 1e-5,normalized.lib.sizes = T) %>% 
-  reshape2::melt() %>% 
-  dplyr::rename(orths = Var1,stages = Var2, logCPM = value) %>% 
-  summarise(mean_logCPM = mean(logCPM),.by = c(orths,stages)) %>% group_by(orths) %>% 
-  mutate(z.score = (mean_logCPM - mean(mean_logCPM))/sd(mean_logCPM)) %>% ungroup()
-d.grouper<-d.grouper %>% mutate(z.clipped = case_when(
-  z.score > quantile(d.grouper$z.score,0.95) ~ quantile(d.grouper$z.score,0.95),
-  z.score < -quantile(d.grouper$z.score,0.95) ~ -quantile(d.grouper$z.score,0.95),
-  T ~ z.score
-)) %>% mutate(sp="grouper")
-
-d.manini<-manini_orth_net_in$dge_keep$counts[(manini_orth_net$moduleColors)$moduleColors==c3,] %>% cpm(log = T,prior.count = 1e-5,normalized.lib.sizes = T) %>% 
+d.manini<-manini_orth_net_in$dge_keep$counts[(manini_orth_net$moduleColors)$moduleColors=="darkturquoise",] %>% cpm(log = T,prior.count = 1e-5,normalized.lib.sizes = T) %>% 
   reshape2::melt() %>% 
   dplyr::rename(orths = Var1,stages = Var2, logCPM = value) %>% 
   summarise(mean_logCPM = mean(logCPM),.by = c(orths,stages)) %>% group_by(orths) %>% 
@@ -669,8 +650,41 @@ d.manini<-d.manini %>% mutate(z.clipped = case_when(
   T ~ z.score
 )) %>% mutate(sp="manini")
 
+d.goby<-goby_orth_net_in$dge_keep$counts[(goby_orth_net$moduleColors)$moduleColors=="lightcyan",] %>% cpm(log = T,prior.count = 1e-5,normalized.lib.sizes = T) %>%
+  reshape2::melt() %>% 
+  dplyr::rename(orths = Var1,stages = Var2, logCPM = value) %>% 
+  summarise(mean_logCPM = mean(logCPM),.by = c(orths,stages)) %>% group_by(orths) %>% 
+  mutate(z.score = (mean_logCPM - mean(mean_logCPM))/sd(mean_logCPM)) %>% ungroup()
+d.goby<-d.goby %>% mutate(z.clipped = case_when(
+  z.score > quantile(d.goby$z.score,0.95) ~ quantile(d.goby$z.score,0.95),
+  z.score < -quantile(d.goby$z.score,0.95) ~ -quantile(d.goby$z.score,0.95),
+  T ~ z.score
+)) %>% mutate(sp="goby")
 
-d.all<-rbind(d.clown, d.grouper, d.goby, d.manini)
+d.grouper<-grouper_orth_net_in$dge_keep$counts[(grouper_orth_net$moduleColors)$moduleColors=="magenta",] %>% cpm(log = T,prior.count = 1e-5,normalized.lib.sizes = T) %>% 
+  reshape2::melt() %>% 
+  dplyr::rename(orths = Var1,stages = Var2, logCPM = value) %>% 
+  summarise(mean_logCPM = mean(logCPM),.by = c(orths,stages)) %>% group_by(orths) %>% 
+  mutate(z.score = (mean_logCPM - mean(mean_logCPM))/sd(mean_logCPM)) %>% ungroup()
+d.grouper<-d.grouper %>% mutate(z.clipped = case_when(
+  z.score > quantile(d.grouper$z.score,0.95) ~ quantile(d.grouper$z.score,0.95),
+  z.score < -quantile(d.grouper$z.score,0.95) ~ -quantile(d.grouper$z.score,0.95),
+  T ~ z.score
+)) %>% mutate(sp="grouper")
+
+d.danio<-danio_orth_net_in$dge_keep$counts[(danio_orth_net$moduleColors)$moduleColors=="darkgrey",] %>% cpm(log = T,prior.count = 1e-5,normalized.lib.sizes = T) %>% 
+  reshape2::melt() %>% 
+  dplyr::rename(orths = Var1,stages = Var2, logCPM = value) %>% 
+  summarise(mean_logCPM = mean(logCPM),.by = c(orths,stages)) %>% group_by(orths) %>% 
+  mutate(z.score = (mean_logCPM - mean(mean_logCPM))/sd(mean_logCPM)) %>% ungroup()
+d.danio<-d.danio %>% mutate(z.clipped = case_when(
+  z.score > quantile(d.danio$z.score,0.95) ~ quantile(d.danio$z.score,0.95),
+  z.score < -quantile(d.danio$z.score,0.95) ~ -quantile(d.danio$z.score,0.95),
+  T ~ z.score
+)) %>% mutate(sp="danio")
+
+
+d.all<-rbind(d.clown, d.grouper, d.goby, d.manini, d.danio)
 
 
 d.all %>% filter(sp=="clown") %>%  
@@ -684,9 +698,22 @@ d.all %>% filter(sp=="clown") %>%
            fill = "#594BE4", alpha = 0.2) +  
   ylim(-2.2,2.2)+
   ylab("Z-score")+
-  ggtitle(c1)+
   theme_linedraw()+
   theme(axis.text.x = element_blank())->p1
+
+d.all %>% filter(sp=="manini") %>%  
+  ggplot(aes(x=stages, y=z.clipped, group=orths))+
+  ggbeeswarm::geom_quasirandom(shape = 21, color = "grey90", alpha = 0.8, size = 1.5,
+                               fill = "#9acd32")+
+  geom_line(data = (d.all %>% filter(sp=="manini")
+                    %>% summarise(mean_exp = mean(z.score),.by = "stages")),
+            aes(x = stages, y = mean_exp, group = 1),linewidth = 1, color = "black")+
+  annotate(geom = "rect", xmin = 1.5, xmax = 3.5, ymin = -Inf, ymax = Inf,
+           fill = "#594BE4", alpha = 0.15) + 
+  ylim(-2.2,2.2)+
+  ylab("Z-score")+
+  theme_linedraw()+
+  theme(axis.text.x = element_blank())->p2
 
 d.all %>% filter(sp=="goby") %>%  
   ggplot(aes(x=stages, y=z.clipped, group=orths))+
@@ -699,9 +726,8 @@ d.all %>% filter(sp=="goby") %>%
            fill = "#594BE4", alpha = 0.15) + 
   ylim(-2.2,2.2)+
   ylab("Z-score")+
-  ggtitle(c4)+
   theme_linedraw()+
-  theme(axis.text.x = element_blank())->p2
+  theme(axis.text.x = element_blank())->p3
 
 d.all %>% filter(sp=="grouper") %>%  
   ggplot(aes(x=stages, y=z.clipped, group=orths))+
@@ -716,30 +742,32 @@ d.all %>% filter(sp=="grouper") %>%
            fill = "#594BE4", alpha = 0.15) +
   ylim(-2.2,2.2)+
   ylab("Z-score")+
-  ggtitle(c2)+
-  theme_linedraw()+
-  theme(axis.text.x = element_blank())->p3
-
-d.all %>% filter(sp=="manini") %>%  
-  ggplot(aes(x=stages, y=z.clipped, group=orths))+
-  ggbeeswarm::geom_quasirandom(shape = 21, color = "grey90", alpha = 0.8, size = 1.5,
-                               fill = "#9acd32")+
-  geom_line(data = (d.all %>% filter(sp=="manini")
-                    %>% summarise(mean_exp = mean(z.score),.by = "stages")),
-            aes(x = stages, y = mean_exp, group = 1),linewidth = 1, color = "black")+
-  annotate(geom = "rect", xmin = 1.5, xmax = 3.5, ymin = -Inf, ymax = Inf,
-           fill = "#594BE4", alpha = 0.15) + 
-  ylim(-2.2,2.2)+
-  ylab("Z-score")+
-  ggtitle(c3)+
   theme_linedraw()+
   theme(axis.text.x = element_blank())->p4
 
-length(homologous_modules_mods_proc %>% 
+d.all %>% filter(sp=="danio") %>%  
+  ggplot(aes(x=stages, y=z.clipped, group=orths))+
+  ggbeeswarm::geom_quasirandom(shape = 21, color = "grey90", alpha = 0.8, size = 1.5,
+                               fill = "#594BE4")+
+  geom_line(data = (d.all %>% filter(sp=="danio")
+                    %>% summarise(mean_exp = mean(z.score),.by = "stages")),
+            aes(x = stages, y = mean_exp, group = 1),linewidth = 1, color = "black")+
+  annotate(geom = "rect", xmin = 1.5, xmax = 2.5, ymin = -Inf, ymax = Inf,
+           fill = "#594BE4", alpha = 0.15) + 
+  annotate(geom = "rect", xmin = 5.5, xmax = 6.5, ymin = -Inf, ymax = Inf,
+           fill = "#594BE4", alpha = 0.15) +
+  ylim(-2.2,2.2)+
+  ylab("Z-score")+
+  theme_linedraw()+
+  theme(axis.text.x = element_blank())->p5
+
+
+
+length(homologous_mods_BP_proc %>% 
          filter(col.clown==c1) %>% 
          pull(Term))->len
 
-homologous_modules_mods_proc %>% filter(col.clown==c1) %>% 
+homologous_mods_BP_proc %>% filter(col.clown==c1) %>% 
   ggplot(aes(label=Term, y=c(1:len)))+
   geom_text(x=1,hjust = "left",size = 3)+
   xlim(1,len)+
@@ -2088,7 +2116,7 @@ goby_mods_proc<-readRDS("./03.Annotations/goby_mods_proc_GO.rds")
 Since the goal of this project is to identify core sets of genes mediating metamophorosis across different species of fish I need to estimate the orthologs between the genes and construct networks of the orthologous genes. For that I need to construct an ortholog gene expression matrix. I estimate orthlogs from OrthoFinder and filter out only the genes families that are present in all 5 species. This step ensures we select gene families that have a common evolutionary history, and not ones that have species-specific evolutionary trajectories (either gains or losses).
 
 ```{r}
-orth<-readRDS("./04.Orthogroups/Orthologer_latest.rds") 
+orth<-readRDS("./04.Orthogroups/Orthologer_latest2.rds") 
 
 rbind(
 rbind(
@@ -2463,6 +2491,29 @@ purrr::map2(.x=sig_corr_dat %>% pull(mod1) %>% as.character(),
   purrr::set_names(name_list)->clown_ME_GO_plots_corr
 
 #grouper
+grouper_orth_net$MEs->t
+expand_grid(c1=names(t), c2=names(t))->df
+purrr::map2(.x=df$c1,
+            .y=df$c2,
+            ~correlation_test(t[[.x]], t[[.y]]) %>% 
+              mutate(mod1=.x, mod2=.y)%>% 
+              mutate(sig = case_when(
+    p_value_adj < 0.05  ~ "Significant",
+    p_value_adj > 0.05  ~ "Not significant"))) %>% 
+  list_rbind()->grouper_ME_corr
+
+grouper_ME_corr %>% mutate(mod1=str_remove(grouper_ME_corr$mod1, "ME"),
+                         mod2=str_remove(grouper_ME_corr$mod2, "ME")) %>% 
+  mutate(mod1=reorder(mod1, -corr),mod2=reorder(mod2, -corr)) %>% 
+  ggplot(aes(x=mod1,y=mod2, fill=corr))+
+  geom_tile()+
+  scale_y_discrete(position = "right")+
+  scale_fill_gradient2(low = "grey20",mid = "white",high =  "#D9C343",limits=c(-1,1))+
+  geom_point(aes(color = sig),alpha=0.5,size=1,shape=8)+
+  scale_colour_manual(values = c("white","red3"))+
+  theme_linedraw()+
+  theme(axis.text.x = element_text(angle=90, hjust=0.90, vjust=0.2))->grouper_ME_corr_plot
+
  grouper_ME_corr_plot$data %>% 
   mutate(corr=round(grouper_ME_corr_plot$data$corr,digits = 5)) %>% 
   filter(corr < 1) %>% filter(sig == "Significant") %>% distinct(corr, .keep_all = T)->sig_corr_dat
@@ -7951,6 +8002,45 @@ fubar_res_non_homologous %>% mutate(selection=case_when(`Prob[alpha>beta]` > 0.9
   theme_bw()->site_freq_non_homol
 ```
 
+```{r}
+rbind(fubar_res,fubar_res_non_homologous) %>%  
+    mutate(selection=case_when(`Prob[alpha>beta]` > 0.9 ~ "Purifying", 
+    `Prob[alpha<beta]` > 0.9 ~"Diversifying",
+    .default = "Low evidence")) %>% 
+    dplyr::count(type,selection) %>% mutate(n.per=((n/sum(n))*100) %>% round(2)) %>% 
+    dplyr::select(-n.per) %>% 
+    pivot_wider(names_from = selection, values_from = n) %>% 
+    dplyr::select(-type) %>%
+    as.matrix() %>% chisq.test()->chisq
+  
+ ggarrange( 
+  rbind(fubar_res,fubar_res_non_homologous) %>% 
+    mutate(selection=case_when(`Prob[alpha>beta]` > 0.9 ~ "Purifying", 
+                               `Prob[alpha<beta]` > 0.9 ~"Diversifying",
+                               .default = "Low evidence")) %>% 
+    dplyr::count(type,selection) %>% 
+    mutate(n.per=((n/sum(n))*100) %>% round(2)) %>% 
+    ggplot(aes(x=selection,y=n.per, fill=type))+
+    geom_col(width = 0.65,position = "dodge")+
+    ggsci::scale_fill_aaas()+
+    labs(title = "FUBAR analysis",
+         x = "Selection type", 
+         y = "Proportion of genes (%)",
+         fill = "Gene class")+
+    theme_bw(),
+  
+  
+  as_tibble(chisq$stdres) %>% mutate(type=c("Homologous","Non homologous")) %>% 
+    pivot_longer(c(Diversifying, `Low evidence`, Purifying), names_to = "Selection type") %>% 
+    ggplot(aes(y=type,x=value, fill=`Selection type`))+
+    geom_col(width = 0.65,position = "dodge")+
+    labs(x = "Standardised residual", y = "Type of gene")+
+    ggsci::scale_fill_jama()+
+    theme_bw(),
+  nrow = 1,widths = c(0.5,1)
+ )
+```
+
 ##### BUSTED
 
 ## Single cell expression and expression during metamorphosis
@@ -8178,5 +8268,17 @@ meta_exp_cafe_genes <- function(species, orthogroup){
     
   } 
 }
+```
+
+```{r}
+purrr::map2(.x="Amphiprion_ocellaris", 
+            .y=(cafe_clown %>% distinct(Orthogroup) %>% pull(Orthogroup)),
+            ~meta_exp_cafe_genes(species = .x, orthogroup = .y))->clown_meta_cafe_exp
+```
+
+```{r}
+purrr::map2(.x="Epinephelus_malabaricus", 
+            .y=(cafe_clown %>% distinct(Orthogroup) %>% pull(Orthogroup)),
+            ~meta_exp_cafe_genes(species = .x, orthogroup = .y))->grouper_meta_cafe_exp
 ```
 
