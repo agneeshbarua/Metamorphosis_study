@@ -627,162 +627,159 @@ get_jaccard_estimate<-function(col1,col2,net1,net2){
  }
  
 # Homologous modules line plots
-homo_mods_lines<-function(c1,c2,c3,c4){
-d.clown<-clown_orth_net_in$dge_keep$counts[(clown_orth_net$moduleColors)$moduleColors=="orange",] %>% cpm(log = T,prior.count = 1e-5,normalized.lib.sizes = T) %>% 
-  reshape2::melt() %>% 
-  dplyr::rename(orths = Var1,stages = Var2, logCPM = value) %>% 
-  summarise(mean_logCPM = mean(logCPM),.by = c(orths,stages)) %>% group_by(orths) %>% 
-  mutate(z.score = (mean_logCPM - mean(mean_logCPM))/sd(mean_logCPM)) %>% ungroup()
-d.clown<-d.clown %>% mutate(z.clipped = case_when(
-  z.score > quantile(d.clown$z.score,0.95) ~ quantile(d.clown$z.score,0.95),
-  z.score < -quantile(d.clown$z.score,0.95) ~ -quantile(d.clown$z.score,0.95),
-  T ~ z.score
-)) %>% mutate(sp="clown")
+  homo_mods_lines<-function(mod.clown,mod.manini,mod.goby,mod.grouper,mod.danio,GO_dat){
+    d.clown<-clown_orth_net_in$dge_keep$counts[(clown_orth_net$moduleColors)$moduleColors==mod.clown,] %>% cpm(log = T,prior.count = 1e-5,normalized.lib.sizes = T) %>% 
+      reshape2::melt() %>% 
+      dplyr::rename(orths = Var1,stages = Var2, logCPM = value) %>% 
+      summarise(mean_logCPM = mean(logCPM),.by = c(orths,stages)) %>% group_by(orths) %>% 
+      mutate(z.score = (mean_logCPM - mean(mean_logCPM))/sd(mean_logCPM)) %>% ungroup()
+    d.clown<-d.clown %>% mutate(z.clipped = case_when(
+      z.score > quantile(d.clown$z.score,0.95) ~ quantile(d.clown$z.score,0.95),
+      z.score < -quantile(d.clown$z.score,0.95) ~ -quantile(d.clown$z.score,0.95),
+      T ~ z.score
+    )) %>% mutate(sp="clown")
+    
+    d.manini<-manini_orth_net_in$dge_keep$counts[(manini_orth_net$moduleColors)$moduleColors==mod.manini,] %>% cpm(log = T,prior.count = 1e-5,normalized.lib.sizes = T) %>% 
+      reshape2::melt() %>% 
+      dplyr::rename(orths = Var1,stages = Var2, logCPM = value) %>% 
+      summarise(mean_logCPM = mean(logCPM),.by = c(orths,stages)) %>% group_by(orths) %>% 
+      mutate(z.score = (mean_logCPM - mean(mean_logCPM))/sd(mean_logCPM)) %>% ungroup()
+    d.manini<-d.manini %>% mutate(z.clipped = case_when(
+      z.score > quantile(d.manini$z.score,0.95) ~ quantile(d.manini$z.score,0.95),
+      z.score < -quantile(d.manini$z.score,0.95) ~ -quantile(d.manini$z.score,0.95),
+      T ~ z.score
+    )) %>% mutate(sp="manini")
+    
+    d.goby<-goby_orth_net_in$dge_keep$counts[(goby_orth_net$moduleColors)$moduleColors==mod.goby,] %>% cpm(log = T,prior.count = 1e-5,normalized.lib.sizes = T) %>%
+      reshape2::melt() %>% 
+      dplyr::rename(orths = Var1,stages = Var2, logCPM = value) %>% 
+      summarise(mean_logCPM = mean(logCPM),.by = c(orths,stages)) %>% group_by(orths) %>% 
+      mutate(z.score = (mean_logCPM - mean(mean_logCPM))/sd(mean_logCPM)) %>% ungroup()
+    d.goby<-d.goby %>% mutate(z.clipped = case_when(
+      z.score > quantile(d.goby$z.score,0.95) ~ quantile(d.goby$z.score,0.95),
+      z.score < -quantile(d.goby$z.score,0.95) ~ -quantile(d.goby$z.score,0.95),
+      T ~ z.score
+    )) %>% mutate(sp="goby")
+    
+    d.grouper<-grouper_orth_net_in$dge_keep$counts[(grouper_orth_net$moduleColors)$moduleColors==mod.grouper,] %>% cpm(log = T,prior.count = 1e-5,normalized.lib.sizes = T) %>% 
+      reshape2::melt() %>% 
+      dplyr::rename(orths = Var1,stages = Var2, logCPM = value) %>% 
+      summarise(mean_logCPM = mean(logCPM),.by = c(orths,stages)) %>% group_by(orths) %>% 
+      mutate(z.score = (mean_logCPM - mean(mean_logCPM))/sd(mean_logCPM)) %>% ungroup()
+    d.grouper<-d.grouper %>% mutate(z.clipped = case_when(
+      z.score > quantile(d.grouper$z.score,0.95) ~ quantile(d.grouper$z.score,0.95),
+      z.score < -quantile(d.grouper$z.score,0.95) ~ -quantile(d.grouper$z.score,0.95),
+      T ~ z.score
+    )) %>% mutate(sp="grouper")
+    
+    d.danio<-danio_orth_net_in$dge_keep$counts[(danio_orth_net$moduleColors)$moduleColors==mod.danio,] %>% cpm(log = T,prior.count = 1e-5,normalized.lib.sizes = T) %>% 
+      reshape2::melt() %>% 
+      dplyr::rename(orths = Var1,stages = Var2, logCPM = value) %>% 
+      summarise(mean_logCPM = mean(logCPM),.by = c(orths,stages)) %>% group_by(orths) %>% 
+      mutate(z.score = (mean_logCPM - mean(mean_logCPM))/sd(mean_logCPM)) %>% ungroup()
+    d.danio<-d.danio %>% mutate(z.clipped = case_when(
+      z.score > quantile(d.danio$z.score,0.95) ~ quantile(d.danio$z.score,0.95),
+      z.score < -quantile(d.danio$z.score,0.95) ~ -quantile(d.danio$z.score,0.95),
+      T ~ z.score
+    )) %>% mutate(sp="danio")
+    
+    
+    d.all<-rbind(d.clown, d.grouper, d.goby, d.manini, d.danio)
+    
+    
+    d.all %>% filter(sp=="clown") %>%  
+      ggplot(aes(x=stages, y=z.clipped, group=orths))+
+      ggbeeswarm::geom_quasirandom(shape = 21, color = "grey90", alpha = 0.8, size = 1.5,
+                                   fill = "#e77515")+
+      geom_line(data = (d.all %>% filter(sp=="clown")
+                        %>% summarise(mean_exp = mean(z.score),.by = "stages")),
+                aes(x = stages, y = mean_exp, group = 1),linewidth = 1, color = "black")+
+      annotate(geom = "rect", xmin = 4.5, xmax = 5.5, ymin = -Inf, ymax = Inf,
+               fill = "#594BE4", alpha = 0.2) +  
+      ylim(-2.2,2.2)+
+      ylab("Z-score")+
+      theme_linedraw()+
+      theme(axis.text.x = element_blank())->p1
+    
+    d.all %>% filter(sp=="manini") %>%  
+      ggplot(aes(x=stages, y=z.clipped, group=orths))+
+      ggbeeswarm::geom_quasirandom(shape = 21, color = "grey90", alpha = 0.8, size = 1.5,
+                                   fill = "#9acd32")+
+      geom_line(data = (d.all %>% filter(sp=="manini")
+                        %>% summarise(mean_exp = mean(z.score),.by = "stages")),
+                aes(x = stages, y = mean_exp, group = 1),linewidth = 1, color = "black")+
+      annotate(geom = "rect", xmin = 1.5, xmax = 3.5, ymin = -Inf, ymax = Inf,
+               fill = "#594BE4", alpha = 0.15) + 
+      ylim(-2.2,2.2)+
+      ylab("Z-score")+
+      theme_linedraw()+
+      theme(axis.text.x = element_blank())->p2
+    
+    d.all %>% filter(sp=="goby") %>%  
+      ggplot(aes(x=stages, y=z.clipped, group=orths))+
+      ggbeeswarm::geom_quasirandom(shape = 21, color = "grey90", alpha = 0.8, size = 1.5,
+                                   fill = "#BA4566")+
+      geom_line(data = (d.all %>% filter(sp=="goby")
+                        %>% summarise(mean_exp = mean(z.score),.by = "stages")),
+                aes(x = stages, y = mean_exp, group = 1),linewidth = 1, color = "black")+
+      annotate(geom = "rect", xmin = 2.5, xmax = 3.5, ymin = -Inf, ymax = Inf,
+               fill = "#594BE4", alpha = 0.15) + 
+      ylim(-2.2,2.2)+
+      ylab("Z-score")+
+      theme_linedraw()+
+      theme(axis.text.x = element_blank())->p3
+    
+    d.all %>% filter(sp=="grouper") %>%  
+      ggplot(aes(x=stages, y=z.clipped, group=orths))+
+      ggbeeswarm::geom_quasirandom(shape = 21, color = "grey90", alpha = 0.8, size = 1.5,
+                                   fill = "#D9C343")+
+      geom_line(data = (d.all %>% filter(sp=="grouper")
+                        %>% summarise(mean_exp = mean(z.score),.by = "stages")),
+                aes(x = stages, y = mean_exp, group = 1),linewidth = 1, color = "black")+
+      annotate(geom = "rect", xmin = 1.5, xmax = 2.5, ymin = -Inf, ymax = Inf,
+               fill = "#594BE4", alpha = 0.15) + 
+      annotate(geom = "rect", xmin = 5.5, xmax = 6.5, ymin = -Inf, ymax = Inf,
+               fill = "#594BE4", alpha = 0.15) +
+      ylim(-2.2,2.2)+
+      ylab("Z-score")+
+      theme_linedraw()+
+      theme(axis.text.x = element_blank())->p4
+    
+    d.all %>% filter(sp=="danio") %>%  
+      ggplot(aes(x=stages, y=z.clipped, group=orths))+
+      ggbeeswarm::geom_quasirandom(shape = 21, color = "grey90", alpha = 0.8, size = 1.5,
+                                   fill = "#594BE4")+
+      geom_line(data = (d.all %>% filter(sp=="danio")
+                        %>% summarise(mean_exp = mean(z.score),.by = "stages")),
+                aes(x = stages, y = mean_exp, group = 1),linewidth = 1, color = "black")+
+      annotate(geom = "rect", xmin = 1.5, xmax = 2.5, ymin = -Inf, ymax = Inf,
+               fill = "#594BE4", alpha = 0.15) + 
+      annotate(geom = "rect", xmin = 5.5, xmax = 6.5, ymin = -Inf, ymax = Inf,
+               fill = "#594BE4", alpha = 0.15) +
+      ylim(-2.2,2.2)+
+      ylab("Z-score")+
+      theme_linedraw()+
+      theme(axis.text.x = element_blank())->p5
+    
+    #GO terms
+    #Use different go results when needed
+    GO_dat %>% list_rbind() %>% filter(mod==mod.clown) %>% slice_head(n=10) %>% 
+      ggplot(aes(label=Term, y=c(1:10)))+
+      geom_text(x=1,hjust = "left",size = 3)+
+      xlim(1,len)+
+      ylab(NULL)+
+      labs(subtitle = "Enriched GO terms" )+
+      theme_minimal()+
+      theme(axis.text = element_blank(),
+            panel.grid = element_blank())->p6
+    
+    wrap_plots(p1,p2,p3,p4,p5,p6,
+               nrow = 1, 
+               ncol = 6, 
+               widths = c(0.5,0.5,0.5,0.5,0.5,1),
+               heights = c(1,1,1,1,1,0.05)) %>% return()
+  }
 
-d.manini<-manini_orth_net_in$dge_keep$counts[(manini_orth_net$moduleColors)$moduleColors=="darkturquoise",] %>% cpm(log = T,prior.count = 1e-5,normalized.lib.sizes = T) %>% 
-  reshape2::melt() %>% 
-  dplyr::rename(orths = Var1,stages = Var2, logCPM = value) %>% 
-  summarise(mean_logCPM = mean(logCPM),.by = c(orths,stages)) %>% group_by(orths) %>% 
-  mutate(z.score = (mean_logCPM - mean(mean_logCPM))/sd(mean_logCPM)) %>% ungroup()
-d.manini<-d.manini %>% mutate(z.clipped = case_when(
-  z.score > quantile(d.manini$z.score,0.95) ~ quantile(d.manini$z.score,0.95),
-  z.score < -quantile(d.manini$z.score,0.95) ~ -quantile(d.manini$z.score,0.95),
-  T ~ z.score
-)) %>% mutate(sp="manini")
-
-d.goby<-goby_orth_net_in$dge_keep$counts[(goby_orth_net$moduleColors)$moduleColors=="lightcyan",] %>% cpm(log = T,prior.count = 1e-5,normalized.lib.sizes = T) %>%
-  reshape2::melt() %>% 
-  dplyr::rename(orths = Var1,stages = Var2, logCPM = value) %>% 
-  summarise(mean_logCPM = mean(logCPM),.by = c(orths,stages)) %>% group_by(orths) %>% 
-  mutate(z.score = (mean_logCPM - mean(mean_logCPM))/sd(mean_logCPM)) %>% ungroup()
-d.goby<-d.goby %>% mutate(z.clipped = case_when(
-  z.score > quantile(d.goby$z.score,0.95) ~ quantile(d.goby$z.score,0.95),
-  z.score < -quantile(d.goby$z.score,0.95) ~ -quantile(d.goby$z.score,0.95),
-  T ~ z.score
-)) %>% mutate(sp="goby")
-
-d.grouper<-grouper_orth_net_in$dge_keep$counts[(grouper_orth_net$moduleColors)$moduleColors=="magenta",] %>% cpm(log = T,prior.count = 1e-5,normalized.lib.sizes = T) %>% 
-  reshape2::melt() %>% 
-  dplyr::rename(orths = Var1,stages = Var2, logCPM = value) %>% 
-  summarise(mean_logCPM = mean(logCPM),.by = c(orths,stages)) %>% group_by(orths) %>% 
-  mutate(z.score = (mean_logCPM - mean(mean_logCPM))/sd(mean_logCPM)) %>% ungroup()
-d.grouper<-d.grouper %>% mutate(z.clipped = case_when(
-  z.score > quantile(d.grouper$z.score,0.95) ~ quantile(d.grouper$z.score,0.95),
-  z.score < -quantile(d.grouper$z.score,0.95) ~ -quantile(d.grouper$z.score,0.95),
-  T ~ z.score
-)) %>% mutate(sp="grouper")
-
-d.danio<-danio_orth_net_in$dge_keep$counts[(danio_orth_net$moduleColors)$moduleColors=="darkgrey",] %>% cpm(log = T,prior.count = 1e-5,normalized.lib.sizes = T) %>% 
-  reshape2::melt() %>% 
-  dplyr::rename(orths = Var1,stages = Var2, logCPM = value) %>% 
-  summarise(mean_logCPM = mean(logCPM),.by = c(orths,stages)) %>% group_by(orths) %>% 
-  mutate(z.score = (mean_logCPM - mean(mean_logCPM))/sd(mean_logCPM)) %>% ungroup()
-d.danio<-d.danio %>% mutate(z.clipped = case_when(
-  z.score > quantile(d.danio$z.score,0.95) ~ quantile(d.danio$z.score,0.95),
-  z.score < -quantile(d.danio$z.score,0.95) ~ -quantile(d.danio$z.score,0.95),
-  T ~ z.score
-)) %>% mutate(sp="danio")
-
-
-d.all<-rbind(d.clown, d.grouper, d.goby, d.manini, d.danio)
-
-
-d.all %>% filter(sp=="clown") %>%  
-  ggplot(aes(x=stages, y=z.clipped, group=orths))+
-    ggbeeswarm::geom_quasirandom(shape = 21, color = "grey90", alpha = 0.8, size = 1.5,
-                                 fill = "#e77515")+
-  geom_line(data = (d.all %>% filter(sp=="clown")
-                    %>% summarise(mean_exp = mean(z.score),.by = "stages")),
-            aes(x = stages, y = mean_exp, group = 1),linewidth = 1, color = "black")+
-  annotate(geom = "rect", xmin = 4.5, xmax = 5.5, ymin = -Inf, ymax = Inf,
-           fill = "#594BE4", alpha = 0.2) +  
-  ylim(-2.2,2.2)+
-  ylab("Z-score")+
-  theme_linedraw()+
-  theme(axis.text.x = element_blank())->p1
-
-d.all %>% filter(sp=="manini") %>%  
-  ggplot(aes(x=stages, y=z.clipped, group=orths))+
-  ggbeeswarm::geom_quasirandom(shape = 21, color = "grey90", alpha = 0.8, size = 1.5,
-                               fill = "#9acd32")+
-  geom_line(data = (d.all %>% filter(sp=="manini")
-                    %>% summarise(mean_exp = mean(z.score),.by = "stages")),
-            aes(x = stages, y = mean_exp, group = 1),linewidth = 1, color = "black")+
-  annotate(geom = "rect", xmin = 1.5, xmax = 3.5, ymin = -Inf, ymax = Inf,
-           fill = "#594BE4", alpha = 0.15) + 
-  ylim(-2.2,2.2)+
-  ylab("Z-score")+
-  theme_linedraw()+
-  theme(axis.text.x = element_blank())->p2
-
-d.all %>% filter(sp=="goby") %>%  
-  ggplot(aes(x=stages, y=z.clipped, group=orths))+
-  ggbeeswarm::geom_quasirandom(shape = 21, color = "grey90", alpha = 0.8, size = 1.5,
-                               fill = "#BA4566")+
-  geom_line(data = (d.all %>% filter(sp=="goby")
-                    %>% summarise(mean_exp = mean(z.score),.by = "stages")),
-            aes(x = stages, y = mean_exp, group = 1),linewidth = 1, color = "black")+
-  annotate(geom = "rect", xmin = 2.5, xmax = 3.5, ymin = -Inf, ymax = Inf,
-           fill = "#594BE4", alpha = 0.15) + 
-  ylim(-2.2,2.2)+
-  ylab("Z-score")+
-  theme_linedraw()+
-  theme(axis.text.x = element_blank())->p3
-
-d.all %>% filter(sp=="grouper") %>%  
-  ggplot(aes(x=stages, y=z.clipped, group=orths))+
-  ggbeeswarm::geom_quasirandom(shape = 21, color = "grey90", alpha = 0.8, size = 1.5,
-                               fill = "#D9C343")+
-  geom_line(data = (d.all %>% filter(sp=="grouper")
-                    %>% summarise(mean_exp = mean(z.score),.by = "stages")),
-            aes(x = stages, y = mean_exp, group = 1),linewidth = 1, color = "black")+
-  annotate(geom = "rect", xmin = 1.5, xmax = 2.5, ymin = -Inf, ymax = Inf,
-           fill = "#594BE4", alpha = 0.15) + 
-  annotate(geom = "rect", xmin = 5.5, xmax = 6.5, ymin = -Inf, ymax = Inf,
-           fill = "#594BE4", alpha = 0.15) +
-  ylim(-2.2,2.2)+
-  ylab("Z-score")+
-  theme_linedraw()+
-  theme(axis.text.x = element_blank())->p4
-
-d.all %>% filter(sp=="danio") %>%  
-  ggplot(aes(x=stages, y=z.clipped, group=orths))+
-  ggbeeswarm::geom_quasirandom(shape = 21, color = "grey90", alpha = 0.8, size = 1.5,
-                               fill = "#594BE4")+
-  geom_line(data = (d.all %>% filter(sp=="danio")
-                    %>% summarise(mean_exp = mean(z.score),.by = "stages")),
-            aes(x = stages, y = mean_exp, group = 1),linewidth = 1, color = "black")+
-  annotate(geom = "rect", xmin = 1.5, xmax = 2.5, ymin = -Inf, ymax = Inf,
-           fill = "#594BE4", alpha = 0.15) + 
-  annotate(geom = "rect", xmin = 5.5, xmax = 6.5, ymin = -Inf, ymax = Inf,
-           fill = "#594BE4", alpha = 0.15) +
-  ylim(-2.2,2.2)+
-  ylab("Z-score")+
-  theme_linedraw()+
-  theme(axis.text.x = element_blank())->p5
-
-
-
-length(homologous_mods_BP_proc %>% 
-         filter(col.clown==c1) %>% 
-         pull(Term))->len
-
-homologous_mods_BP_proc %>% filter(col.clown==c1) %>% 
-  ggplot(aes(label=Term, y=c(1:len)))+
-  geom_text(x=1,hjust = "left",size = 3)+
-  xlim(1,len)+
-  ylab(NULL)+
-  ggtitle("Enriched GO terms" )+
-  theme_minimal()+
-  theme(axis.text = element_blank(),
-        panel.grid = element_blank())->p5
-
-wrap_plots(p1,p2,p3,p4,p5, 
-           nrow = 1, 
-           ncol = 5, 
-           widths = c(0.5,0.5,0.5,0.5,1),
-           heights = c(1,1,1,1,0.05)) %>% return()
-}
 
 correlation_test <- function(x, y) {
   test <- cor.test(x, y, method = "spearman")
@@ -4792,6 +4789,17 @@ homologous_modules %>% saveRDS("./RDS/homologous_modules.rds")
 
 ```{r}
 homologous_modules<-readRDS("./RDS/homologous_modules.rds")
+```
+
+### Homologous modules lines plot
+```{r}
+homologous_modules
+
+  homo_mods_lines(mod.clown = "orange",
+                  mod.manini = "darkturquoise", 
+                  mod.goby = "lightcyan", 
+                  mod.grouper = "magenta",
+                  mod.danio = "darkgrey",GO_dat = homologous_mods_BP_proc)
 ```
 
 ## Extract homologous gene lists
