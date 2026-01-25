@@ -628,6 +628,13 @@ get_jaccard_estimate<-function(col1,col2,net1,net2){
  
 # Homologous modules line plots
   homo_mods_lines<-function(mod.clown,mod.manini,mod.goby,mod.grouper,mod.danio,GO_dat){
+    
+#mod.clown=mods_combs$col.clown[1]
+#mod.manini=mods_combs$col.manini[1]
+#mod.goby=mods_combs$col.goby[1]
+#mod.grouper=mods_combs$col.grouper[1]
+#mod.danio=mods_combs$col.danio[1]
+
     d.clown<-clown_orth_net_in$dge_keep$counts[(clown_orth_net$moduleColors)$moduleColors==mod.clown,] %>% cpm(log = T,prior.count = 1e-5,normalized.lib.sizes = T) %>% 
       reshape2::melt() %>% 
       dplyr::rename(orths = Var1,stages = Var2, logCPM = value) %>% 
@@ -700,7 +707,14 @@ get_jaccard_estimate<-function(col1,col2,net1,net2){
       ylim(-2.2,2.2)+
       ylab("Z-score")+
       theme_linedraw()+
-      theme(axis.text.x = element_blank())->p1
+    theme(
+        plot.background  = element_rect(fill = "transparent", colour = NA),
+        panel.background = element_rect(fill = "transparent", colour = NA),
+        legend.background = element_rect(fill = "transparent", colour = NA),
+        legend.box.background = element_rect(fill = "transparent", colour = NA),
+        legend.key = element_rect(fill = "transparent", colour = NA),
+        panel.grid = element_blank(),
+        axis.text.x = element_blank())->p1
     
     d.all %>% filter(sp=="manini") %>%  
       ggplot(aes(x=stages, y=z.clipped))+
@@ -716,7 +730,14 @@ get_jaccard_estimate<-function(col1,col2,net1,net2){
       ylim(-2.2,2.2)+
       ylab("Z-score")+
       theme_linedraw()+
-      theme(axis.text.x = element_blank())->p2
+      theme(
+        plot.background  = element_rect(fill = "transparent", colour = NA),
+        panel.background = element_rect(fill = "transparent", colour = NA),
+        legend.background = element_rect(fill = "transparent", colour = NA),
+        legend.box.background = element_rect(fill = "transparent", colour = NA),
+        legend.key = element_rect(fill = "transparent", colour = NA),
+        panel.grid = element_blank(),
+        axis.text.x = element_blank())->p2
     
     d.all %>% filter(sp=="goby") %>%  
       ggplot(aes(x=stages, y=z.clipped))+
@@ -731,7 +752,14 @@ get_jaccard_estimate<-function(col1,col2,net1,net2){
       ylim(-2.2,2.2)+
       ylab("Z-score")+
       theme_linedraw()+
-      theme(axis.text.x = element_blank())->p3
+     theme(
+        plot.background  = element_rect(fill = "transparent", colour = NA),
+        panel.background = element_rect(fill = "transparent", colour = NA),
+        legend.background = element_rect(fill = "transparent", colour = NA),
+        legend.box.background = element_rect(fill = "transparent", colour = NA),
+        legend.key = element_rect(fill = "transparent", colour = NA),
+        panel.grid = element_blank(),
+        axis.text.x = element_blank())->p3
     
     d.all %>% filter(sp=="grouper") %>%  
       ggplot(aes(x=stages, y=z.clipped))+
@@ -748,7 +776,14 @@ get_jaccard_estimate<-function(col1,col2,net1,net2){
       ylim(-2.2,2.2)+
       ylab("Z-score")+
       theme_linedraw()+
-      theme(axis.text.x = element_blank())->p4
+      theme(
+        plot.background  = element_rect(fill = "transparent", colour = NA),
+        panel.background = element_rect(fill = "transparent", colour = NA),
+        legend.background = element_rect(fill = "transparent", colour = NA),
+        legend.box.background = element_rect(fill = "transparent", colour = NA),
+        legend.key = element_rect(fill = "transparent", colour = NA),
+        panel.grid = element_blank(),
+        axis.text.x = element_blank())->p4
     
     d.all %>% filter(sp=="danio") %>%  
       ggplot(aes(x=stages, y=z.clipped))+
@@ -761,7 +796,14 @@ get_jaccard_estimate<-function(col1,col2,net1,net2){
       ylim(-2.2,2.2)+
       ylab("Z-score")+
       theme_linedraw()+
-      theme(axis.text.x = element_blank())->p5
+      theme(
+        plot.background  = element_rect(fill = "transparent", colour = NA),
+        panel.background = element_rect(fill = "transparent", colour = NA),
+        legend.background = element_rect(fill = "transparent", colour = NA),
+        legend.box.background = element_rect(fill = "transparent", colour = NA),
+        legend.key = element_rect(fill = "transparent", colour = NA),
+        panel.grid = element_blank(),
+        axis.text.x = element_blank())->p5
     
     #GO terms
     #Use different go results when needed
@@ -772,14 +814,25 @@ get_jaccard_estimate<-function(col1,col2,net1,net2){
       ylab(NULL)+
       labs(subtitle = "Enriched GO terms" )+
       theme_minimal()+
-      theme(axis.text = element_blank(),
-            panel.grid = element_blank())->p6
+     theme(
+        plot.background  = element_rect(fill = "transparent", colour = NA),
+        panel.background = element_rect(fill = "transparent", colour = NA),
+        legend.background = element_rect(fill = "transparent", colour = NA),
+        legend.box.background = element_rect(fill = "transparent", colour = NA),
+        legend.key = element_rect(fill = "transparent", colour = NA),
+        panel.grid = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks = element_blank())->p6
     
     wrap_plots(p1,p2,p3,p4,p5,p6,
                nrow = 1, 
                ncol = 6, 
                widths = c(0.5,0.5,0.5,0.5,0.5,1),
-               heights = c(1,1,1,1,1,0.05)) %>% return()
+               heights = c(1,1,1,1,1,0.05)) &
+      theme(plot.background = element_rect(fill='transparent'),
+            legend.background = element_rect(fill = 'transparent'))->wp
+    
+    ggsave(plot = wp, filename = paste0("./Plots/homo_mods_lineplots/",mod.clown,".png"), device = "png", width = 12, height = 2, units = "in",bg = "transparent")
   }
 
 
@@ -4796,26 +4849,26 @@ homologous_modules<-readRDS("./RDS/homologous_modules.rds")
 ### Homologous modules lines plot
 ```{r}
 homologous_modules %>% dplyr::select(col.clown, col.goby, col.danio, col.manini, col.grouper) %>% distinct(col.clown, .keep_all = TRUE) %>% filter(col.clown %in% unique(as.character((homologous_mods_BP_proc %>% list_rbind())$mod)))->mods_combs
-mods_combs %>% 
-  filter(col.clown %in% 
-           (cafe_genefamily_outs %>% filter(is_sig=="y") %>% pull(mod)))->mods_combs
+#mods_combs %>% 
+#  filter(col.clown %in% 
+#           (cafe_genefamily_outs %>% filter(is_sig=="y") %>% pull(mod)))->mods_combs
 
   
 safe_homo <- purrr::safely(homo_mods_lines, otherwise = NULL, quiet = TRUE)
 
-  purrr::pmap(list(as.character(mods_combs$col.clown),
-                   as.character(mods_combs$col.manini),
-                   as.character(mods_combs$col.goby),
-                   as.character(mods_combs$col.grouper),
-                   as.character(mods_combs$col.danio)),
+  purrr::pmap(list(as.character(mods_combs$col.clown[1]),
+                   as.character(mods_combs$col.manini[1]),
+                   as.character(mods_combs$col.goby[1]),
+                   as.character(mods_combs$col.grouper[1]),
+                   as.character(mods_combs$col.danio[1])),
               ~safe_homo(mod.clown = ..1,
                                     mod.manini = ..2,
                                     mod.goby = ..3,
                                     mod.grouper = ..4,
                                     mod.danio = ..5,
                                GO_dat = homologous_mods_BP_proc %>% list_rbind() %>% 
-                           filter(mod %in% mods_combs$col.clown))) %>%
-  purrr::map("result") %>% purrr::compact()->homo_lines
+                           filter(mod %in% mods_combs$col.clown))) #%>%
+  #purrr::map("result") %>% purrr::compact()->homo_lines
   
   
 
