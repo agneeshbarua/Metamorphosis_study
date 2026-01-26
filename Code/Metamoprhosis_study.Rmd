@@ -698,7 +698,7 @@ get_jaccard_estimate<-function(col1,col2,net1,net2){
       ggplot(aes(x=stages, y=z.clipped))+
       ggbeeswarm::geom_quasirandom(shape = 21, color = "grey90", alpha = 0.8, size = 1.5,
                                    fill = "#e77515")+
-      geom_boxplot(outliers = FALSE, fill = "grey80",alpha=0.5)+
+      geom_boxplot(outliers = FALSE, fill = "grey90",alpha=0.5)+
       geom_line(data = (d.all %>% filter(sp=="clown")
                         %>% summarise(mean_exp = mean(z.score),.by = "stages")),
                 aes(x = stages, y = mean_exp, group = 1),linewidth = 1, color = "black")+
@@ -720,7 +720,7 @@ get_jaccard_estimate<-function(col1,col2,net1,net2){
       ggplot(aes(x=stages, y=z.clipped))+
       ggbeeswarm::geom_quasirandom(shape = 21, color = "grey90", alpha = 0.8, size = 1.5,
                                    fill = "#9acd32")+
-            geom_boxplot(outliers = FALSE, fill = "grey80",alpha=0.5)+
+            geom_boxplot(outliers = FALSE, fill = "grey90",alpha=0.5)+
 
       geom_line(data = (d.all %>% filter(sp=="manini")
                         %>% summarise(mean_exp = mean(z.score),.by = "stages")),
@@ -743,7 +743,7 @@ get_jaccard_estimate<-function(col1,col2,net1,net2){
       ggplot(aes(x=stages, y=z.clipped))+
       ggbeeswarm::geom_quasirandom(shape = 21, color = "grey90", alpha = 0.8, size = 1.5,
                                    fill = "#BA4566")+
-            geom_boxplot(outliers = FALSE, fill = "grey80",alpha=0.5)+
+            geom_boxplot(outliers = FALSE, fill = "grey90",alpha=0.5)+
       geom_line(data = (d.all %>% filter(sp=="goby")
                         %>% summarise(mean_exp = mean(z.score),.by = "stages")),
                 aes(x = stages, y = mean_exp, group = 1),linewidth = 1, color = "black")+
@@ -765,7 +765,7 @@ get_jaccard_estimate<-function(col1,col2,net1,net2){
       ggplot(aes(x=stages, y=z.clipped))+
       ggbeeswarm::geom_quasirandom(shape = 21, color = "grey90", alpha = 0.8, size = 1.5,
                                    fill = "#D9C343")+
-            geom_boxplot(outliers = FALSE, fill = "grey80",alpha=0.5)+
+            geom_boxplot(outliers = FALSE, fill = "grey90",alpha=0.5)+
       geom_line(data = (d.all %>% filter(sp=="grouper")
                         %>% summarise(mean_exp = mean(z.score),.by = "stages")),
                 aes(x = stages, y = mean_exp, group = 1),linewidth = 1, color = "black")+
@@ -789,7 +789,7 @@ get_jaccard_estimate<-function(col1,col2,net1,net2){
       ggplot(aes(x=stages, y=z.clipped))+
       ggbeeswarm::geom_quasirandom(shape = 21, color = "grey90", alpha = 0.8, size = 1.5,
                                    fill = "#594BE4")+
-            geom_boxplot(outliers = FALSE, fill = "grey80",alpha=0.5)+
+            geom_boxplot(outliers = FALSE, fill = "grey90",alpha=0.5)+
       geom_line(data = (d.all %>% filter(sp=="danio")
                         %>% summarise(mean_exp = mean(z.score),.by = "stages")),
                 aes(x = stages, y = mean_exp, group = 1),linewidth = 1, color = "black")+
@@ -821,7 +821,7 @@ get_jaccard_estimate<-function(col1,col2,net1,net2){
         legend.box.background = element_rect(fill = "transparent", colour = NA),
         legend.key = element_rect(fill = "transparent", colour = NA),
         panel.grid = element_blank(),
-        axis.text.x = element_blank(),
+        axis.text  = element_blank(),
         axis.ticks = element_blank())->p6
     
     wrap_plots(p1,p2,p3,p4,p5,p6,
@@ -4856,11 +4856,11 @@ homologous_modules %>% dplyr::select(col.clown, col.goby, col.danio, col.manini,
   
 safe_homo <- purrr::safely(homo_mods_lines, otherwise = NULL, quiet = TRUE)
 
-  purrr::pmap(list(as.character(mods_combs$col.clown[1]),
-                   as.character(mods_combs$col.manini[1]),
-                   as.character(mods_combs$col.goby[1]),
-                   as.character(mods_combs$col.grouper[1]),
-                   as.character(mods_combs$col.danio[1])),
+  purrr::pmap(list(as.character(mods_combs$col.clown),
+                   as.character(mods_combs$col.manini),
+                   as.character(mods_combs$col.goby),
+                   as.character(mods_combs$col.grouper),
+                   as.character(mods_combs$col.danio)),
               ~safe_homo(mod.clown = ..1,
                                     mod.manini = ..2,
                                     mod.goby = ..3,
@@ -7933,7 +7933,7 @@ df %>% filter(mod=="steelblue") %>%
 
 ## Selection analysis
 ##### Prepare the datasts for analysis
-```{r}
+```{r, eval=FALSE}
 #Prepare data of background 
 #orth %>% filter(sp %in% no_WGD_tree$tip.label & Orthogroup %in% danio_orth_net_in$dge_keep$genes$genes) %>% distinct(Orthogroup) %>% filter(!Orthogroup %in% homologous_genes$genes) %>% slice_sample(n = 2000)->bg_genes
 
@@ -7942,7 +7942,7 @@ df %>% filter(mod=="steelblue") %>%
 genomes<-read_tsv("./00.Sequences/NCBI_genomes.tsv")
 ```
 
-```{r}
+```{r, eval=FALSE}
 rbind(
     orth %>% filter(Orthogroup %in% homologous_genes$genes) %>% dplyr::count(Orthogroup) %>% mutate(type="homo"),
     orth %>% filter(Orthogroup %in% full_orths$Orthogroup & !Orthogroup %in% homologous_genes$genes) %>% dplyr::count(Orthogroup)  %>% slice_sample(n = 1200) %>% mutate(type="non-homo")) %>% dplyr::select(Orthogroup)->genes_to_get
@@ -7956,7 +7956,7 @@ rbind(
 
 ```
 
-```{r}
+```{r, eval=FALSE}
 orth %>% filter(sp %in% no_WGD_tree$tip.label & Orthogroup %in% genes_to_get$Orthogroup) %>% filter(!sp %in% c("Danio_rerio", "Amphiprion_ocellaris")) %>% 
   mutate(fast_head=paste0(orths,"_",sp))->ncbi_genomes
 
@@ -7970,7 +7970,8 @@ ncbi_genomes %>% filter(sp %in% accn$sp) %>% write_tsv("./00.Sequences/genes_nee
 ```{r}
 #Parse the JSON file from HyPhy
 fitmg94_json_parse<-function(orth) {
-  f<-read_json(paste0("./10.HyPhy/",orth,"_fitmg94.local.json"))
+  library(jsonlite)
+  f<-read_json(paste0("./10.HyPhy/MG94/",orth,"_fitmg94.local.json"))
   
   tibble(
     Orthogroup=orth,
@@ -7986,15 +7987,17 @@ homologous_genes$genes %>%
   purrr::map(safely(fitmg94_json_parse)) %>%
   purrr::map("result") %>%       
   compact() %>% 
-  list_rbind() %>% mutate(type="homologous")->fitmg94_res_homo
+  list_rbind() %>% mutate(type="Homologous")->fitmg94_res_homo
 
+
+genes_needed<-read_tsv("./00.Sequences/genes_needed.tsv")
 
 (genes_needed %>% distinct(Orthogroup) %>% 
     filter(!Orthogroup %in% homologous_genes$genes))$Orthogroup %>%
   purrr::map(safely(fitmg94_json_parse)) %>%
   purrr::map("result") %>%       
   compact() %>% 
-  list_rbind() %>% mutate(type="non_homologous")->fitmg94_res_non_homo
+  list_rbind() %>% mutate(type="Non Homologous")->fitmg94_res_non_homo
 ```
 
 ###### Distribution of dN/dS between homologous and non-homologous network genes
@@ -8010,8 +8013,9 @@ rbind(fitmg94_res_homo %>% filter(pval_adj < 0.05) %>% slice_sample(n=400),
       fitmg94_res_non_homo %>% filter(pval_adj < 0.05) %>% slice_sample(n=400)) %>% 
   ggplot(aes(x=log2(omega), fill=type))+
   geom_density(color="black", linewidth=0.2, alpha=0.5)+
-  ggsci::scale_fill_bmj()+
-  theme_bw()
+  ggsci::scale_fill_aaas()+
+  labs(title = "Global MG94 estimate",x="log2(omega)", y="Density")+
+  theme_bw()+theme(panel.background = element_rect(fill = "transparent"))
 ```
 
 ###### Wilcox rank sum test 
@@ -8057,25 +8061,25 @@ fubar_json_parse<- function(orth) {
     return()
 }
 
-purrr::map(og,fubar_json_parse) %>% list_rbind()->fubar_res
+rbind(
+  homologous_genes$genes %>%
+    purrr::map(safely(fubar_json_parse)) %>%
+    purrr::map("result") %>%       
+    compact() %>% 
+    list_rbind() %>% mutate(type="Homologous"),
+  
+  (genes_needed %>% distinct(Orthogroup) %>% 
+     filter(!Orthogroup %in% homologous_genes$genes))$Orthogroup  %>%
+    purrr::map(safely(fubar_json_parse)) %>%
+    purrr::map("result") %>%       
+    compact() %>% 
+    list_rbind() %>% mutate(type="Non homologous")
+)->fubar_res
 
-homologous_genes$genes %>%
-  purrr::map(safely(fubar_json_parse)) %>%
-  purrr::map("result") %>%       
-  compact() %>% 
-  list_rbind() %>% mutate(type="homologous")->fubar_res
-
-(genes_needed %>% distinct(Orthogroup) %>% 
-    filter(!Orthogroup %in% homologous_genes$genes))$Orthogroup  %>%
-  purrr::map(safely(fubar_json_parse)) %>%
-  purrr::map("result") %>%       
-  compact() %>% 
-  list_rbind() %>% mutate(type="non_homologous")->fubar_res_non_homologous
-
-fubar_res_non_homologous %>% mutate(selection=case_when(`Prob[alpha>beta]` > 0.9 ~ "purifying", 
+fubar_res %>% mutate(selection=case_when(`Prob[alpha>beta]` > 0.9 ~ "purifying", 
                                             `Prob[alpha<beta]` > 0.9 ~"diversifying",
                                             .default = "low evidence")) %>% 
-  dplyr::count(selection) %>% mutate(n.per=((n/sum(n))*100) %>% round(2)) %>% 
+  dplyr::count(selection,type) %>% mutate(n.per=((n/sum(n))*100) %>% round(2)) %>% 
   mutate(selection=reorder(selection,-n.per)) %>% 
   ggplot(aes(x=selection, y=n.per))+
   geom_col(aes(fill=selection))+
@@ -8086,7 +8090,7 @@ fubar_res_non_homologous %>% mutate(selection=case_when(`Prob[alpha>beta]` > 0.9
 ```
 
 ```{r}
-rbind(fubar_res,fubar_res_non_homologous) %>%  
+fubar_res %>%  
     mutate(selection=case_when(`Prob[alpha>beta]` > 0.9 ~ "Purifying", 
     `Prob[alpha<beta]` > 0.9 ~"Diversifying",
     .default = "Low evidence")) %>% 
@@ -8097,19 +8101,19 @@ rbind(fubar_res,fubar_res_non_homologous) %>%
     as.matrix() %>% chisq.test()->chisq
   
  ggarrange( 
-  rbind(fubar_res,fubar_res_non_homologous) %>% 
+  fubar_res %>% 
     mutate(selection=case_when(`Prob[alpha>beta]` > 0.9 ~ "Purifying", 
                                `Prob[alpha<beta]` > 0.9 ~"Diversifying",
                                .default = "Low evidence")) %>% 
     dplyr::count(type,selection) %>% 
     mutate(n.per=((n/sum(n))*100) %>% round(2)) %>% 
-    ggplot(aes(x=selection,y=n.per, fill=type))+
+    ggplot(aes(x=type,y=n.per, fill=selection))+
     geom_col(width = 0.65,position = "dodge")+
     ggsci::scale_fill_aaas()+
     labs(title = "FUBAR analysis",
-         x = "Selection type", 
+         x = "Gene class", 
          y = "Proportion of genes (%)",
-         fill = "Gene class")+
+         fill = "Selection type")+
     theme_bw(),
   
   
@@ -8117,11 +8121,12 @@ rbind(fubar_res,fubar_res_non_homologous) %>%
     pivot_longer(c(Diversifying, `Low evidence`, Purifying), names_to = "Selection type") %>% 
     ggplot(aes(y=type,x=value, fill=`Selection type`))+
     geom_col(width = 0.65,position = "dodge")+
-    labs(x = "Standardised residual", y = "Type of gene")+
-    ggsci::scale_fill_jama()+
+    labs(x = "Standardised residual", 
+         y = "Type of gene",
+         fill = "Selection type")+
+    ggsci::scale_fill_aaas()+
     theme_bw(),
-  nrow = 1,widths = c(0.5,1)
- )
+  nrow = 1, common.legend = TRUE)
 ```
 
 ##### BUSTED
