@@ -7966,6 +7966,29 @@ accn<-read_csv("./00.Sequences/accessions_genomes.csv",col_names = c("acc","sp")
 ncbi_genomes %>% filter(sp %in% accn$sp) %>% write_tsv("./00.Sequences/genes_needed.tsv")
 ```
 
+Here I check that we're selecting Orthogroups that do not drastically vary in number of gene copies between the homologous network gene set and the random null set. We can check the distributions using a box plot and test for difference in gene copy numbers between the two gene types. Using a bootstrapped Wilcoxon rank sum test we observe no significant difference between the two groups. Therefore the sets of orthogroups we use in the selection analyses are comparable in terms of number of gene copies. 
+```{r}
+genes_needed<-read_tsv("./00.Sequences/genes_needed.tsv")
+
+wil_test_genes_needed<-function(){
+    genes_needed %>% 
+      mutate(type=case_when(Orthogroup %in% homologous_genes$genes ~ "Homologous", 
+                            .default = "Non homologous")) %>% 
+      dplyr::count(Orthogroup,type)->gn_orths
+    
+    wilcox.test(x=gn_orths %>% filter(type=="Homologous") %>% slice_sample(n=200) %>% pull(n),
+                y=gn_orths %>% filter(type=="Non homologous") %>% slice_sample(n=200) %>% pull(n)
+  )->res
+    
+    tibble(test=res$alternative,
+           pval=res$p.value) %>% return()
+  }
+  
+  purrr::map(1:100, ~wil_test_genes_needed()) %>% 
+    list_rbind() %>% mutate(padj=p.adjust(pval,"BH"))->wil_test_genes_needed_res
+  
+```
+
 ##### Global dN/dS using MG94 model
 ```{r}
 #Parse the JSON file from HyPhy
@@ -7979,25 +8002,26 @@ fitmg94_json_parse<-function(orth) {
     omega_ci_lb=f$fits$`Standard MG94`$`Confidence Intervals`$`non-synonymous/synonymous rate ratio`$LB,
     omega_ci_ub=f$fits$`Standard MG94`$`Confidence Intervals`$`non-synonymous/synonymous rate ratio`$UB,
     p_val=f$`test results`$`non-synonymous/synonymous rate ratio`$`p-value`,
-    lrt=f$`test results`$`non-synonymous/synonymous rate ratio`$LRT) %>% 
-    mutate(pval_adj=p.adjust(p_val,method = "BH"))
+    lrt=f$`test results`$`non-synonymous/synonymous rate ratio`$LRT)
 }
-
-homologous_genes$genes %>%
-  purrr::map(safely(fitmg94_json_parse)) %>%
-  purrr::map("result") %>%       
-  compact() %>% 
-  list_rbind() %>% mutate(type="Homologous")->fitmg94_res_homo
-
 
 genes_needed<-read_tsv("./00.Sequences/genes_needed.tsv")
 
-(genes_needed %>% distinct(Orthogroup) %>% 
+rbind(
+  homologous_genes$genes %>%
+  purrr::map(safely(fitmg94_json_parse)) %>%
+  purrr::map("result") %>%       
+  compact() %>% 
+  list_rbind() %>% mutate(type="Homologous"),
+  
+  (genes_needed %>% distinct(Orthogroup) %>% 
     filter(!Orthogroup %in% homologous_genes$genes))$Orthogroup %>%
   purrr::map(safely(fitmg94_json_parse)) %>%
   purrr::map("result") %>%       
   compact() %>% 
-  list_rbind() %>% mutate(type="Non Homologous")->fitmg94_res_non_homo
+  list_rbind() %>% mutate(type="Non Homologous")) %>%
+      mutate(pval_adj=p.adjust(p_val,method = "BH"))->fitmg94_res
+
 ```
 
 ###### Distribution of dN/dS between homologous and non-homologous network genes
@@ -8023,11 +8047,10 @@ rbind(fitmg94_res_homo %>% filter(pval_adj < 0.05) %>% slice_sample(n=400),
 
 test_wil<-function(){
   
-  rbind(fitmg94_res_homo %>% filter(pval_adj < 0.05) %>% slice_sample(n=200),
-        fitmg94_res_non_homo %>% filter(pval_adj < 0.05) %>% slice_sample(n=200))->test_dat
+  rbind(fitmg94_res %>% filter(pval_adj < 0.05) %>% slice_sample(n=200))->test_dat
   
-  wilcox.test(x=test_dat %>% filter(type=="homologous") %>% pull(omega) %>% log2(),
-              y=test_dat %>% filter(type=="non_homologous") %>% pull(omega) %>% log2(),
+  wilcox.test(x=test_dat %>% filter(type=="Homologous") %>% pull(omega) %>% log2(),
+              y=test_dat %>% filter(type=="Non Homologous") %>% pull(omega) %>% log2(),
               alternative = "two.sided")->wil.res
   
   tibble(pval=wil.res$p.value,
@@ -8035,7 +8058,7 @@ test_wil<-function(){
   }
 
 
-purrr::map(1:1000, ~test_wil()) %>% list_rbind() %>% mutate(padj=p.adjust(pval,"BH"))->global_sel_diff
+purrr::map(1:100, ~test_wil()) %>% list_rbind() %>% mutate(padj=p.adjust(pval,"BH"))->global_sel_diff
 
 ```
 
@@ -8130,6 +8153,57 @@ fubar_res %>%
 ```
 
 ##### BUSTED
+```{r}
+busted_json_parse<- function(orth) {
+  library(jsonlite)
+  f<-read_json(paste0("./10.HyPhy/BUSTED/",orth, "_cds_treeinput.fa.BUSTED.json"),
+               simplifyVector = TRUE)
+  
+  tibble(Orthogroup=orth,
+         p_value=as.numeric(f$`test results`$`p-value`),
+         lrt=as.numeric(f$`test results`$LRT),
+         no_of_branches=length(f$tested$`0`)) %>% 
+    return()
+}
+
+
+rbind(
+  homologous_genes$genes %>%
+    purrr::map(safely(busted_json_parse)) %>%
+    purrr::map("result") %>%       
+    compact() %>% 
+    list_rbind() %>% 
+    mutate(type="Homologous"),
+  
+  (genes_needed %>% distinct(Orthogroup) %>% 
+     filter(!Orthogroup %in% homologous_genes$genes))$Orthogroup %>% 
+    purrr::map(safely(busted_json_parse)) %>%
+    purrr::map("result") %>%       
+    compact() %>% 
+    list_rbind() %>% 
+    mutate(type="Non homologous")
+) %>% mutate(p_adj=p.adjust(p_value, "BH"))->busted_res
+  
+
+busted_res %>% mutate(is_sig=case_when(p_adj<0.05 ~ "yes",.default = "no")) %>%
+  dplyr::count(type, is_sig) %>% pivot_wider(names_from = is_sig,
+                                             values_from = n,
+                                             values_fill = 0) %>% 
+  dplyr::select(yes,no) %>% as.matrix() %>% fisher.test()
+  
+busted_res %>% mutate(is_sig=case_when(p_adj<0.05 ~ "yes",.default = "no")) %>%
+  dplyr::count(type, is_sig)  %>%
+  mutate(prop=(n/sum(n))) %>% ungroup() %>% 
+  ggplot(aes(x=type, y=prop, fill=is_sig)) +
+  geom_col(width = 0.6, position = "dodge") +
+  scale_y_continuous(labels = scales::percent) +
+  labs(y = "Proportion significant", x = NULL) +
+  scale_fill_manual(values = c("#B39E88","#4EB5AA"))+
+  labs(subtitle = "BUSTED analysis",x="Gene class", fill="Is significant") +
+  theme_bw()
+  
+```
+
 
 ## Single cell expression and expression during metamorphosis
 
