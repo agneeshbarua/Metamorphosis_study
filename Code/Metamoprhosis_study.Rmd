@@ -7968,26 +7968,70 @@ ncbi_genomes %>% filter(sp %in% accn$sp) %>% write_tsv("./00.Sequences/genes_nee
 
 Here I check that we're selecting Orthogroups that do not drastically vary in number of gene copies between the homologous network gene set and the random null set. We can check the distributions using a box plot and test for difference in gene copy numbers between the two gene types. Using a bootstrapped Wilcoxon rank sum test we observe no significant difference between the two groups. Therefore the sets of orthogroups we use in the selection analyses are comparable in terms of number of gene copies. 
 ```{r}
-genes_needed<-read_tsv("./00.Sequences/genes_needed.tsv")
+seq_stats<-read_tsv("./10.HyPhy/seq_dat_clean.tsv") %>% mutate(type=case_when(Orthogroup %in% homologous_genes$genes ~ "Homologous", 
+                            .default = "Non homologous"))
 
-wil_test_genes_needed<-function(){
-    genes_needed %>% 
-      mutate(type=case_when(Orthogroup %in% homologous_genes$genes ~ "Homologous", 
-                            .default = "Non homologous")) %>% 
-      dplyr::count(Orthogroup,type)->gn_orths
-    
-    wilcox.test(x=gn_orths %>% filter(type=="Homologous") %>% slice_sample(n=200) %>% pull(n),
-                y=gn_orths %>% filter(type=="Non homologous") %>% slice_sample(n=200) %>% pull(n)
+seq_stats  %>%
+    ggplot(aes(x=type, y=log10(number_of_seqs), fill=type))+
+    ggbeeswarm::geom_quasirandom(shape=21, color="grey40",alpha=0.5)+
+    geom_boxplot(alpha=0.5, outliers = FALSE, fill="grey")+
+    labs(subtitle = "Difference in number",
+         x=NULL,
+         y="log10(number of sequences)")+
+    ggsci::scale_fill_bmj()+
+    theme_bw()+
+    theme(axis.text.x = element_blank(),
+          axis.title.y = element_text(size=10))->seq_num
+
+wil_test_seq_stats<-function(metric){
+  
+    wilcox.test(x=seq_stats %>% filter(type=="Homologous") %>% slice_sample(n=200) %>% pull(metric),
+                y=seq_stats %>% filter(type=="Non homologous") %>% slice_sample(n=200) %>% pull(metric)
   )->res
     
-    tibble(test=res$alternative,
+    tibble(test=metric,
            pval=res$p.value) %>% return()
   }
   
-  purrr::map(1:100, ~wil_test_genes_needed()) %>% 
-    list_rbind() %>% mutate(padj=p.adjust(pval,"BH"))->wil_test_genes_needed_res
+  purrr::map(1:100, ~wil_test_seq_stats(metric = "number_of_seqs")) %>% 
+    list_rbind() %>% mutate(padj=p.adjust(pval,"BH"))->wil_test_number_of_genes
+
   
 ```
+
+I also checked for difference in gene length and found that there is no difference in gene lengths between the genes from the homologous network and genes the random null set. 
+```{r}
+seq_stats<-read_tsv("./10.HyPhy/seq_dat_clean.tsv") %>% mutate(type=case_when(Orthogroup %in% homologous_genes$genes ~ "Homologous", 
+                            .default = "Non homologous")) 
+
+
+seq_stats  %>%
+    ggplot(aes(x=type, y=log10(avg_len), fill=type))+
+    ggbeeswarm::geom_quasirandom(shape=21, color="grey40",alpha=0.5)+
+    geom_boxplot(alpha=0.5, outliers = FALSE, fill="grey")+
+    labs(subtitle = "Difference in average length",
+         x=NULL,
+         y="log10(average length)")+
+    ggsci::scale_fill_bmj()+
+    theme_bw()+
+    theme(axis.text.x = element_blank(),
+          axis.title.y = element_text(size=10))->seq_length
+
+  
+  purrr::map(1:100, ~wil_test_seq_stats(metric = "avg_len")) %>% 
+    list_rbind() %>% mutate(padj=p.adjust(pval,"BH"))->wil_test_seq_len
+
+```
+
+```{r}
+  rbind(wil_test_number_of_genes, wil_test_seq_len) %>% 
+    ggplot(aes(x=padj))+facet_wrap(~test, scales="free")+
+    geom_density(fill="grey70", alpha=0.5)+
+    theme_bw()->pvaldist
+
+ggarrange((seq_length|seq_num)/pvaldist)
+```
+
 
 ##### Global dN/dS using MG94 model
 ```{r}
@@ -8442,5 +8486,103 @@ purrr::map2(.x="Amphiprion_ocellaris",
 purrr::map2(.x="Epinephelus_malabaricus", 
             .y=(cafe_clown %>% distinct(Orthogroup) %>% pull(Orthogroup)),
             ~meta_exp_cafe_genes(species = .x, orthogroup = .y))->grouper_meta_cafe_exp
+```
+
+### Expression in other fish
+```{r}
+library(biomaRt)
+#Get orthology and gene expression information from Bgee
+#Get Bgee Danio orthology info for the cafe sig genes:
+#metamorph_orthlist %>% filter(Orthogroup %in% cafe_sig$genes) 
+
+bgee_orth_json<-function(orth){
+  library(jsonlite)
+  f<-fromJSON(paste0("./11.Bgee_comparative_transcriptomics/",orth,".json "),flatten = TRUE)
+  f$data$orthologsByTaxon$genes %>% list_rbind() %>% 
+    mutate(danio_gene=orth, sp=paste0(species.genus,"_",species.speciesName)) %>% return()
+}
+
+
+(metamorph_orthlist %>% filter(Orthogroup %in% cafe_sig$genes) %>% filter(sp=="Danio_rerio"))$orths %>%
+  purrr::map(safely(bgee_orth_json)) %>%
+  purrr::map("result") %>%       
+  compact() %>% 
+  list_rbind() %>% left_join(metamorph_orthlist %>% 
+                               filter(Orthogroup %in% cafe_sig$genes) %>% 
+                               filter(sp=="Danio_rerio") %>% 
+                               dplyr::select(orths,Orthogroup), 
+                             by = c("danio_gene"="orths"))->bgee_orth_res
+
+ rbind(
+   bgee_orth_res %>% dplyr::select(geneId, name, Orthogroup),
+   Danio_biomart %>% dplyr::select(`Gene stable ID`,`Gene name`) %>% 
+     left_join(bgee_orth_res %>% dplyr::select(c(danio_gene, Orthogroup)), 
+               by=c(`Gene stable ID`="danio_gene"), relationship = "many-to-many") %>% 
+     drop_na() %>% 
+     dplyr::rename(geneId=`Gene stable ID`, name=`Gene name`)
+ ) %>% distinct(geneId, .keep_all = TRUE)->bgee_orth_res_to_use
+
+```
+
+```{r, eval=FALSE}
+bgee_dat<-readRDS("./RDS/Bgee_fish_rna.seq_more_fish.rds")
+
+make_exp_data_frames_Read.count<-function(.data, ...){
+  .data  %>% 
+    dplyr::select(Gene.ID, Read.count, Library.ID) %>% 
+    pivot_wider(names_from = Library.ID,values_from = Read.count) %>%
+    mutate(across(everything(), ~replace_na(.x, 0)))
+}
+
+build_data_frame_from_bgee<-function(dat, species){
+  library(edgeR)
+  library(DESeq2)
+  make_exp_data_frames_Read.count<-function(.data, ...){
+    .data  %>% 
+      dplyr::select(Gene.ID, Read.count, Library.ID) %>% 
+      pivot_wider(names_from = Library.ID,values_from = Read.count) %>%
+      mutate(across(everything(), ~replace_na(.x, 0)))
+  }
+  
+  design_matrix<-dat %>% 
+    dplyr::select(Experiment.ID,Library.ID,Anatomical.entity.name) %>% distinct()
+  
+  dge<-edgeR::DGEList(dat %>% make_exp_data_frames_Read.count() %>% 
+                        column_to_rownames("Gene.ID"), 
+                      group = factor(design_matrix$Anatomical.entity.name))
+  keep<-filterByExpr(cpm(dge), min.count = 1, group = factor(design_matrix$Experiment.ID))
+  dge<-dge[keep, ,keep.lib.sizes =T]
+  dge<-calcNormFactors(dge,method = "TMM")
+  dat_genes<-rownames(dge$counts)
+  dge<-edgeR::cpm(dge, normalized.lib.sizes = TRUE, log = FALSE)
+  dge %>% as_tibble() %>% 
+    mutate(genes=dat_genes) %>% 
+    pivot_longer(cols = c(-genes), names_to = "Library.ID", values_to = "cpm") %>%
+    left_join(design_matrix, by = "Library.ID") %>% 
+    filter(Anatomical.entity.name !="multicellular organism") %>% 
+    mutate(sp=species) %>% return()
+  }
+
+rbind(
+  build_data_frame_from_bgee(dat = bgee_dat$Anguilla_anguilla, species = "Anguilla_anguilla"),
+  build_data_frame_from_bgee(dat = bgee_dat$Astatotilapia_calliptera, species = "Astatotilapia_calliptera"),
+  build_data_frame_from_bgee(dat = bgee_dat$Danio_rerio, species = "Danio_rerio"),
+  build_data_frame_from_bgee(dat = bgee_dat$Esox_lucius, species = "Esox_lucius"),
+  build_data_frame_from_bgee(dat = bgee_dat$Nothobranchius_furzeri, species = "Nothobranchius_furzeri"),
+  build_data_frame_from_bgee(dat = bgee_dat$Oryzias_latipes, species = "Oryzias_latipes"),
+  build_data_frame_from_bgee(dat = bgee_dat$Poecilia_reticulata, species = "Poecilia_reticulata"),
+  build_data_frame_from_bgee(dat = bgee_dat$Salmo_salar, species = "Salmo_salar"),
+  build_data_frame_from_bgee(dat = bgee_dat$Scophthalmus_maximus, species = "Scophthalmus_maximus")
+)->bgee_combined_long
+
+  bgee_combined_long %>% saveRDS("./RDS/Bgee_combined_long.rds")
+
+```
+
+```{r}
+bgee_combined_long<-readRDS("./RDS/Bgee_combined_long.rds")
+read_csv("./08.ZFIN/Danio_biomart.csv")->Danio_biomart
+
+
 ```
 
