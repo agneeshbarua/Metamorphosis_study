@@ -51,7 +51,7 @@ expression_matrix_and_pca<-function(sp,colramp){
   dge <- DGEList(cts,
              group = groups,
              genes = rownames(cts))
-  keep <- rowSums(cpm(dge) > 0.5) >= 3 
+  keep <- rowSums(edgeR::cpm(dge) > 0.5) >= 3 
   dge<-dge[keep, ,keep.lib.sizes =F]
   dge<-calcNormFactors(dge,method = "TMM")
   dge_keep<-dge #save for later
@@ -70,7 +70,7 @@ expression_matrix_and_pca<-function(sp,colramp){
     xlab(paste0("PC1 (",percentVar_all[1],"%)")) +
     ylab(paste0("PC2 (",percentVar_all[2],"%)"))
   
-  dat <- cpm(dge, log = T,prior.count = 1e-5,normalized.lib.sizes = T)
+  dat <- edgeR::cpm(dge, log = T,prior.count = 1e-5,normalized.lib.sizes = T)
   design <- model.matrix(~1+group, dge$samples)
   cobra_estimates <- cobra(design, dat)
   rownames(cobra_estimates$Q) <- paste0(sp,"_",rownames(dat))
@@ -95,7 +95,7 @@ expression_matrix_and_pca_clown<-function(){
   dge <- DGEList(cts,
                  group = groups,
                  genes = rownames(cts))
-  keep <- rowSums(cpm(dge) > 0.5) >= 3
+  keep <- rowSums(edgeR::cpm(dge) > 0.5) >= 3
   dge<-dge[keep, ,keep.lib.sizes =F]
   dge<-calcNormFactors(dge,method = "TMM")
   dge_keep<-dge
@@ -114,7 +114,7 @@ expression_matrix_and_pca_clown<-function(){
     xlab(paste0("PC1 (",percentVar_all[1],"%)")) +
     ylab(paste0("PC2 (",percentVar_all[2],"%)"))
   
-  dat <- cpm(dge, log = T,prior.count = 1e-5,normalized.lib.sizes = T)
+  dat <- edgeR::cpm(dge, log = T,prior.count = 1e-5,normalized.lib.sizes = T)
   design <- model.matrix(~1+group, dge$samples)
   cobra_estimates <- cobra(design, dat)
   rownames(cobra_estimates$Q) <- rownames(dat)
@@ -141,7 +141,7 @@ expression_matrix_and_pca_danio<-function(){
   dge <- DGEList(cts,
                  group = groups,
                  genes = rownames(cts))
-  keep <- rowSums(cpm(dge) > 0.5) >= 3
+  keep <- rowSums(edgeR::cpm(dge) > 0.5) >= 3
   dge<-dge[keep, ,keep.lib.sizes =F]
   dge<-calcNormFactors(dge,method = "TMM")
   dge_keep<-dge
@@ -160,7 +160,7 @@ expression_matrix_and_pca_danio<-function(){
     xlab(paste0("PC1 (",percentVar_all[1],"%)")) +
     ylab(paste0("PC2 (",percentVar_all[2],"%)"))
   
-  dat <- cpm(dge, log = T,prior.count = 1e-5,normalized.lib.sizes = T)
+  dat <- edgeR::cpm(dge, log = T,prior.count = 1e-5,normalized.lib.sizes = T)
   #dat <- dge_vsd
   design <- model.matrix(~1+group, dge$samples)
   cobra_estimates <- cobra(design, dat)
@@ -554,7 +554,7 @@ make_orth_net_input<-function(d){
   dge <- DGEList(d,group = colnames(d),genes = rownames(d))
   dge<-calcNormFactors(dge,method = "TMM")
   dge_keep<-dge
-  dat <- cpm(dge, log = T,prior.count = 1e-5,normalized.lib.sizes = T)
+  dat <- edgeR::cpm(dge, log = T,prior.count = 1e-5,normalized.lib.sizes = T)
   design <- model.matrix(~1+group, dge$samples)
   cobra_estimates <- cobra(design, dat)
   rownames(cobra_estimates$Q) <- rownames(dat)
@@ -3237,6 +3237,7 @@ mp %>% saveRDS("./02.Gene_expression_and_network/orth_module_pres_grouper_danio.
 
 ```
 
+### Loading the module pres plots
 ```{r}
 #clownfish
 module_pres_plots(mp=readRDS("./02.Gene_expression_and_network/orth_module_pres_clownfish_grouper.rds"),
@@ -4905,6 +4906,7 @@ homologous_gene_list<-function(mod){
   #these genes can be though to represent conserved processes across species
   #annotating them shows which key processes have a high degree of co-regulation among species
   #select one column with stable annotation
+  
   #homologous_filtered %>% filter(col.clown==mod)->one_col
   non_homologous_filtered %>% filter(col.clown==mod)->one_col #Use for non-homologus modules
 
@@ -5011,8 +5013,7 @@ ggarrange(jacc_plots|homo_pres_plots)
 The homologous genes on an average have higher connectivity than the other genes. Therefore, they represent hub genes.
 ```{r}
 homologous_genes<-readRDS("./RDS/homologous_genes.rds")
-#homologous_genes50<-readRDS("./RDS/homologous_genes_50.rds")
-#homologous_genes20<-readRDS("./RDS/homologous_genes_20.rds")
+
 
 
 #non_homologous_genes<-readRDS("./RDS/non_homologous_genes.rds")
@@ -5585,7 +5586,7 @@ orth_gene_copy  %>%
 
 ```{r}
 #Search for the clownfish and the danio orthologs in the orthgroups. 
-orth<-readRDS("./04.Orthogroups/Orthologer_latest.rds")
+orth<-readRDS("./04.Orthogroups/Orthologer_latest2.rds")
 left_join(danio_orth_net$connectivity,orth %>% filter(sp=="Danio_rerio") %>% filter(Orthogroup %in% danio_all_orth_exp_mat$Orthogroup),by=c("gene"="Orthogroup")) %>% dplyr::select(module,gene,orths)->danio_orth_genes_modules
 
 #Filter the homologous modules
@@ -5738,13 +5739,17 @@ make_cafe_input<-function(genelist, cols){
     dplyr::select(-c(Family, Order, SpecCode)) %>% pivot_wider(names_from = sp, values_from = no_of_gene_copies) %>%
     replace(is.na(.), 0) %>% mutate(`Family ID`=paste0("OG",Orthogroup), Desc="(null)") %>% 
     dplyr::select(c(Desc, `Family ID`, everything(), -Orthogroup)) %>% 
-    write_tsv(paste0("./06.CAFE5/New_results/cafe_input_",cols,".tsv"))#change destination in needed
+    write_tsv(paste0("./06.CAFE5/New_random/cafe_input_",cols,".tsv"))#change destination in needed
 }
 
+#Use this random data for a null
+# seq_stats can be found further downstream
 
-non_homologous_genes %>% distinct(mod) %>% pull(mod)->cols
+seq_stats %>% filter(type=="Non homologous") %>% slice_head(n=1175) %>% mutate(mod=paste0("random_mod", rep(1:25, each = 47))) %>% dplyr::rename("genes"="Orthogroup")->random_cafe
+
+random_cafe %>% distinct(mod) %>% pull(mod)->cols
 purrr::map(.x = cols, 
-           ~make_cafe_input(genelist = non_homologous_genes, cols = .x))
+           ~make_cafe_input(genelist = random_cafe, cols = .x))
 
 homologous_genes %>% distinct(mod) %>% pull(mod)->cols
 purrr::map(.x = cols, 
