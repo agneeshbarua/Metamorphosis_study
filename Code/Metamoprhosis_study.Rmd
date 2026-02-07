@@ -5745,7 +5745,7 @@ make_cafe_input<-function(genelist, cols){
 #Use this random data for a null
 # seq_stats can be found further downstream
 
-seq_stats %>% filter(type=="Non homologous") %>% slice_head(n=1175) %>% mutate(mod=paste0("random_mod", rep(1:25, each = 47))) %>% dplyr::rename("genes"="Orthogroup")->random_cafe
+seq_stats %>% filter(type=="Non homologous") %>% slice_head(n=1175) %>% mutate(mod=paste0("random_mod", rep(1:47, each = 47))) %>% dplyr::rename("genes"="Orthogroup")->random_cafe
 
 random_cafe %>% distinct(mod) %>% pull(mod)->cols
 purrr::map(.x = cols, 
@@ -5766,23 +5766,23 @@ purrr::map(.x = cols,
 #non_homologous_phylogenetic_res<-readRDS("./05.CAFE5/non_homologous_phylogenetic_res2.rds")
 #homologous_phylogenetic_res <-readRDS("./05.CAFE5/homologous_phylogenetic_res2.rds")
 
-get_cafe_family_results<-function(cols){
-  read_table(paste0("./06.CAFE5/New_results/results_cafe_",cols,"/Multi_lambda_model_1/Base_family_results.txt"),
+get_cafe_family_results<-function(cols,type){
+  read_table(paste0("./06.CAFE5/",type,"/results_cafe_",cols,"/Multi_lambda_model_1/Base_family_results.txt"),
              skip = 1, col_names= c("genes","pval","is_sig"))->fam
   
   fam %>% mutate(mod=cols,
                  genes=str_remove_all(genes,"OG")) %>% return()
 }
 
-get_cafe_model_outputs<-function(cols){
-  read_table(paste0("./06.CAFE5/New_results/results_cafe_",cols,"/Base_model/Base_results.txt"),col_names = c("q","w","e","r","t","y"))->b
+get_cafe_model_outputs<-function(cols,type){
+  read_table(paste0("./06.CAFE5/",type,"/results_cafe_",cols,"/Base_model/Base_results.txt"),col_names = c("q","w","e","r","t","y"))->b
   
   tibble("neglogL"=b$y[1],
          "lambda1"=b$w[2] %>% str_remove_all(",") %>% as.numeric(),
          "lambda2"=b$e[2] %>% str_remove_all(",") %>% as.numeric(),
          "model_type"="base")->base_model
   
-  read_table(paste0("./06.CAFE5/New_results/results_cafe_",cols,"/Multi_lambda_model_1/Base_results.txt"),
+  read_table(paste0("./06.CAFE5/",type,"/results_cafe_",cols,"/Multi_lambda_model_1/Base_results.txt"),
              col_names=c("q","w","e","r","t","y"))->m1
   
   tibble("neglogL"=m1$y[1],
@@ -5790,7 +5790,7 @@ get_cafe_model_outputs<-function(cols){
          "lambda2"=m1$e[2] %>% str_remove_all(",") %>% as.numeric(),
          "model_type"="multi_lambda_1")->multi_1
   
-  read_table(paste0("./06.CAFE5/New_results/results_cafe_",cols,"/Multi_lambda_model_2/Base_results.txt"),
+  read_table(paste0("./06.CAFE5/",type,"/results_cafe_",cols,"/Multi_lambda_model_2/Base_results.txt"),
              col_names=c("q","w","e","r","t","y"))->m2
   
   tibble("neglogL"=m2$y[1],
@@ -5798,7 +5798,7 @@ get_cafe_model_outputs<-function(cols){
          "lambda2"=m2$e[2] %>% str_remove_all(",") %>% as.numeric(),
          "model_type"="multi_lambda_2")->multi_2
   
-  read_table(paste0("./06.CAFE5/New_results/results_cafe_",cols,"/Multi_lambda_model_3/Base_results.txt"),
+  read_table(paste0("./06.CAFE5/",type,"/results_cafe_",cols,"/Multi_lambda_model_3/Base_results.txt"),
            col_names=c("q","w","e","r","t","y"))->m3
   
   tibble("neglogL"=m3$y[1],
@@ -5812,14 +5812,42 @@ get_cafe_model_outputs<-function(cols){
 } 
 
 
+
 #non_homologous_phylogenetic_res %>% distinct(module) %>% pull(module)->cols_nh
 #homologous_phylogenetic_res %>% distinct(module) %>% pull(module)->cols_h
 
-cols_h<-read_csv("./06.CAFE5/New_results/cafe_colours.csv")
+cols_h<-read_csv("./06.CAFE5/test/cafe_colours.csv")
 
-purrr::map(cols_h$colours,get_cafe_model_outputs) %>% list_rbind() %>% mutate(mod_type="homologous")->cafe_model_outs
-
-purrr::map(cols_h$colours,get_cafe_family_results) %>% list_rbind() %>% mutate(mod_type="homologous") %>% left_join(module_annot, by="mod")->cafe_genefamily_outs
+rbind(
+  purrr::map2(.x=as.list(unique(random_cafe$mod)),
+              .y=as.list("random"),
+              ~get_cafe_model_outputs(cols = .x, 
+                                      type = .y)) %>% 
+    list_rbind() %>% 
+    mutate(mod_type="Non homologous"),
+  
+  purrr::map2(.x=as.list(unique(cols_h$colours)),
+              .y=as.list("test"),
+              ~get_cafe_model_outputs(cols = .x, 
+                                      type = .y)) %>% 
+    list_rbind() %>% 
+    mutate(mod_type="Homologous"))->cafe_model_outs
+  
+  
+rbind(
+  purrr::map2(.x=as.list(unique(cols_h$colours)),
+              .y="test",
+              ~get_cafe_family_results(cols = .x,
+                                       type = .y)) %>% 
+    list_rbind() %>% mutate(mod_type="Homologous") %>% 
+    left_join(module_annot,by="mod"),
+  
+  purrr::map2(.x=as.list(unique(random_cafe$mod)),
+            .y="random",
+            ~get_cafe_family_results(cols = .x,
+                                     type = .y)) %>% 
+    list_rbind() %>% mutate(mod_type="Non homologous", annot="random")
+)->cafe_genefamily_outs
 
 ```
 
@@ -5916,16 +5944,57 @@ all_fish_wil_test_cafe_res %>%
 The plot below shows the negative log-likelihoods for two models implemented in CAFE. The Base model, with a single rate acorss the entire tree, and a multi-lambda model where the acanthomorpha and non-acanthomorpha fish have different rates. For all of the homologous modules, except royalblue, the multi-lambda model is a better fit to the data.
 
 ```{r}
-cafe_model_outs %>% mutate(model_type=cafe_model_outs$model_type %>% str_remove_all("_[1-3]")) %>% 
+cafe_model_outs %>% filter(mod_type=="Homologous")->cafe_homo_plot_dat
+  cafe_homo_plot_dat %>% 
+    mutate(model_type=cafe_homo_plot_dat$model_type %>% str_remove_all("_[1-3]")) %>% 
   filter(mod !="white") %>% 
   ggplot(aes(x=model_type,y=neglogL, group=mod, fill=model_type))+
   facet_wrap(~mod, scales="free_y")+
   geom_point(shape=21, color="grey20", size=3)+
   ggsci::scale_fill_aaas()+
-  labs(title = "CAFE5 model outputs")+
+  labs(subtitle = "Homologous network")+
   theme_linedraw()+
   theme(axis.text.x = element_blank(),
-         strip.background = element_rect(fill = "#67980C"))
+         strip.background = element_rect(fill = "#67980C"))->cafe_homo_model_plots
+  
+  cafe_model_outs %>% filter(mod_type=="Non homologous")->cafe_nonhomo_plot_dat
+  cafe_nonhomo_plot_dat %>% 
+    mutate(model_type=cafe_nonhomo_plot_dat$model_type %>% str_remove_all("_[1-3]")) %>% 
+  filter(mod !="white") %>% 
+  ggplot(aes(x=model_type,y=neglogL, group=mod, fill=model_type))+
+  facet_wrap(~mod, scales="free_y")+
+  geom_point(shape=21, color="grey20", size=3)+
+  ggsci::scale_fill_aaas()+
+  labs(subtitle = "Random network")+
+  theme_linedraw()+
+  theme(axis.text.x = element_blank(),
+         strip.background = element_rect(fill = "#67980C"))->cafe_nonhomo_model_plots
+```
+
+##### Proportion of turnover between homologous and random genes
+```{r}
+
+fisher_boot_test<-function(){
+  rbind(
+    cafe_genefamily_outs %>% filter(mod_type=="Homologous") %>% slice_sample(n=500,replace = TRUE),
+    cafe_genefamily_outs %>% filter(mod_type=="Non homologous") %>% slice_sample(n=500,replace = TRUE)) %>% 
+    dplyr::count(is_sig, mod_type) %>% 
+    pivot_wider(names_from = is_sig, 
+                values_from = n, 
+                values_fill = 0) %>% dplyr::select(y,n) %>%
+    as.matrix() %>% fisher.test()->test_res
+  
+  tibble(pval=test_res$p.value) %>% return()
+}
+
+purrr::map(1:1000, ~fisher_boot_test()) %>% 
+  list_rbind() %>% mutate(padj=p.adjust(pval,"BH"))->fisher_boot_test_res
+
+fisher_boot_test_res %>% 
+  ggplot(aes(x=padj))+
+  geom_histogram(bins=100, fill="grey70", color="black", linewidth = 0.2)+
+  geom_vline(xintercept = 0.05, color="red", linetype="dashed")+
+  theme_bw()
 ```
 
 ##### Processes with significant expansion and contractions
@@ -8078,20 +8147,16 @@ rbind(
 
 ###### Distribution of dN/dS between homologous and non-homologous network genes
 ```{r}
-rbind(fitmg94_res_homo %>% filter(pval_adj < 0.05) %>% slice_sample(n=400),
-      fitmg94_res_non_homo %>% filter(pval_adj < 0.05) %>% slice_sample(n=400)) %>% 
-  ggplot(aes(x=log2(omega), fill=type))+
-  geom_histogram(bins = 50, color="black", linewidth=0.2, alpha=0.8)+
+rbind(fitmg94_res %>% filter(pval_adj < 0.05)) %>% 
+  ggplot(aes(x=type,y=log2(omega), fill=type))+
+  geom_quasirandom(shape=21, alpha=0.7, color="grey20",size=2)+
+  geom_boxplot(alpha=0.8, outliers = FALSE, fill="grey90", width=0.4)+
+  labs(subtitle = "Global MG94 estimate",
+       x=NULL,
+       fill="type of gene")+
   ggsci::scale_fill_bmj()+
-  theme_bw()
-
-rbind(fitmg94_res_homo %>% filter(pval_adj < 0.05) %>% slice_sample(n=400),
-      fitmg94_res_non_homo %>% filter(pval_adj < 0.05) %>% slice_sample(n=400)) %>% 
-  ggplot(aes(x=log2(omega), fill=type))+
-  geom_density(color="black", linewidth=0.2, alpha=0.5)+
-  ggsci::scale_fill_aaas()+
-  labs(title = "Global MG94 estimate",x="log2(omega)", y="Density")+
-  theme_bw()+theme(panel.background = element_rect(fill = "transparent"))
+  theme_bw()+
+  theme(axis.text.x = element_blank())
 ```
 
 ###### Wilcox rank sum test 
@@ -8151,6 +8216,9 @@ rbind(
     list_rbind() %>% mutate(type="Non homologous")
 )->fubar_res
 
+
+fubar_res %>% saveRDS("./RDS/FUBAR_res.rds")
+
 fubar_res %>% mutate(selection=case_when(`Prob[alpha>beta]` > 0.9 ~ "purifying", 
                                             `Prob[alpha<beta]` > 0.9 ~"diversifying",
                                             .default = "low evidence")) %>% 
@@ -8183,7 +8251,7 @@ fubar_res %>%
     dplyr::count(type,selection) %>% 
     mutate(n.per=((n/sum(n))*100) %>% round(2)) %>% 
     ggplot(aes(x=type,y=n.per, fill=selection))+
-    geom_col(width = 0.65,position = "dodge")+
+    geom_col(width = 0.65,position = "dodge",alpha=0.8)+
     ggsci::scale_fill_aaas()+
     labs(title = "FUBAR analysis",
          x = "Gene class", 
@@ -8195,7 +8263,7 @@ fubar_res %>%
   as_tibble(chisq$stdres) %>% mutate(type=c("Homologous","Non homologous")) %>% 
     pivot_longer(c(Diversifying, `Low evidence`, Purifying), names_to = "Selection type") %>% 
     ggplot(aes(y=type,x=value, fill=`Selection type`))+
-    geom_col(width = 0.65,position = "dodge")+
+    geom_col(width = 0.65,position = "dodge",alpha=0.8)+
     labs(x = "Standardised residual", 
          y = "Type of gene",
          fill = "Selection type")+
@@ -8235,6 +8303,8 @@ rbind(
     list_rbind() %>% 
     mutate(type="Non homologous")
 ) %>% mutate(p_adj=p.adjust(p_value, "BH"))->busted_res
+
+busted_res %>% saveRDS("./RDS/BUSTED_res.rds")
   
 
 busted_res %>% mutate(is_sig=case_when(p_adj<0.05 ~ "yes",.default = "no")) %>%
@@ -8249,7 +8319,7 @@ busted_res %>% mutate(is_sig=case_when(p_adj<0.05 ~ "yes",.default = "no")) %>%
   ggplot(aes(x=type, y=prop, fill=is_sig)) +
   geom_col(width = 0.6, position = "dodge") +
   scale_y_continuous(labels = scales::percent) +
-  labs(y = "Proportion significant", x = NULL) +
+  labs(y = "Proportion", x = NULL) +
   scale_fill_manual(values = c("#B39E88","#4EB5AA"))+
   labs(subtitle = "BUSTED analysis",x="Gene class", fill="Is significant") +
   theme_bw()
