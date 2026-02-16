@@ -125,6 +125,7 @@ expression_matrix_and_pca_clown<-function(){
 
   return(list(dge_keep=dge_keep, pcaDat=pcaDat, plot=plot_pca, clust=clust, wgcna_in=Sigma_D))
 }
+
 expression_matrix_and_pca_danio<-function(){
   danio_ensembl<-read_csv("./01.Kallisto/Danio_biomart.csv")
   tx2gene<-data.frame(transcript=danio_ensembl$`Transcript stable ID version`,
@@ -366,18 +367,6 @@ module_pres_lineplots<-function(dat,mp_net,orth_exp,plot_mods){
   return(line_plots %>% patchwork::wrap_plots(ncol = 5))
 }
 
-#Orth network stats table
-make_orth_table<-function(.x){
-  orthdata<-read_tsv("./04.Orthogroups/Results_Oct15/Orthogroups/Orthogroups.tsv") #ouput from OrthoFinder
-  orthdata %>% dplyr::select(c(Orthogroup,contains(.x))) %>% drop_na()->d
-  ncols<-max(stringr::str_count(d[,2],",")) +1
-  colmn<-paste("col",1:ncols)
-  d %>% separate(col = 2,sep = ",",into = colmn,remove = T)->d
-  d %>% pivot_longer(!Orthogroup)->d
-  d %>% mutate(orths = str_remove(d$value," ")) %>%
-    dplyr::select(Orthogroup,orths) %>%
-    drop_na() %>% mutate(sp = .x) %>% return()
-}
 
 #Module preservation heatmaps
 module_heatmaps_pres_analysis<-function(dat,net,cols){
@@ -1706,7 +1695,7 @@ model_plot_dat %>%
                                      size = 8))  %>% 
   return()
 }
-brain_brms_plot<-function(model_list, submodel){
+brain_brms_plot<-function(model_list, submodel, trait){
   
   #model_list<- model_ecology
   #model_list<-model_brain
@@ -1721,7 +1710,7 @@ brain_brms_plot<-function(model_list, submodel){
     },
     .id = "model_id"
   ) %>%
-    filter(str_detect(model_vars, "BrainWeight")) %>% 
+    filter(str_detect(model_vars, paste0(trait))) %>% 
     mutate(eigengene=str_split(model_vars, pattern = "_",simplify = T)[,2],
            feature=str_split(model_vars, pattern = "_",simplify = T)[,3]) %>%
     mutate(feature=reorder(feature,`95%`))->model_plot_dat
@@ -1915,6 +1904,56 @@ swim_brms_plot<-function(model_list, submodel){
                                      vjust = 0.3,
                                      size = 8))  %>% 
     return()
+}
+
+
+make_pca_trait_model_plot<-function(model,pca_dat,trait,arrow_scale,fill_label){
+  
+  as_tibble(diag(pca_dat$Eval)/sum(pca_dat$Eval)*100) %>% 
+    mutate(PCs=rownames(pca_dat$Eval)) %>% 
+    pivot_wider(names_from = PCs, values_from = value)->var_exp
+  
+  pca_dat$Evec %>% as_tibble() %>% 
+    mutate(genes=rownames(pca_dat$Evec))->vec_dat
+  
+  if (is.numeric(model$data[[trait]])) {
+  
+  model$data %>% 
+    mutate(z=(model$data[[trait]] - mean(model$data[[trait]]))/sd(model$data[[trait]])) %>%
+    mutate(z.clipped=case_when(
+      z > quantile(z, 0.95) ~ quantile(z, 0.95), 
+      z < -quantile(z, 0.95) ~ -quantile(z, 0.95),
+      .default = z)) %>% 
+    ggplot(aes(x=PC1.cpy, y= PC2.cpy))+
+    geom_point(aes(fill = z.clipped),shape=21, size=3, 
+               position = position_jitter(width = 2, height = 2))+
+    geom_segment(aes(0,0, xend=PC1*arrow_scale, yend=PC2*arrow_scale), data = vec_dat,
+                 arrow = arrow(type = "closed", 
+                               length = unit(0.2, "cm")), 
+                 color="#D3004F", size=0.5, show.legend = FALSE, inherit.aes = FALSE)+
+    scale_fill_gradient2(low = "#F5D33D", mid = "grey90", high = "#3B6D75")+
+    labs(x=paste0("PC1 gene copy","(",round(var_exp$PC1),"%)"), 
+         y=paste0("PC2 gene copy","(",round(var_exp$PC2),"%)"), 
+         fill=fill_label)+
+    theme_minimal()
+    
+  } else {
+      
+    model$data %>% 
+      ggplot(aes(x=PC1.cpy, y= PC2.cpy))+
+      geom_point(aes(color=model$data[[trait]]),shape=16, size=3, 
+                 position = position_jitter(width = 2, height = 2))+
+      geom_segment(aes(0,0, xend=PC1*arrow_scale, yend=PC2*arrow_scale), data = vec_dat,
+                   arrow = arrow(type = "closed", 
+                                 length = unit(0.2, "cm")), 
+                   color="#D3004F", size=0.5, show.legend = FALSE, inherit.aes = FALSE)+
+      ggsci::scale_color_d3()+
+      labs(x=paste0("PC1 gene copy","(",round(var_exp$PC1),"%)"), 
+           y=paste0("PC2 gene copy","(",round(var_exp$PC2),"%)"), 
+           fill=paste0(fill_label))+
+      theme_minimal()
+    
+    }
 }
 ```
 
@@ -5724,6 +5763,8 @@ I use the birth-and-death model implemented in CAFE5 to further validate the dif
 ```{r, eval=FALSE}
 non_homologous_genes<-readRDS("./RDS/non_homologous_genes.rds")
 homologous_genes<-readRDS("./RDS/homologous_genes.rds")
+seq_stats<-read_tsv("./10.HyPhy/seq_dat_clean.tsv") %>% mutate(type=case_when(Orthogroup %in% homologous_genes$genes ~ "Homologous", 
+                            .default = "Non homologous"))
 
 #random_non_homologus_genes<-clown_orth_net$connectivity %>% 
 #  filter(!gene %in% homologous_genes$genes) %>% 
@@ -5743,9 +5784,7 @@ make_cafe_input<-function(genelist, cols){
 }
 
 #Use this random data for a null
-# seq_stats can be found further downstream
-
-seq_stats %>% filter(type=="Non homologous") %>% slice_head(n=1175) %>% mutate(mod=paste0("random_mod", rep(1:47, each = 47))) %>% dplyr::rename("genes"="Orthogroup")->random_cafe
+seq_stats %>% filter(type=="Non homologous") %>% slice_head(n=1175) %>% mutate(mod=paste0("random_mod", rep(1:25, each = 47))) %>% dplyr::rename("genes"="Orthogroup")->random_cafe
 
 random_cafe %>% distinct(mod) %>% pull(mod)->cols
 purrr::map(.x = cols, 
@@ -5972,6 +6011,7 @@ cafe_model_outs %>% filter(mod_type=="Homologous")->cafe_homo_plot_dat
 ```
 
 ##### Proportion of turnover between homologous and random genes
+Doing the test without the re-sampling gives a significant difference in proportions between homologous and non-homologous networks. I perform the re-sampling to ensure there is consistency in the data sampling and results.
 ```{r}
 
 fisher_boot_test<-function(){
@@ -5993,7 +6033,20 @@ purrr::map(1:1000, ~fisher_boot_test()) %>%
 fisher_boot_test_res %>% 
   ggplot(aes(x=padj))+
   geom_histogram(bins=100, fill="grey70", color="black", linewidth = 0.2)+
-  geom_vline(xintercept = 0.05, color="red", linetype="dashed")+
+  geom_vline(xintercept = 0.1, color="red", linetype="dashed")+
+  geom_vline(xintercept = mean(fisher_boot_test_res$padj), color="blue", linetype="dashed")+
+  theme_bw()
+
+
+
+cafe_genefamily_outs %>% dplyr::count(mod_type, is_sig)  %>%
+  mutate(prop=(n/sum(n))) %>% 
+  ggplot(aes(x=mod_type, y=prop, fill=is_sig)) +
+  geom_col(width = 0.6, position = "stacked") +
+  scale_y_continuous(labels = scales::percent) +
+  labs(y = "Proportion", x = NULL) +
+  scale_fill_manual(values = c("#B39E88","#4EB5AA"))+
+  labs(subtitle = "CAFE5 analysis",x="Gene class", fill="Is significant") +
   theme_bw()
 ```
 
@@ -6490,7 +6543,8 @@ The plots can be viewed below.
 
 ```{r, eval=FALSE}
 #Plots for spearman correlation between components
-cafe_cols<-cafe_genefamily_outs %>% filter(is_sig=="y") %>% janitor::get_dupes(mod) %>% distinct(mod) %>% pull(mod)
+cafe_sig<-cafe_genefamily_outs %>% filter(is_sig=="y" & mod_type=="Homologous")
+cafe_cols<-cafe_sig %>% janitor::get_dupes(mod) %>% distinct(mod) %>% pull(mod)
 purrr::map(cafe_cols,gene_copy_comp_trait_comp)->trait_gene_components_plots
 names(trait_gene_components_plots)<-cafe_cols  
 ```
@@ -6620,6 +6674,10 @@ model_brms_head %>% saveRDS("./RDS/model_brms_head.rds")
 shapes_brms_plot(model_list = readRDS("./RDS/model_brms_body.rds"))
 shapes_brms_plot(model_list = readRDS("./RDS/model_brms_head.rds"))
 shapes_brms_plot(model_list = readRDS("./RDS/model_brms_caudalpeduncle.rds"))
+```
+
+```{r}
+model_body<-readRDS("./RDS/model_brms_body.rds")
 ```
 
 ##### Shapes model with random data
@@ -6943,9 +7001,11 @@ return(list(pca_gene_pca=pca_gene_pca,
             model_brms_zone=model_brms_zone,
             model_brms_feed=model_brms_feed))
 }
+
 brms_model_brain<-function(col){
     library(brms)
 
+cafe_genefamily_outs<-cafe_genefamily_outs %>% filter(is_sig=="y")
 #lead the genecopy data
 orth_gene_copy %>% filter(Orthogroup %in% (cafe_genefamily_outs %>% filter(mod==col) %>% 
                                              pull(genes))) %>% 
@@ -6961,11 +7021,15 @@ pca_gene_pca <- phyl.pca(pglmm_tree, pca_dat_gene, method = "lambda", mode = "co
 pca_gene <- as.data.frame(pca_gene_pca$S) %>% dplyr::rename_with(~paste0(.,".cpy")) %>% 
   rownames_to_column("sp")
 
-#modify the ecology data from fishbase to only select informative features and keep species in genes data and tree
-brain %>% dplyr::select(sp, BrainWeight) %>% 
-  drop_na() %>% summarise(BrainWeight=mean(BrainWeight), .by = sp) %>% 
-  filter(sp %in% pglmm_tree$tip.label) %>% distinct(sp, .keep_all = T) %>% column_to_rownames("sp") %>% 
-  log2() %>% 
+#modify the ecology data from fishbase to only select informative features and keep species in genes data and tree;
+#remove all "doubtful" measures
+brain %>% filter(Doubtful >=0 & !sp=="Cyclopterus_lumpus") %>% dplyr::select(sp,BrainWeight,BodyWeight) %>% 
+  drop_na() %>% 
+  summarise(BrainWeight=mean(BrainWeight),
+            BodyWeight=mean(BodyWeight),
+            EncCoeff=(BrainWeight/BodyWeight),
+            .by = sp) %>%  
+  filter(sp %in% pglmm_tree$tip.label) %>% distinct(sp, .keep_all = T) %>% column_to_rownames("sp") %>% log10() %>% 
   as.data.frame() %>% rownames_to_column("sp")->brain_model
 
 left_join(pca_gene,brain_model) %>% drop_na()->model_dat
@@ -6982,13 +7046,13 @@ geiger::name.check(pglmm_tree_fishbase,model_dat %>% column_to_rownames("sp"))
 #plots to visualise response and predictors
 ggarrange(
   model_dat %>% 
-    ggplot(aes(y=PC1.cpy, x=BrainWeight))+
+    ggplot(aes(y=PC1.cpy, x=EncCoeff))+
     geom_point(shape=21, fill="#8BAE06", size=3)+
     geom_smooth(method = "lm", se = TRUE,colour = "#F0710F")+
     theme_linedraw(),
   
   model_dat %>% 
-    ggplot(aes(y=PC2.cpy, x=BrainWeight))+
+    ggplot(aes(y=PC2.cpy, x=EncCoeff))+
     geom_point(shape=21, fill="#8BAE06", size=3)+
     geom_smooth(method = "lm", se = TRUE,colour = "#F0710F")+
     theme_linedraw(),
@@ -6999,14 +7063,14 @@ A<-MCMCglmm::inverseA(pglmm_tree_fishbase,scale = TRUE,nodes = "TIPS")
 A<-A$Ainv
 #Priors
 priors_brain<-get_prior(mvbind(PC1.cpy,PC2.cpy) ~  
-                         BrainWeight +(1 |gr(sp, cov = A)),  
+                         EncCoeff +(1 |gr(sp, cov = A)),  
                   data = model_dat,
                   data2   = list(A = A),
                   family = skew_normal())
 #Model
 model_brms_brain <- brm(
   mvbind(PC1.cpy,PC2.cpy) ~  
-    BrainWeight +(1 |gr(sp, cov = A)),
+    EncCoeff +(1 |gr(sp, cov = A)),
   data = model_dat,
   data2   = list(A = A),
   prior = priors_brain,
@@ -7024,6 +7088,180 @@ return(list(pca_gene_pca=pca_gene_pca,
             brain_plots=brain_plots,
             model_brms_brain=model_brms_brain))
 }
+
+brms_model_brain_random<-function(){
+    library(brms)
+
+#lead the genecopy data
+cafe_genefamily_outs %>% filter(is_sig=="y" & mod_type=="Non homologous") %>% slice_sample(n = 10)->random_dat
+orth_gene_copy %>% filter(Orthogroup %in% (random_dat %>% 
+                                             pull(genes))) %>% 
+  filter(sp %in% pglmm_tree$tip.label) %>% 
+  dplyr::select(-c(Family, Order, SpecCode)) %>% 
+  pivot_wider(names_from = Orthogroup, values_from = no_of_gene_copies) %>% 
+  replace(is.na(.), 0) %>% filter(sp %in% shapes_dat$sp)->sp_genes_wide
+#colnames(sp_genes_wide)<-c("sp", paste0("gene",seq(1:(ncol(sp_genes_wide)-1))))
+
+expr_scaled<-sp_genes_wide %>% column_to_rownames("sp")->pca_dat_gene
+scale(pca_dat_gene, center = FALSE,scale = TRUE)->pca_dat_gene
+pca_gene_pca <- phyl.pca(pglmm_tree, pca_dat_gene, method = "lambda", mode = "corr")
+pca_gene <- as.data.frame(pca_gene_pca$S) %>% dplyr::rename_with(~paste0(.,".cpy")) %>% 
+  rownames_to_column("sp")
+
+#modify the ecology data from fishbase to only select informative features and keep species in genes data and tree;
+#remove all "doubtful" measures
+brain %>% filter(Doubtful >=0 & !sp=="Cyclopterus_lumpus") %>% dplyr::select(sp,BrainWeight,BodyWeight) %>% 
+  drop_na() %>% 
+  summarise(BrainWeight=mean(BrainWeight),
+            BodyWeight=mean(BodyWeight),
+            EncCoeff=(BrainWeight/BodyWeight),
+            .by = sp) %>%  
+  filter(sp %in% pglmm_tree$tip.label) %>% distinct(sp, .keep_all = T) %>% column_to_rownames("sp") %>% log10() %>% 
+  as.data.frame() %>% rownames_to_column("sp")->brain_model
+
+left_join(pca_gene,brain_model) %>% drop_na()->model_dat
+
+#Prune the pglmm tree
+pglmm_tree_fishbase<-drop.tip(pglmm_tree,pglmm_tree$tip.label[-match(model_dat$sp, pglmm_tree$tip.label)])
+is.rooted(pglmm_tree_fishbase)
+is.ultrametric(pglmm_tree_fishbase)
+#Must pass namecheck
+geiger::name.check(pglmm_tree_fishbase,model_dat %>% column_to_rownames("sp"))
+
+#model_dat %>% ggplot(aes(x=PC1.cpy))+geom_density()
+
+#plots to visualise response and predictors
+ggarrange(
+  model_dat %>% 
+    ggplot(aes(y=PC1.cpy, x=EncCoeff))+
+    geom_point(shape=21, fill="#8BAE06", size=3)+
+    geom_smooth(method = "lm", se = TRUE,colour = "#F0710F")+
+    theme_linedraw(),
+  
+  model_dat %>% 
+    ggplot(aes(y=PC2.cpy, x=EncCoeff))+
+    geom_point(shape=21, fill="#8BAE06", size=3)+
+    geom_smooth(method = "lm", se = TRUE,colour = "#F0710F")+
+    theme_linedraw(),
+  nrow = 1, ncol = 2)->brain_plots
+
+#Phylogenetic covariance matrix
+A<-MCMCglmm::inverseA(pglmm_tree_fishbase,scale = TRUE,nodes = "TIPS")
+A<-A$Ainv
+#Priors
+priors_brain<-get_prior(mvbind(PC1.cpy,PC2.cpy) ~  
+                         EncCoeff +(1 |gr(sp, cov = A)),  
+                  data = model_dat,
+                  data2   = list(A = A),
+                  family = skew_normal())
+#Model
+model_brms_brain <- brm(
+  mvbind(PC1.cpy,PC2.cpy) ~  
+    EncCoeff +(1 |gr(sp, cov = A)),
+  data = model_dat,
+  data2   = list(A = A),
+  prior = priors_brain,
+  family = skew_normal(),
+  chains = 4, 
+  cores = 4,
+  iter = 5000, 
+  warmup = 1000,
+  backend = "cmdstanr",
+  control = list(adapt_delta=0.999, max_treedepth = 12)
+)
+
+
+return(list(pca_gene_pca_random=pca_gene_pca,
+            brain_plots_random=brain_plots,
+            model_brms_brain_random=model_brms_brain))
+}
+
+brms_model_weight<-function(col){
+    library(brms)
+
+#lead the genecopy data
+orth_gene_copy %>% filter(Orthogroup %in% (cafe_genefamily_outs %>% filter(mod==col) %>% 
+                                             pull(genes))) %>% 
+  filter(sp %in% pglmm_tree$tip.label) %>% 
+  dplyr::select(-c(Family, Order, SpecCode)) %>% 
+  pivot_wider(names_from = Orthogroup, values_from = no_of_gene_copies) %>% 
+  replace(is.na(.), 0) %>% filter(sp %in% shapes_dat$sp)->sp_genes_wide
+#colnames(sp_genes_wide)<-c("sp", paste0("gene",seq(1:(ncol(sp_genes_wide)-1))))
+
+expr_scaled<-sp_genes_wide %>% column_to_rownames("sp")->pca_dat_gene
+scale(pca_dat_gene, center = FALSE,scale = TRUE)->pca_dat_gene
+pca_gene_pca <- phyl.pca(pglmm_tree, pca_dat_gene, method = "lambda", mode = "corr")
+pca_gene <- as.data.frame(pca_gene_pca$S) %>% dplyr::rename_with(~paste0(.,".cpy")) %>% 
+  rownames_to_column("sp")
+
+#modify the ecology data from fishbase to only select informative features and keep species in genes data and tree;
+#remove all "doubtful" measures
+#remove that one bad fish data
+brain %>% filter(Doubtful >=0 & !sp=="Cyclopterus_lumpus") %>% 
+  dplyr::select(sp,BodyWeight) %>% 
+  drop_na() %>% 
+  summarise(BodyWeight=mean(BodyWeight),
+            .by = sp) %>%  
+  filter(sp %in% pglmm_tree$tip.label) %>% distinct(sp, .keep_all = T) %>% column_to_rownames("sp") %>% log10() %>% 
+  as.data.frame() %>% rownames_to_column("sp")->weight_model
+
+left_join(pca_gene,weight_model) %>% drop_na()->model_dat
+
+#Prune the pglmm tree
+pglmm_tree_fishbase<-drop.tip(pglmm_tree,pglmm_tree$tip.label[-match(model_dat$sp, pglmm_tree$tip.label)])
+is.rooted(pglmm_tree_fishbase)
+is.ultrametric(pglmm_tree_fishbase)
+#Must pass namecheck
+geiger::name.check(pglmm_tree_fishbase,model_dat %>% column_to_rownames("sp"))
+
+#model_dat %>% ggplot(aes(x=PC1.cpy))+geom_density()
+
+#plots to visualise response and predictors
+ggarrange(
+  model_dat %>% 
+    ggplot(aes(y=PC1.cpy, x=BodyWeight))+
+    geom_point(shape=21, fill="#8BAE06", size=3)+
+    geom_smooth(method = "lm", se = TRUE,colour = "#F0710F")+
+    theme_linedraw(),
+  
+  model_dat %>% 
+    ggplot(aes(y=PC2.cpy, x=BodyWeight))+
+    geom_point(shape=21, fill="#8BAE06", size=3)+
+    geom_smooth(method = "lm", se = TRUE,colour = "#F0710F")+
+    theme_linedraw(),
+  nrow = 1, ncol = 2)->weight_plots
+
+#Phylogenetic covariance matrix
+A<-MCMCglmm::inverseA(pglmm_tree_fishbase,scale = TRUE,nodes = "TIPS")
+A<-A$Ainv
+#Priors
+priors_brain<-get_prior(mvbind(PC1.cpy,PC2.cpy) ~  
+                         BodyWeight +(1 |gr(sp, cov = A)),  
+                  data = model_dat,
+                  data2   = list(A = A),
+                  family = skew_normal())
+#Model
+model_brms_weight <- brm(
+  mvbind(PC1.cpy,PC2.cpy) ~  
+    BodyWeight +(1 |gr(sp, cov = A)),
+  data = model_dat,
+  data2   = list(A = A),
+  prior = priors_brain,
+  family = skew_normal(),
+  chains = 4, 
+  cores = 4,
+  iter = 5000, 
+  warmup = 1000,
+  backend = "cmdstanr",
+  control = list(adapt_delta=0.999, max_treedepth = 12)
+)
+
+
+return(list(pca_gene_pca=pca_gene_pca,
+            weight_plots=weight_plots,
+            model_brms_weight=model_brms_weight))
+}
+
 brms_model_larvae<-function(col){
     library(brms)
 
@@ -7769,10 +8007,11 @@ ecology_brms_plot(model_list = readRDS("./05.Phylogenomics/PGLMM/model_ecology.r
 #### Brain weight
 
 ```{r}
-cafe_cols<-cafe_genefamily_outs %>% janitor::get_dupes(mod) %>% distinct(mod) %>% pull(mod)
+cafe_cols<-cafe_sig %>% filter(is_sig=="y" & mod_type=="Homologous") %>% 
+  janitor::get_dupes(mod) %>% distinct(mod) %>% pull(mod)
 purrr::map(cafe_cols, brms_model_brain)->model_brain
 names(model_brain)<-cafe_cols
-model_brain %>% saveRDS("./05.Phylogenomics/PGLMM/model_brain.rds")
+#model_brain %>% saveRDS("./05.Phylogenomics/PGLMM/model_brain.rds")
 ```
 
 ```{r}
@@ -7796,6 +8035,65 @@ plot(model_brain$pink$model_brms_brain, nvariables = 8, ask = FALSE)
 
 ```
 
+#### Brain weight random
+
+```{r}
+
+purrr::map(1:5, ~brms_model_brain_random())->model_brain_random
+names(model_brain)<-cafe_cols
+#model_brain %>% saveRDS("./05.Phylogenomics/PGLMM/model_brain.rds")
+```
+
+```{r}
+model_brain<-readRDS("./05.Phylogenomics/PGLMM/model_brain.rds")
+```
+
+```{r}
+brain_brms_plot(model_list = readRDS("./05.Phylogenomics/PGLMM/model_brain.rds"),
+                  submodel = "model_brms_brain")
+```
+
+```{r}
+ggarrange(
+  pp_check(model_brain$pink$model_brms_brain,resp = "PC1cpy",ndraws=200),
+  pp_check(model_brain$pink$model_brms_brain,resp = "PC2cpy",ndraws=200),
+  pp_check(model_brain$pink$model_brms_brain,resp = "PC1cpy", type = "ecdf_overlay", ndraws=200),
+  pp_check(model_brain$pink$model_brms_brain,resp = "PC2cpy", type = "ecdf_overlay", ndraws=200),
+  ncol = 2, nrow = 2,common.legend = TRUE)
+
+plot(model_brain$pink$model_brms_brain, nvariables = 8, ask = FALSE)
+
+```
+
+#### Body weight
+```{r}
+cafe_cols<-cafe_genefamily_outs %>% filter(is_sig=="y" & mod_type=="Homologous") %>% janitor::get_dupes(mod) %>% distinct(mod) %>% pull(mod)
+purrr::map(cafe_cols, brms_model_weight)->model_weight
+names(model_weight)<-cafe_cols
+model_weight %>% saveRDS("./05.Phylogenomics/PGLMM/model_weight.rds")
+```
+
+```{r}
+model_weight<-readRDS("./05.Phylogenomics/PGLMM/model_weight.rds")
+```
+
+```{r}
+brain_brms_plot(model_list = readRDS("./05.Phylogenomics/PGLMM/model_weight.rds"),
+                submodel = "model_brms_weight",
+                trait = "BodyWeight")
+```
+
+```{r}
+ggarrange(
+  pp_check(model_brain$pink$model_brms_brain,resp = "PC1cpy",ndraws=200),
+  pp_check(model_brain$pink$model_brms_brain,resp = "PC2cpy",ndraws=200),
+  pp_check(model_brain$pink$model_brms_brain,resp = "PC1cpy", type = "ecdf_overlay", ndraws=200),
+  pp_check(model_brain$pink$model_brms_brain,resp = "PC2cpy", type = "ecdf_overlay", ndraws=200),
+  ncol = 2, nrow = 2,common.legend = TRUE)
+
+plot(model_brain$pink$model_brms_brain, nvariables = 8, ask = FALSE)
+
+```
 #### Larvae
 
 ```{r}
@@ -7878,6 +8176,42 @@ ggarrange(
 plot(model_brain$pink$model_brms_brain, nvariables = 8, ask = FALSE)
 
 ```
+## PCA taits
+```{r}
+make_pca_trait_model_plot(model = model_brain$black$model_brms_brain,
+                          pca_dat = model_brain$black$pca_gene_pca,
+                          trait = "BrainWeight",
+                          arrow_scale = 40,
+                          fill_label = "Scaled brain weight")
+
+make_pca_trait_model_plot(model = model_brain$pink$model_brms_brain,
+                          pca_dat = model_brain$pink$pca_gene_pca,
+                          trait = "BrainWeight",
+                          arrow_scale = 30,
+                          fill_label = "Scaled brain weight")
+
+make_pca_trait_model_plot(model = model_brain$blue$model_brms_brain,
+                          pca_dat = model_brain$blue$pca_gene_pca,
+                          trait = "BrainWeight",
+                          arrow_scale = 50,
+                          fill_label = "Scaled brain weight")
+
+
+make_pca_trait_model_plot(model = model_swim$pink$model_brms_swim,
+                          pca_dat = model_swim$pink$pca_gene_pca,
+                          trait = "AdultMode",
+                          arrow_scale = 50,
+                          fill_label = "Swimming type")
+
+make_pca_trait_model_plot(model = model_ecology$pink$model_brms_feed,
+                          pca_dat = model_ecology$pink$pca_gene_pca,
+                          trait = "Herbivory2",
+                          arrow_scale = 50,
+                          fill_label = "Swimming type")
+
+```
+
+
 
 ## Phenotypic effect of genes
 
@@ -8305,7 +8639,11 @@ rbind(
 ) %>% mutate(p_adj=p.adjust(p_value, "BH"))->busted_res
 
 busted_res %>% saveRDS("./RDS/BUSTED_res.rds")
-  
+```
+
+```{r}
+
+busted_res<-readRDS("./RDS/BUSTED_res.rds")
 
 busted_res %>% mutate(is_sig=case_when(p_adj<0.05 ~ "yes",.default = "no")) %>%
   dplyr::count(type, is_sig) %>% pivot_wider(names_from = is_sig,
@@ -8383,7 +8721,7 @@ names(make_cell_dist_plots)<-as.character(cafe_sig %>% drop_na() %>%  distinct(a
 ```{r}
 ######## Single cell PGLMM genes ##########
 
-danio_genes_modules_annot<-danio_genes_modules %>% filter(gene %in% homologous_genes$genes) %>% left_join(homologous_genes, by=c("gene"="genes")) %>% dplyr::select(gene, orths, mod) %>% left_join(module_annot, by="mod") %>% filter(gene %in% cafe_sig$genes)
+danio_genes_modules_annot<-danio_genes_modules %>% filter(gene %in% homologous_genes$genes) %>% left_join(homologous_genes, by=c("gene"="genes")) %>% dplyr::select(gene, orths, mod) %>% left_join(module_annot, by="mod") %>% filter(gene %in% (cafe_genefamily_outs %>% filter(mod_type=="Homologous" & is_sig=="y") %>% pull(genes)))
 
 
 umap_gene_exp<-function(stage,process) {  
@@ -8588,6 +8926,10 @@ purrr::map2(.x="Epinephelus_malabaricus",
 ### Expression in other fish
 ```{r}
 library(biomaRt)
+cafe_sig<-cafe_genefamily_outs
+ tissues_to_remove<-c("early embryo", "embryo","gastrula",
+                      "granulocyte","larva","mature ovarian follicle",
+                      "sexually immature organism", "semen")
 #Get orthology and gene expression information from Bgee
 #Get Bgee Danio orthology info for the cafe sig genes:
 #metamorph_orthlist %>% filter(Orthogroup %in% cafe_sig$genes) 
