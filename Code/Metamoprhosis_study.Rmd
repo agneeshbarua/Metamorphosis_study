@@ -2159,22 +2159,190 @@ make_pca_trait_model_plot<-function(model,pca_dat,trait,arrow_scale,fill_label){
         mutate(sp_shrt=str_match(sp, "^([A-Za-z]{2})[A-Za-z]*_([A-Za-z]{3})[A-Za-z]*$") %>%
                  { paste0(.[,2], .[,3]) }) %>% 
         ggplot(aes(x=PC1.cpy, y= PC2.cpy))+
-        geom_point(aes(fill=model$data[[trait]]),shape=21, size=3,stroke=0.3,
-                   position = position_jitter(width = 2, height = 2))+
         geom_segment(aes(0,0, xend=PC1*arrow_scale, yend=PC2*arrow_scale), data = vec_dat,
                      arrow = arrow(type = "closed", 
                                    length = unit(0.2, "cm")), 
                      color="#D3004F", size=0.5, show.legend = FALSE, inherit.aes = FALSE)+
-        geom_text_repel(aes(label=sp_shrt), max.overlaps = 10, size=3,
-                        min.segment.length = 1, seed = 42, box.padding = 0.5)+
-        ggsci::scale_fill_bmj()+
+        geom_label(aes(label = sp_shrt, fill = model$data[[trait]]),
+                   position = position_jitter(width = 3, height = 3, seed = 42),
+                   color = "white",
+                   alpha=0.9,
+                   size = 3,                     
+                   linewidth = 0.10,               
+                   label.padding = unit(0.06, "lines")) +
+        ggsci::scale_fill_jama()+
         labs(x=paste0("PC1 gene copy","(",round(var_exp$PC1),"%)"), 
              y=paste0("PC2 gene copy","(",round(var_exp$PC2),"%)"), 
              fill=paste0(fill_label))+
         theme_bw()
       
     }
+}
+
+bgee_orth_json<-function(orth){
+  library(jsonlite)
+  f<-fromJSON(paste0("./11.Bgee_comparative_transcriptomics/",orth,".json "),flatten = TRUE)
+  f$data$orthologsByTaxon$genes %>% list_rbind() %>% 
+    mutate(danio_gene=orth, sp=paste0(species.genus,"_",species.speciesName)) %>% return()
+}
+
+build_data_frame_from_bgee<-function(dat, species){
+  library(edgeR)
+  library(DESeq2)
+  make_exp_data_frames_Read.count<-function(.data, ...){
+    .data  %>% 
+      dplyr::select(Gene.ID, Read.count, Library.ID) %>% 
+      pivot_wider(names_from = Library.ID,values_from = Read.count) %>%
+      mutate(across(everything(), ~replace_na(.x, 0)))
   }
+  
+  design_matrix<-dat %>% 
+    dplyr::select(Experiment.ID,Library.ID,Anatomical.entity.name) %>% distinct()
+  
+  dge<-edgeR::DGEList(dat %>% make_exp_data_frames_Read.count() %>% 
+                        column_to_rownames("Gene.ID"), 
+                      group = factor(design_matrix$Anatomical.entity.name))
+  keep<-filterByExpr(cpm(dge), min.count = 1, group = factor(design_matrix$Experiment.ID))
+  dge<-dge[keep, ,keep.lib.sizes =T]
+  dge<-calcNormFactors(dge,method = "TMM")
+  dat_genes<-rownames(dge$counts)
+  dge<-edgeR::cpm(dge, normalized.lib.sizes = TRUE, log = FALSE)
+  dge %>% as_tibble() %>% 
+    mutate(genes=dat_genes) %>% 
+    pivot_longer(cols = c(-genes), names_to = "Library.ID", values_to = "cpm") %>%
+    left_join(design_matrix, by = "Library.ID") %>% 
+    filter(Anatomical.entity.name !="multicellular organism") %>% 
+    mutate(sp=species) %>% return()
+  }
+
+comp_dev_danio_heatmap<-function(system_proc){
+  #read_csv("./08.ZFIN/Danio_biomart.csv")->Danio_biomart #Obtained from bioMart package
+  #Add pseudocount and log
+  ((danio_orth_exp_mat[,3:22])+1e-5) %>% log10->danio_orth_exp_mat_log
+  danio_orth_exp_mat_log$orths=danio_orth_exp_mat$orths.danio
+  #Subset to match data from the input for the zebrafih expression matrix
+  
+  danio_genes_modules_annot %>% 
+    left_join(Danio_biomart %>% dplyr::select(`Gene stable ID`, `Gene name`),
+              by = c(orths="Gene stable ID")) %>% 
+    distinct(orths, .keep_all = TRUE) %>% 
+    left_join(danio_orth_exp_mat_log,by="orths") %>% drop_na()->joined_danio
+  
+  #then only pick those genes in the above filtered data to visualise;
+  #So we can compare expression at embryogenesis and post embryonic development
+  
+  danio_genes_modules_annot<-danio_genes_modules_annot %>% 
+    filter(orths %in% joined_danio$orths)
+  
+  danio_muscle<-Danio_biomart %>% filter(`Gene stable ID` %in% (danio_genes_modules_annot %>% filter(annot=="Muscle system") %>% pull(orths)))
+  danio_matrix<-Danio_biomart %>% filter(`Gene stable ID` %in% (danio_genes_modules_annot %>% filter(annot=="Extracellular matrix and cartilage development 2") %>% pull(orths)))
+  danio_rna1<-Danio_biomart %>% filter(`Gene stable ID` %in% (danio_genes_modules_annot %>% filter(annot=="RNA processing 1") %>% pull(orths)))
+  danio_rna2<-Danio_biomart %>% filter(`Gene stable ID` %in% (danio_genes_modules_annot %>% filter(annot=="RNA processing 2") %>% pull(orths)))
+  danio_dna<-Danio_biomart %>% filter(`Gene stable ID` %in% (danio_genes_modules_annot %>% filter(annot=="DNA replication") %>% pull(orths)))
+  danio_immune<-Danio_biomart %>% filter(`Gene stable ID` %in% (danio_genes_modules_annot %>% filter(annot=="Immune system") %>% pull(orths)))
+  danio_nutrient<-Danio_biomart %>% filter(`Gene stable ID` %in% (danio_genes_modules_annot %>% filter(annot=="Nutrient absorption") %>% pull(orths)))
+  danio_brush<-Danio_biomart %>% filter(`Gene stable ID` %in% (danio_genes_modules_annot %>% filter(annot=="Brush border epithelium development") %>% pull(orths)))
+  danio_synapse1<-Danio_biomart %>% filter(`Gene stable ID` %in% (danio_genes_modules_annot %>% filter(annot=="Synaptic signalling 1") %>% pull(orths)))
+  danio_synapse2<-Danio_biomart %>% filter(`Gene stable ID` %in% (danio_genes_modules_annot %>% filter(annot=="Synaptic signalling 2") %>% pull(orths)))
+  danio_peroxi<-Danio_biomart %>% filter(`Gene stable ID` %in% (danio_genes_modules_annot %>% filter(annot=="Peroxisome process") %>% pull(orths)))
+  danio_cellcylce<-Danio_biomart %>% filter(`Gene stable ID` %in% (danio_genes_modules_annot %>% filter(annot=="Cell cycle process") %>% pull(orths)))
+  danio_resp<-Danio_biomart %>% filter(`Gene stable ID` %in% (danio_genes_modules_annot %>% filter(annot=="Aerobic respiration") %>% pull(orths)))
+  danio_neuron<-Danio_biomart %>% filter(`Gene stable ID` %in% (danio_genes_modules_annot %>% filter(annot=="Neuron migration and placode development") %>% pull(orths)))
+  danio_tranl1<-Danio_biomart %>% filter(`Gene stable ID` %in% (danio_genes_modules_annot %>% filter(annot=="Translation") %>% pull(orths)))
+  danio_tranl2<-Danio_biomart %>% filter(`Gene stable ID` %in% (danio_genes_modules_annot %>% filter(annot=="Translation 2") %>% pull(orths)))
+  danio_ribo<-Danio_biomart %>% filter(`Gene stable ID` %in% (danio_genes_modules_annot %>% filter(annot=="Ribosome related") %>% pull(orths)))
+  danio_protcat<-Danio_biomart %>% filter(`Gene stable ID` %in% (danio_genes_modules_annot %>% filter(annot=="Protein catabolism") %>% pull(orths)))
+  danio_hormone<-Danio_biomart %>% filter(`Gene stable ID` %in% (danio_genes_modules_annot %>% filter(annot=="Hormone response") %>% pull(orths)))
+  danio_blood<-Danio_biomart %>% filter(`Gene stable ID` %in% (danio_genes_modules_annot %>% filter(annot=="Blood related") %>% pull(orths)))
+  danio_protfold<-Danio_biomart %>% filter(`Gene stable ID` %in% (danio_genes_modules_annot %>% filter(annot=="Protein folding") %>% pull(orths)))
+  
+  rowData(zhub_dat)$marker_class <- ifelse(rownames(zhub_dat) %in% danio_muscle$`Gene name`, "Muscle system",
+                                         ifelse(rownames(zhub_dat) %in% danio_matrix$`Gene name`, "Extracellular matrix and cartilage development 2",
+                                                ifelse(rownames(zhub_dat) %in% danio_rna1$`Gene name`, "RNA processing 1",
+                                                       ifelse(rownames(zhub_dat) %in% danio_rna2$`Gene name`, "RNA processing 2",
+                                                              ifelse(rownames(zhub_dat) %in% danio_dna$`Gene name`, "DNA replication",
+                                                                     ifelse(rownames(zhub_dat) %in% danio_immune$`Gene name`, "Immune system",
+                                                                            ifelse(rownames(zhub_dat) %in% danio_nutrient$`Gene name`, "Nutrient absorption",
+                                                                                   ifelse(rownames(zhub_dat) %in% danio_brush$`Gene name`, "Brush border epithelium development",
+                                                                                          ifelse(rownames(zhub_dat) %in% danio_synapse1$`Gene name`, "Synaptic signalling 1",
+                                                                                                 ifelse(rownames(zhub_dat) %in% danio_synapse2$`Gene name`, "Synaptic signalling 2",
+                                                                                                        ifelse(rownames(zhub_dat) %in% danio_peroxi$`Gene name`, "Peroxisome process",
+                                                                                                               ifelse(rownames(zhub_dat) %in% danio_cellcylce$`Gene name`, "Cell cycle process",
+                                                                                                                      ifelse(rownames(zhub_dat) %in% danio_resp$`Gene name`, "Aerobic respiration",
+                                                                                                                             ifelse(rownames(zhub_dat) %in% danio_neuron$`Gene name`, "Neuron migration and placode development",
+                                                                                                                                    ifelse(rownames(zhub_dat) %in% danio_tranl1$`Gene name`, "Translation",
+                                                                                                                                           ifelse(rownames(zhub_dat) %in% danio_tranl2$`Gene name`, "Translation 2",
+                                                                                                                                                  ifelse(rownames(zhub_dat) %in% danio_ribo$`Gene name`, "Ribosome related",
+                                                                                                                                                         ifelse(rownames(zhub_dat) %in% danio_protcat$`Gene name`, "Protein catabolism",
+                                                                                                                                                                ifelse(rownames(zhub_dat) %in% danio_hormone$`Gene name`, "Hormone response",
+                                                                                                                                                                       ifelse(rownames(zhub_dat) %in% danio_blood$`Gene name`, "Blood related",
+                                                                                                                                                                              ifelse(rownames(zhub_dat) %in% danio_protfold$`Gene name`, "Protein folding",
+                                                                                                                                                                                     "other")))))))))))))))))))))
+#Get pseudobulk
+timepoint_mean <- try(aggregateAcrossCells(as(zhub_dat, "SingleCellExperiment"),  
+                                           ids = zhub_dat$timepoint, 
+                                           statistics = "sum",
+                                           use.assay.type = "counts", 
+                                           subset.row = rownames(zhub_dat)[rowData(zhub_dat)$marker_class == system_proc]))
+#Set size factors
+sizeFactors(timepoint_mean)<-colSums(assay(timepoint_mean, "counts"))/mean(colSums(assay(timepoint_mean, "counts")))
+timepoint_mean<-logNormCounts(timepoint_mean)
+rbind(
+  joined_danio %>% filter(annot==paste0(system_proc)) %>% dplyr::select(`Gene name`, contains("danio")) %>% 
+    dplyr::rename("genes"="Gene name") %>% mutate(dat_type="bulk") %>% 
+    pivot_longer(cols = contains("danio"),names_to = "stages", values_to = "logcounts") %>% 
+    mutate(stages=str_remove(stages,"\\.[0-9]")) %>% mutate(stages=str_remove(stages,".danio")) %>% 
+    mutate(dat_type="post-embryonic") %>% group_by(genes) %>% 
+    mutate(z.score=scale(logcounts)) %>% ungroup(),
+  
+  assay(timepoint_mean) %>%
+    as.matrix() %>%as.data.frame() %>%
+    rownames_to_column("genes") %>% dplyr::select(-`10dpf`) %>% 
+    pivot_longer(cols = contains("pf"),
+                 names_to = "stages", values_to = "logcounts") %>% 
+    mutate(dat_type="embryonic") %>% group_by(genes) %>%
+    mutate(z.score=scale(logcounts)) %>% ungroup()
+  )->d
+
+ggarrange(
+  d %>% filter(dat_type=="embryonic") %>% group_by(genes) %>% 
+    mutate(z.score=scale(logcounts)) %>% ungroup() %>% 
+    ggplot(aes(x=stages, y=genes, fill=z.score))+
+    facet_wrap(~dat_type, scales="free")+
+    geom_tile()+
+    scale_fill_gradient2(
+      low = "#0072B2",
+      mid = "#F7F7F7",
+      high = "#D55E00",
+      midpoint = 0,
+      limits = c(-2, 2),
+      oob = scales::squish,
+      name = "Z-score")+
+    theme_bw()+
+    theme(axis.text.x = element_text(angle = 90, hjust=1, vjust=0.5)),
+  
+  d %>% filter(dat_type=="post-embryonic") %>% group_by(genes) %>%
+    mutate(z.score=scale(logcounts)) %>% ungroup() %>%
+    ggplot(aes(x=stages, y=genes, fill=z.score))+
+    facet_wrap(~dat_type, scales="free")+
+    geom_tile()+
+    #scale_fill_continuous(palette = viridis::viridis(100,direction = -1, option = "B"))+
+    scale_fill_gradient2(
+      low = "#0072B2",
+      mid = "#F7F7F7",
+      high = "#D55E00",
+      midpoint = 0,
+      limits = c(-2, 2),
+      oob = scales::squish,
+      name = "Z-score")+
+    labs(y=NULL)+
+    theme_bw()+
+    theme(axis.text.x = element_text(angle = 90, hjust=1, vjust=0.5)),
+  ncol = 2,
+  common.legend = TRUE, legend = "right")->plots
+  
+annotate_figure(plots, top = text_grob(paste0(system_proc),face = "bold", size = 12)) %>% return()
+}
 ```
 
 ### Getting the data
@@ -6751,6 +6919,328 @@ danio_biomart %>% filter(`Gene stable ID` %in% danio_cafe_genes$orths) %>% write
 
 ```
 
+## Selection analysis
+##### Prepare the datasts for analysis
+```{r, eval=FALSE}
+#Prepare data of background 
+#orth %>% filter(sp %in% no_WGD_tree$tip.label & Orthogroup %in% danio_orth_net_in$dge_keep$genes$genes) %>% distinct(Orthogroup) %>% filter(!Orthogroup %in% homologous_genes$genes) %>% slice_sample(n = 2000)->bg_genes
+
+#bg_genes %>% saveRDS("./RDS/bg_genes_for_selection.rds")
+
+genomes<-read_tsv("./00.Sequences/NCBI_genomes.tsv")
+```
+
+```{r, eval=FALSE}
+rbind(
+    orth %>% filter(Orthogroup %in% homologous_genes$genes) %>% dplyr::count(Orthogroup) %>% mutate(type="homo"),
+    orth %>% filter(Orthogroup %in% full_orths$Orthogroup & !Orthogroup %in% homologous_genes$genes) %>% dplyr::count(Orthogroup)  %>% slice_sample(n = 1200) %>% mutate(type="non-homo")) %>% dplyr::select(Orthogroup)->genes_to_get
+
+rbind(
+  orth %>% filter(Orthogroup %in% homologous_genes$genes) %>% dplyr::count(Orthogroup) %>% mutate(type="homo"),
+  orth %>% filter(Orthogroup %in% full_orths$Orthogroup & !Orthogroup %in% homologous_genes$genes) %>% dplyr::count(Orthogroup) %>% slice_sample(n = 1200) %>% mutate(type="non-homo")) %>% 
+  ggplot(aes(x=log2(n), fill = type))+
+  geom_density(alpha=0.5)+
+  theme_bw()
+
+```
+
+```{r, eval=FALSE}
+orth %>% filter(sp %in% no_WGD_tree$tip.label & Orthogroup %in% genes_to_get$Orthogroup) %>% filter(!sp %in% c("Danio_rerio", "Amphiprion_ocellaris")) %>% 
+  mutate(fast_head=paste0(orths,"_",sp))->ncbi_genomes
+
+
+accn<-read_csv("./00.Sequences/accessions_genomes.csv",col_names = c("acc","sp"))
+
+ncbi_genomes %>% filter(sp %in% accn$sp) %>% write_tsv("./00.Sequences/genes_needed.tsv")
+```
+
+Here I check that we're selecting Orthogroups that do not drastically vary in number of gene copies between the homologous network gene set and the random null set. We can check the distributions using a box plot and test for difference in gene copy numbers between the two gene types. Using a bootstrapped Wilcoxon rank sum test we observe no significant difference between the two groups. Therefore the sets of orthogroups we use in the selection analyses are comparable in terms of number of gene copies. 
+```{r}
+seq_stats<-read_tsv("./10.HyPhy/seq_dat_clean.tsv") %>% mutate(type=case_when(Orthogroup %in% homologous_genes$genes ~ "Homologous", 
+                            .default = "Non homologous"))
+
+seq_stats  %>%
+    ggplot(aes(x=type, y=log10(number_of_seqs), fill=type))+
+    ggbeeswarm::geom_quasirandom(shape=21, color="grey40",alpha=0.5)+
+    geom_boxplot(alpha=0.5, outliers = FALSE, fill="grey")+
+    labs(subtitle = "Difference in number",
+         x=NULL,
+         y="log10(number of sequences)")+
+    ggsci::scale_fill_bmj()+
+    theme_bw()+
+    theme(axis.text.x = element_blank(),
+          axis.title.y = element_text(size=10))->seq_num
+
+wil_test_seq_stats<-function(metric){
+  
+    wilcox.test(x=seq_stats %>% filter(type=="Homologous") %>% slice_sample(n=200) %>% pull(metric),
+                y=seq_stats %>% filter(type=="Non homologous") %>% slice_sample(n=200) %>% pull(metric)
+  )->res
+    
+    tibble(test=metric,
+           pval=res$p.value) %>% return()
+  }
+  
+  purrr::map(1:100, ~wil_test_seq_stats(metric = "number_of_seqs")) %>% 
+    list_rbind() %>% mutate(padj=p.adjust(pval,"BH"))->wil_test_number_of_genes
+
+  
+```
+
+I also checked for difference in gene length and found that there is no difference in gene lengths between the genes from the homologous network and genes the random null set. 
+```{r}
+seq_stats<-read_tsv("./10.HyPhy/seq_dat_clean.tsv") %>% mutate(type=case_when(Orthogroup %in% homologous_genes$genes ~ "Homologous", 
+                            .default = "Non homologous")) 
+
+
+seq_stats  %>%
+    ggplot(aes(x=type, y=log10(avg_len), fill=type))+
+    ggbeeswarm::geom_quasirandom(shape=21, color="grey40",alpha=0.5)+
+    geom_boxplot(alpha=0.5, outliers = FALSE, fill="grey")+
+    labs(subtitle = "Difference in average length",
+         x=NULL,
+         y="log10(average length)")+
+    ggsci::scale_fill_bmj()+
+    theme_bw()+
+    theme(axis.text.x = element_blank(),
+          axis.title.y = element_text(size=10))->seq_length
+
+  
+  purrr::map(1:100, ~wil_test_seq_stats(metric = "avg_len")) %>% 
+    list_rbind() %>% mutate(padj=p.adjust(pval,"BH"))->wil_test_seq_len
+
+```
+
+```{r}
+  rbind(wil_test_number_of_genes, wil_test_seq_len) %>% 
+    ggplot(aes(x=padj))+facet_wrap(~test, scales="free")+
+    geom_density(fill="grey70", alpha=0.5)+
+    theme_bw()->pvaldist
+
+ggarrange((seq_length|seq_num)/pvaldist)
+```
+
+
+##### Global dN/dS using MG94 model
+```{r}
+#Parse the JSON file from HyPhy
+fitmg94_json_parse<-function(orth) {
+  library(jsonlite)
+  f<-read_json(paste0("./10.HyPhy/MG94/",orth,"_fitmg94.local.json"))
+  
+  tibble(
+    Orthogroup=orth,
+    omega=f$fits$`Standard MG94`$`Rate Distributions`$`non-synonymous/synonymous rate ratio`,
+    omega_ci_lb=f$fits$`Standard MG94`$`Confidence Intervals`$`non-synonymous/synonymous rate ratio`$LB,
+    omega_ci_ub=f$fits$`Standard MG94`$`Confidence Intervals`$`non-synonymous/synonymous rate ratio`$UB,
+    p_val=f$`test results`$`non-synonymous/synonymous rate ratio`$`p-value`,
+    lrt=f$`test results`$`non-synonymous/synonymous rate ratio`$LRT)
+}
+
+genes_needed<-read_tsv("./00.Sequences/genes_needed.tsv")
+
+rbind(
+  homologous_genes$genes %>%
+  purrr::map(safely(fitmg94_json_parse)) %>%
+  purrr::map("result") %>%       
+  compact() %>% 
+  list_rbind() %>% mutate(type="Homologous"),
+  
+  (genes_needed %>% distinct(Orthogroup) %>% 
+    filter(!Orthogroup %in% homologous_genes$genes))$Orthogroup %>%
+  purrr::map(safely(fitmg94_json_parse)) %>%
+  purrr::map("result") %>%       
+  compact() %>% 
+  list_rbind() %>% mutate(type="Non Homologous")) %>%
+      mutate(pval_adj=p.adjust(p_val,method = "BH"))->fitmg94_res
+
+```
+
+###### Distribution of dN/dS between homologous and non-homologous network genes
+```{r}
+rbind(fitmg94_res %>% filter(pval_adj < 0.05)) %>% 
+  ggplot(aes(x=type,y=log2(omega), fill=type))+
+  geom_quasirandom(shape=21, alpha=0.7, color="grey20",size=2)+
+  geom_boxplot(alpha=0.8, outliers = FALSE, fill="grey90", width=0.4)+
+  labs(subtitle = "Global MG94 estimate",
+       x=NULL,
+       fill="type of gene")+
+  ggsci::scale_fill_bmj()+
+  theme_bw()+
+  theme(axis.text.x = element_blank())
+```
+
+###### Wilcox rank sum test 
+```{r}
+
+test_wil<-function(){
+  
+  rbind(fitmg94_res %>% filter(pval_adj < 0.05) %>% slice_sample(n=200))->test_dat
+  
+  wilcox.test(x=test_dat %>% filter(type=="Homologous") %>% pull(omega) %>% log2(),
+              y=test_dat %>% filter(type=="Non Homologous") %>% pull(omega) %>% log2(),
+              alternative = "two.sided")->wil.res
+  
+  tibble(pval=wil.res$p.value,
+         test=wil.res$alternative) %>% return()
+  }
+
+
+purrr::map(1:100, ~test_wil()) %>% list_rbind() %>% mutate(padj=p.adjust(pval,"BH"))->global_sel_diff
+
+```
+
+##### FUBAR
+```{r}
+#Parse HyPhy output
+list.files("./10.HyPhy/FUBAR/") %>% 
+  str_remove_all("_cds_treeinput.fa.FUBAR.json")->og
+
+fubar_json_parse<- function(orth) {
+  f<-read_json(paste0("./10.HyPhy/FUBAR/",orth,"_cds_treeinput.fa.FUBAR.json"),
+               simplifyVector = )
+  headers <- map_chr(f$MLE$headers,1)
+  rows <- f$MLE$content$`0`
+  rows <- purrr::modify(rows, ~ modify(.x, ~ if (is.null(.x)) 0 else .x))
+  sites <- f$`data partitions`$`0`$coverage
+  
+  purrr::map(.x = rows, 
+      ~as_tibble(setNames(as.list(.x), c(headers,"q1","q2")))) %>% list_rbind() %>% 
+    mutate(sites=seq(1:length(sites[[1]])),
+           Orthogroup=orth) %>% 
+    dplyr::select(Orthogroup,sites, everything()) %>% 
+    return()
+}
+
+rbind(
+  homologous_genes$genes %>%
+    purrr::map(safely(fubar_json_parse)) %>%
+    purrr::map("result") %>%       
+    compact() %>% 
+    list_rbind() %>% mutate(type="Homologous"),
+  
+  (genes_needed %>% distinct(Orthogroup) %>% 
+     filter(!Orthogroup %in% homologous_genes$genes))$Orthogroup  %>%
+    purrr::map(safely(fubar_json_parse)) %>%
+    purrr::map("result") %>%       
+    compact() %>% 
+    list_rbind() %>% mutate(type="Non homologous")
+)->fubar_res
+
+
+fubar_res %>% saveRDS("./RDS/FUBAR_res.rds")
+
+fubar_res %>% mutate(selection=case_when(`Prob[alpha>beta]` > 0.9 ~ "purifying", 
+                                            `Prob[alpha<beta]` > 0.9 ~"diversifying",
+                                            .default = "low evidence")) %>% 
+  dplyr::count(selection,type) %>% mutate(n.per=((n/sum(n))*100) %>% round(2)) %>% 
+  mutate(selection=reorder(selection,-n.per)) %>% 
+  ggplot(aes(x=selection, y=n.per))+
+  geom_col(aes(fill=selection))+
+  geom_text(aes(label = n.per, y=n.per+1))+
+  scale_fill_manual(values=c("#4F868C","grey80","#D92B04"))+
+  labs(y="Percentage of sites", x="Selection")+
+  theme_bw()->site_freq_non_homol
+```
+
+```{r}
+fubar_res %>%  
+    mutate(selection=case_when(`Prob[alpha>beta]` > 0.9 ~ "Purifying", 
+    `Prob[alpha<beta]` > 0.9 ~"Diversifying",
+    .default = "Low evidence")) %>% 
+    dplyr::count(type,selection) %>% mutate(n.per=((n/sum(n))*100) %>% round(2)) %>% 
+    dplyr::select(-n.per) %>% 
+    pivot_wider(names_from = selection, values_from = n) %>% 
+    dplyr::select(-type) %>%
+    as.matrix() %>% chisq.test()->chisq
+  
+ ggarrange( 
+  fubar_res %>% 
+    mutate(selection=case_when(`Prob[alpha>beta]` > 0.9 ~ "Purifying", 
+                               `Prob[alpha<beta]` > 0.9 ~"Diversifying",
+                               .default = "Low evidence")) %>% 
+    dplyr::count(type,selection) %>% 
+    mutate(n.per=((n/sum(n))*100) %>% round(2)) %>% 
+    ggplot(aes(x=type,y=n.per, fill=selection))+
+    geom_col(width = 0.65,position = "dodge",alpha=0.8)+
+    ggsci::scale_fill_aaas()+
+    labs(title = "FUBAR analysis",
+         x = "Gene class", 
+         y = "Proportion of genes (%)",
+         fill = "Selection type")+
+    theme_bw(),
+  
+  
+  as_tibble(chisq$stdres) %>% mutate(type=c("Homologous","Non homologous")) %>% 
+    pivot_longer(c(Diversifying, `Low evidence`, Purifying), names_to = "Selection type") %>% 
+    ggplot(aes(y=type,x=value, fill=`Selection type`))+
+    geom_col(width = 0.65,position = "dodge",alpha=0.8)+
+    labs(x = "Standardised residual", 
+         y = "Type of gene",
+         fill = "Selection type")+
+    ggsci::scale_fill_aaas()+
+    theme_bw(),
+  nrow = 1, common.legend = TRUE)
+```
+
+##### BUSTED
+```{r}
+busted_json_parse<- function(orth) {
+  library(jsonlite)
+  f<-read_json(paste0("./10.HyPhy/BUSTED/",orth, "_cds_treeinput.fa.BUSTED.json"),
+               simplifyVector = TRUE)
+  
+  tibble(Orthogroup=orth,
+         p_value=as.numeric(f$`test results`$`p-value`),
+         lrt=as.numeric(f$`test results`$LRT),
+         no_of_branches=length(f$tested$`0`)) %>% 
+    return()
+}
+
+
+rbind(
+  homologous_genes$genes %>%
+    purrr::map(safely(busted_json_parse)) %>%
+    purrr::map("result") %>%       
+    compact() %>% 
+    list_rbind() %>% 
+    mutate(type="Homologous"),
+  
+  (genes_needed %>% distinct(Orthogroup) %>% 
+     filter(!Orthogroup %in% homologous_genes$genes))$Orthogroup %>% 
+    purrr::map(safely(busted_json_parse)) %>%
+    purrr::map("result") %>%       
+    compact() %>% 
+    list_rbind() %>% 
+    mutate(type="Non homologous")
+) %>% mutate(p_adj=p.adjust(p_value, "BH"))->busted_res
+
+busted_res %>% saveRDS("./RDS/BUSTED_res.rds")
+```
+
+```{r}
+
+busted_res<-readRDS("./RDS/BUSTED_res.rds")
+
+busted_res %>% mutate(is_sig=case_when(p_adj<0.05 ~ "yes",.default = "no")) %>%
+  dplyr::count(type, is_sig) %>% pivot_wider(names_from = is_sig,
+                                             values_from = n,
+                                             values_fill = 0) %>% 
+  dplyr::select(yes,no) %>% as.matrix() %>% fisher.test()
+  
+busted_res %>% mutate(is_sig=case_when(p_adj<0.05 ~ "yes",.default = "no")) %>%
+  dplyr::count(type, is_sig)  %>%
+  mutate(prop=(n/sum(n))) %>% ungroup() %>% 
+  ggplot(aes(x=type, y=prop, fill=is_sig)) +
+  geom_col(width = 0.6, position = "dodge") +
+  scale_y_continuous(labels = scales::percent) +
+  labs(y = "Proportion", x = NULL) +
+  scale_fill_manual(values = c("#B39E88","#4EB5AA"))+
+  labs(subtitle = "BUSTED analysis",x="Gene class", fill="Is significant") +
+  theme_bw()
+  
+```
+
 ## PGLMM
 
 In this section I take the rapidly evolving genes estimated from cafe and check whether there is any relationship between copy number, phenotypic traits, and ecological traits. For this I use a phylogenetic generalised linear mixed model implemented in brms.\
@@ -6859,6 +7349,7 @@ brms_significance_plot(model_list = model_age,
                  trait = "mean_log_age",
                  var_type = "continuous")
 ```
+
 ##### Immune system module
 ###### Trait and PCA plot
 ```{r,message=FALSE}
@@ -7014,7 +7505,7 @@ brms_significance_plot(model_list = model_age_maturity,
                   var_type = "continuous")
 ```
 
-##### Brush border epithelium
+##### Brush border epithelium (unreliable)
 ###### Trait and PCA plot
 ```{r}
 make_pca_trait_model_plot(model = model_age_maturity$greenyellow$model_brms_age_maturity,
@@ -7128,7 +7619,7 @@ plot(model_age_maturity$black$model_brms_age_maturity, nvariables = 8, ask = FAL
   make_pca_trait_model_plot(model = model_age_maturity$orange$model_brms_age_maturity,
                             pca_dat = model_age_maturity$orange$pca_gene_pca,
                             trait = "age_maturity",
-                            arrow_scale = 20,
+                            arrow_scale = 10,
                             fill_label = "Scaled age of maturity")
 ```
 ###### Diagnostics
@@ -7275,7 +7766,7 @@ model_temp<-readRDS("./RDS/model_temp.rds")
                  var_type = "continuous")
 ```
 
-##### Cell cycle process module
+##### Cell cycle process module (unreliable)
 ###### Trait and PCA plot
 ```{r,message=FALSE}
   make_pca_trait_model_plot(model = model_temp$magenta$model_brms_temp,
@@ -7308,7 +7799,7 @@ plot(model_temp$magenta$model_brms_temp, nvariables = 8, ask = FALSE)
   make_pca_trait_model_plot(model = model_temp$lightgreen$model_brms_temp,
                             pca_dat = model_temp$lightgreen$pca_gene_pca,
                             trait = "mean_temp",
-                            arrow_scale = 40,
+                            arrow_scale = 30,
                             fill_label = "Scaled temperature")
 ```
 ###### Diagnostics
@@ -7780,7 +8271,7 @@ brms_significance_plot(model_list = model_bodyshape,
   make_pca_trait_model_plot(model = model_bodyshape$salmon$model_brms_bodyshape,
                             pca_dat = model_bodyshape$salmon$pca_gene_pca,
                             trait = "bodyshape",
-                            arrow_scale = 40,
+                            arrow_scale = 20,
                             fill_label = "bodyshape")
 ```
 ###### Diagnostics
@@ -7801,7 +8292,7 @@ plot(model_bodyshape$salmon$model_brms_bodyshape, nvariables = 8, ask = FALSE)
 #plot(loo(model_brms))
 ```
 
-##### Cell cycle process module
+##### Cell cycle process module (unreliable)
 ###### Trait and PCA plot
 ```{r,message=FALSE}
   make_pca_trait_model_plot(model = model_bodyshape$magenta$model_brms_bodyshape,
@@ -7832,7 +8323,7 @@ plot(model_bodyshape$magenta$model_brms_bodyshape, nvariables = 8, ask = FALSE)
   make_pca_trait_model_plot(model = model_bodyshape$green$model_brms_bodyshape,
                             pca_dat = model_bodyshape$green$pca_gene_pca,
                             trait = "bodyshape",
-                            arrow_scale = 20,
+                            arrow_scale = 40,
                             fill_label = "bodyshape")
 ```
 ###### Diagnostics
@@ -7900,7 +8391,6 @@ plot(model_bodyshape$black$model_brms_bodyshape, nvariables = 8, ask = FALSE)
 #pairs(model_brms, regex = "^b_")
 #plot(loo(model_brms))
 ```
-
 
 ##### Muscle system module
 ###### Trait and PCA plot
@@ -8141,8 +8631,6 @@ plot(model_habitat$royalblue$model_brms_habitat, nvariables = 8, ask = FALSE)
 #pairs(model_brms, regex = "^b_")
 #plot(loo(model_brms))
 ```
-
-
 
 ### Aspect ratio ~ gene copy variation
 Caudal fin height and length divided by area (dimensionless)
@@ -8427,237 +8915,206 @@ cafe_cols<-cafe_sig %>% filter(is_sig=="y" & mod_type=="Homologous") %>%
                          submodel = "model_brms_lower_jaw_length",
                          trait = "lower_jaw_length",
                          var_type = "continuous")
-
 ```
 
-
-### Encephalisation coefficient ~ gene copy variation
-
-```{r}
-brms_model_brain<-function(col){
-    library(brms)
-
-cafe_genefamily_outs<-cafe_genefamily_outs %>% filter(is_sig=="y")
-#lead the genecopy data
-orth_gene_copy %>% filter(Orthogroup %in% (cafe_genefamily_outs %>% filter(mod=="black") %>% 
-                                             pull(genes))) %>% 
-  filter(sp %in% pglmm_tree$tip.label) %>% 
-  dplyr::select(-c(Family, Order, SpecCode)) %>% 
-  pivot_wider(names_from = Orthogroup, values_from = no_of_gene_copies) %>% 
-  replace(is.na(.), 0) %>% filter(sp %in% shapes_dat$sp)->sp_genes_wide
-#colnames(sp_genes_wide)<-c("sp", paste0("gene",seq(1:(ncol(sp_genes_wide)-1))))
-
-expr_scaled<-sp_genes_wide %>% column_to_rownames("sp")->pca_dat_gene
-scale(pca_dat_gene, center = FALSE,scale = TRUE)->pca_dat_gene
-pca_gene_pca <- phyl.pca(pglmm_tree, pca_dat_gene, method = "lambda", mode = "corr")
-pca_gene <- as.data.frame(pca_gene_pca$S) %>% dplyr::rename_with(~paste0(.,".cpy")) %>% 
-  rownames_to_column("sp")
-
-#modify the ecology data from fishbase to only select informative features and keep species in genes data and tree;
-#remove all "doubtful" measures
-brain %>% filter(Doubtful >=0 & !sp=="Cyclopterus_lumpus") %>% dplyr::select(sp,BrainWeight,BodyWeight) %>% 
-  drop_na() %>% 
-  summarise(BrainWeight=median(BrainWeight),
-            BodyWeight=median(BodyWeight),
-            EncCoeff=(BrainWeight/BodyWeight),
-            .by = sp) %>%  
-  filter(sp %in% pglmm_tree$tip.label) %>% distinct(sp, .keep_all = T) %>% column_to_rownames("sp") %>% log10() %>% 
-  as.data.frame() %>% rownames_to_column("sp")->brain_model
-
-left_join(pca_gene,brain_model) %>% drop_na()->model_dat
-
-#Prune the pglmm tree
-pglmm_tree_fishbase<-drop.tip(pglmm_tree,pglmm_tree$tip.label[-match(model_dat$sp, pglmm_tree$tip.label)])
-is.rooted(pglmm_tree_fishbase)
-is.ultrametric(pglmm_tree_fishbase)
-#Must pass namecheck
-geiger::name.check(pglmm_tree_fishbase,model_dat %>% column_to_rownames("sp"))
-
-#model_dat %>% ggplot(aes(x=PC1.cpy))+geom_density()
-
-#plots to visualise response and predictors
+##### Cell cycle process module (unreliable)
+###### Trait and PCA plot
+```{r,message=FALSE}
+  make_pca_trait_model_plot(model = model_lower_jaw_length$magenta$model_brms_lower_jaw_length,
+                            pca_dat = model_lower_jaw_length$magenta$pca_gene_pca,
+                            trait = "lower_jaw_length",
+                            arrow_scale = 30,
+                            fill_label = "Scaled lower jaw length")
+```
+###### Diagnostics
+The posteriors probability checks looks fine with ample overlap between sample predictor distribution and sampled posterior space. The ECDF overlays shows good coverage.
+```{r,message=FALSE}
 ggarrange(
-  model_dat %>% 
-    ggplot(aes(y=PC1.cpy, x=EncCoeff))+
-    geom_point(shape=21, fill="#8BAE06", size=3)+
-    geom_smooth(method = "lm", se = TRUE,colour = "#F0710F")+
-    theme_linedraw(),
-  
-  model_dat %>% 
-    ggplot(aes(y=PC2.cpy, x=EncCoeff))+
-    geom_point(shape=21, fill="#8BAE06", size=3)+
-    geom_smooth(method = "lm", se = TRUE,colour = "#F0710F")+
-    theme_linedraw(),
-  nrow = 1, ncol = 2)->brain_plots
-
-#Phylogenetic covariance matrix
-A<-MCMCglmm::inverseA(pglmm_tree_fishbase,scale = TRUE,nodes = "TIPS")
-A<-A$Ainv
-#Priors
-priors_brain<-get_prior(EncCoeff ~  
-                         PC1.cpy + PC2.cpy +(1 |gr(sp, cov = A)),  
-                  data = model_dat,
-                  data2   = list(A = A),
-                  family = skew_normal())
-#Model
-model_brms_brain <- brm(EncCoeff ~  
-                          PC1.cpy + PC2.cpy +(1 |gr(sp, cov = A)),
-  data = model_dat,
-  data2   = list(A = A),
-  prior = priors_brain,
-  family = skew_normal(),
-  chains = 4, 
-  cores = 4,
-  iter = 5000, 
-  warmup = 1000,
-  backend = "cmdstanr",
-  control = list(adapt_delta=0.999, max_treedepth = 12)
+  pp_check(model_lower_jaw_length$magenta$model_brms_lower_jaw_length,ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_lower_jaw_length$magenta$model_brms_lower_jaw_length,ndraws = 200, resp = "PC2cpy"),
+  pp_check(model_lower_jaw_length$magenta$model_brms_lower_jaw_length, type = "ecdf_overlay", ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_lower_jaw_length$magenta$model_brms_lower_jaw_length, type = "ecdf_overlay", ndraws = 200, resp = "PC2cpy")
 )
 
+plot(model_lower_jaw_length$magenta$model_brms_lower_jaw_length, nvariables = 8, ask = FALSE)
 
-return(list(pca_gene_pca=pca_gene_pca,
-            brain_plots=brain_plots,
-            model_brms_brain=model_brms_brain))
-}
-cafe_cols<-cafe_sig %>% filter(is_sig=="y" & mod_type=="Homologous") %>% 
-  janitor::get_dupes(mod) %>% distinct(mod) %>% pull(mod)
-purrr::map(cafe_cols, brms_model_brain)->model_brain
-names(model_brain)<-cafe_cols
-model_brain %>% saveRDS("./RDS/model_brain.rds")
+#Additional diagnostic plots.
+#Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
+#pairs(model_brms, regex = "^b_")
+#plot(loo(model_brms))
 ```
 
-```{r}
-brain_brms_plot(model_list = readRDS("./RDS/model_brain.rds"),
-                  submodel = "model_brms_brain",trait = "EncCoeff")
+##### Neuron migration and placode module (unreliable)
+###### Trait and PCA plot
+```{r,message=FALSE}
+  make_pca_trait_model_plot(model = model_lower_jaw_length$lightgreen$model_brms_lower_jaw_length,
+                            pca_dat = model_lower_jaw_length$lightgreen$pca_gene_pca,
+                            trait = "lower_jaw_length",
+                            arrow_scale = 30,
+                            fill_label = "Scaled lower jaw length")
 ```
-
-
-
-##### Diagnostics
-
-```{r}
-pp_check(model_ecology$green$model_brms_zone,ndraws = 200, resp = "PC1cpy")
-pp_check(model_ecology$green$model_brms_zone,ndraws = 200, resp = "PC2cpy")
-
-pp_check(model_ecology$green$model_brms_zone, type = "ecdf_overlay", ndraws = 200, resp = "PC1cpy")
-pp_check(model_brms, type = "stat", stat = "min", ndraws = 200)
-pp_check(model_brms, type = "stat", stat = "max", ndraws = 200)
-plot(model_ecology$green$model_brms_zone, nvariables = 8, ask = FALSE)
-plot(conditional_effects(model_brms), points = TRUE, ask = FALSE)
-pairs(model_brms, regex = "^b_")
-plot(loo(model_brms))
-model_brms
-```
-
-```{r}
-ecology_brms_plot(model_list = readRDS("./RDS/model_ecology.rds"),
-                  submodel = "model_brms_zone")
-ecology_brms_plot(model_list = readRDS("./RDS/model_ecology.rds"),
-                  submodel = "model_brms_feed")
-```
-
-#### Brain weight
-
-```{r}
-cafe_cols<-cafe_sig %>% filter(is_sig=="y" & mod_type=="Homologous") %>% 
-  janitor::get_dupes(mod) %>% distinct(mod) %>% pull(mod)
-purrr::map(cafe_cols, brms_model_brain)->model_brain
-names(model_brain)<-cafe_cols
-model_brain %>% saveRDS("./05.Phylogenomics/PGLMM/model_brain.rds")
-```
-
-```{r}
-model_brain<-readRDS("./05.Phylogenomics/PGLMM/model_brain.rds")
-```
-
-```{r}
-brain_brms_plot(model_list = readRDS("./RDS/model_brain.rds"),
-                  submodel = "model_brms_brain",trait = "EncCoeff")
-```
-
-```{r}
+###### Diagnostics
+The posteriors probability checks looks fine with ample overlap between sample predictor distribution and sampled posterior space. The ECDF overlays shows good coverage.
+```{r,message=FALSE}
 ggarrange(
-  pp_check(model_brain$pink$model_brms_brain,resp = "PC1cpy",ndraws=200),
-  pp_check(model_brain$pink$model_brms_brain,resp = "PC2cpy",ndraws=200),
-  pp_check(model_brain$pink$model_brms_brain,resp = "PC1cpy", type = "ecdf_overlay", ndraws=200),
-  pp_check(model_brain$pink$model_brms_brain,resp = "PC2cpy", type = "ecdf_overlay", ndraws=200),
-  ncol = 2, nrow = 2,common.legend = TRUE)
+  pp_check(model_lower_jaw_length$lightgreen$model_brms_lower_jaw_length,ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_lower_jaw_length$lightgreen$model_brms_lower_jaw_length,ndraws = 200, resp = "PC2cpy"),
+  pp_check(model_lower_jaw_length$lightgreen$model_brms_lower_jaw_length, type = "ecdf_overlay", ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_lower_jaw_length$lightgreen$model_brms_lower_jaw_length, type = "ecdf_overlay", ndraws = 200, resp = "PC2cpy")
+)
 
-plot(model_brain$blue$model_brms_brain, nvariables = 8, ask = FALSE)
+plot(model_lower_jaw_length$lightgreen$model_brms_lower_jaw_length, nvariables = 8, ask = FALSE)
 
+#Additional diagnostic plots.
+#Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
+#pairs(model_brms, regex = "^b_")
+#plot(loo(model_brms))
 ```
 
-#### Brain weight random
-
-```{r, eval=FALSE}
-purrr::map(1:5, ~brms_model_brain_random())->model_brain_random
-names(model_brain_random)<-paste0("random",rep(1:5))
-model_brain_random %>% saveRDS("./05.Phylogenomics/PGLMM/model_brain_random.rds")
+##### Peroxisome process module (unreliable)
+###### Trait and PCA plot
+```{r,message=FALSE}
+  make_pca_trait_model_plot(model = model_lower_jaw_length$black$model_brms_lower_jaw_length,
+                            pca_dat = model_lower_jaw_length$black$pca_gene_pca,
+                            trait = "lower_jaw_length",
+                            arrow_scale = 50,
+                            fill_label = "Scaled lower jaw length")
 ```
-
-```{r}
-model_brain_random<-readRDS("./05.Phylogenomics/PGLMM/model_brain_random.rds")
-```
-
-```{r}
-brms_plot_random(model_list = readRDS("./05.Phylogenomics/PGLMM/model_brain_random.rds"),
-                 submodel = "model_brms_brain_random",
-                 trait = "EncCoeff")
-```
-
-```{r}
+###### Diagnostics
+The posteriors probability checks looks fine with ample overlap between sample predictor distribution and sampled posterior space. The ECDF overlays shows good coverage.
+```{r,message=FALSE}
 ggarrange(
-  pp_check(model_brain_random$random1$model_brms_brain_random,resp = "PC1cpy",ndraws=200),
-  pp_check(model_brain_random$random1$model_brms_brain_random,resp = "PC2cpy",ndraws=200),
-  pp_check(model_brain_random$random1$model_brms_brain_random,resp = "PC1cpy", type = "ecdf_overlay", ndraws=200),
-  pp_check(model_brain_random$random1$model_brms_brain_random,resp = "PC2cpy", type = "ecdf_overlay", ndraws=200),
-  ncol = 2, nrow = 2,common.legend = TRUE)
+  pp_check(model_lower_jaw_length$black$model_brms_lower_jaw_length,ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_lower_jaw_length$black$model_brms_lower_jaw_length,ndraws = 200, resp = "PC2cpy"),
+  pp_check(model_lower_jaw_length$black$model_brms_lower_jaw_length, type = "ecdf_overlay", ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_lower_jaw_length$black$model_brms_lower_jaw_length, type = "ecdf_overlay", ndraws = 200, resp = "PC2cpy")
+)
 
-plot(model_brain_random$random1$model_brms_brain_random, nvariables = 8, ask = FALSE)
+plot(model_lower_jaw_length$black$model_brms_lower_jaw_length, nvariables = 8, ask = FALSE)
 
+#Additional diagnostic plots.
+#Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
+#pairs(model_brms, regex = "^b_")
+#plot(loo(model_brms))
 ```
 
+##### RNA processing module (unreliable)
+###### Trait and PCA plot
+```{r,message=FALSE}
+  make_pca_trait_model_plot(model = model_lower_jaw_length$orange$model_brms_lower_jaw_length,
+                            pca_dat = model_lower_jaw_length$orange$pca_gene_pca,
+                            trait = "lower_jaw_length",
+                            arrow_scale = 50,
+                            fill_label = "Scaled lower jaw length")
+```
+###### Diagnostics
+The posteriors probability checks looks fine with ample overlap between sample predictor distribution and sampled posterior space. The ECDF overlays shows good coverage.
+```{r,message=FALSE}
+ggarrange(
+  pp_check(model_lower_jaw_length$orange$model_brms_lower_jaw_length,ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_lower_jaw_length$orange$model_brms_lower_jaw_length,ndraws = 200, resp = "PC2cpy"),
+  pp_check(model_lower_jaw_length$orange$model_brms_lower_jaw_length, type = "ecdf_overlay", ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_lower_jaw_length$orange$model_brms_lower_jaw_length, type = "ecdf_overlay", ndraws = 200, resp = "PC2cpy")
+)
 
-## PCA taits
+plot(model_lower_jaw_length$orange$model_brms_lower_jaw_length, nvariables = 8, ask = FALSE)
+
+#Additional diagnostic plots.
+#Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
+#pairs(model_brms, regex = "^b_")
+#plot(loo(model_brms))
+```
+
+##### Synaptic signalling 1 
+###### Trait and PCA plot
+```{r,message=FALSE}
+  make_pca_trait_model_plot(model = model_lower_jaw_length$blue$model_brms_lower_jaw_length,
+                            pca_dat = model_lower_jaw_length$blue$pca_gene_pca,
+                            trait = "lower_jaw_length",
+                            arrow_scale = 50,
+                            fill_label = "Scaled lower jaw length")
+```
+###### Diagnostics
+The posteriors probability checks looks fine with ample overlap between sample predictor distribution and sampled posterior space. The ECDF overlays shows good coverage.
+```{r,message=FALSE}
+ggarrange(
+  pp_check(model_lower_jaw_length$blue$model_brms_lower_jaw_length,ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_lower_jaw_length$blue$model_brms_lower_jaw_length,ndraws = 200, resp = "PC2cpy"),
+  pp_check(model_lower_jaw_length$blue$model_brms_lower_jaw_length, type = "ecdf_overlay", ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_lower_jaw_length$blue$model_brms_lower_jaw_length, type = "ecdf_overlay", ndraws = 200, resp = "PC2cpy")
+)
+
+plot(model_lower_jaw_length$blue$model_brms_lower_jaw_length, nvariables = 8, ask = FALSE)
+
+#Additional diagnostic plots.
+#Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
+#pairs(model_brms, regex = "^b_")
+#plot(loo(model_brms))
+```
+
+## Functional characterisation of genes
+Here I functionally characterise the high turnover genes to determine whether they can have an affect on the traits they have a relationship with. I do not focus on the unreliable ones because they are likely driven by outliers. 
+The functional characterisation involved looking at which tissues the high turnover genes are expressed in, using data from Bgee. Then I look at expression of these genes at the single cell level during embryonic development in zebrafish, followed by contrasting the expression in post embryonic development. I then look for specificity of expression of the genes during metamorphosis in clownfish and grouper. Lastly, I analyse perturbation data of the modules of which the high tuernover genes are members of using the ZFIN database.  
+Collectively, this section tells me whether the genes are expressed in the relevant cell and tissue types where we predicted an association with a particular phenotype, how they function during embryonic and post embryonic development, and whether there is any specificity in their activity during metamorphosis. 
+
+### Load data for setup
+```{r, include=FALSE}
+read_csv("./08.ZFIN/Danio_biomart.csv")->Danio_biomart #Obtained from bioMart package
+read_tsv("./08.ZFIN/phenoGeneCleanData_fish_2023.05.07.tsv")->pheno #Download from ZFIN
+read_tsv("./08.ZFIN/ensembl_1_to_1_2025.08.26.txt")->zfin_ids #Download from ZFIN
+zfin_ids$...5<-NULL
+bgee_combined_long<-readRDS("./RDS/Bgee_combined_long.rds")
+```
+
+### Process the data 
 ```{r}
-make_pca_trait_model_plot(model = model_brain$black$model_brms_brain,
-                          pca_dat = model_brain$black$pca_gene_pca,
-                          trait = "BrainWeight",
-                          arrow_scale = 40,
-                          fill_label = "Scaled brain weight")
+#Remove these low sampled and inconsistelty distributed tissues
+tissues_to_remove<-c("early embryo", "embryo","gastrula",
+                      "granulocyte","larva","mature ovarian follicle",
+                      "sexually immature organism", "semen")
+rbind(
+  build_data_frame_from_bgee(dat = bgee_dat$Anguilla_anguilla, species = "Anguilla_anguilla"),
+  build_data_frame_from_bgee(dat = bgee_dat$Astatotilapia_calliptera, species = "Astatotilapia_calliptera"),
+  build_data_frame_from_bgee(dat = bgee_dat$Danio_rerio, species = "Danio_rerio"),
+  build_data_frame_from_bgee(dat = bgee_dat$Esox_lucius, species = "Esox_lucius"),
+  build_data_frame_from_bgee(dat = bgee_dat$Lepisosteus_oculatus, species = "Lepisosteus_oculatus"),
 
-make_pca_trait_model_plot(model = model_brain$pink$model_brms_brain,
-                          pca_dat = model_brain$pink$pca_gene_pca,
-                          trait = "BrainWeight",
-                          arrow_scale = 30,
-                          fill_label = "Scaled brain weight")
+  build_data_frame_from_bgee(dat = bgee_dat$Nothobranchius_furzeri, species = "Nothobranchius_furzeri"),
+  build_data_frame_from_bgee(dat = bgee_dat$Oryzias_latipes, species = "Oryzias_latipes"),
+  build_data_frame_from_bgee(dat = bgee_dat$Poecilia_reticulata, species = "Poecilia_reticulata"),
+  build_data_frame_from_bgee(dat = bgee_dat$Salmo_salar, species = "Salmo_salar"),
+  build_data_frame_from_bgee(dat = bgee_dat$Scophthalmus_maximus, species = "Scophthalmus_maximus")
+)->bgee_combined_long
 
-make_pca_trait_model_plot(model = model_brain$blue$model_brms_brain,
-                          pca_dat = model_brain$blue$pca_gene_pca,
-                          trait = "BrainWeight",
-                          arrow_scale = 50,
-                          fill_label = "Scaled brain weight")
-
-
-make_pca_trait_model_plot(model = model_swim$pink$model_brms_swim,
-                          pca_dat = model_swim$pink$pca_gene_pca,
-                          trait = "AdultMode",
-                          arrow_scale = 50,
-                          fill_label = "Swimming type")
-
-make_pca_trait_model_plot(model = model_ecology$pink$model_brms_feed,
-                          pca_dat = model_ecology$pink$pca_gene_pca,
-                          trait = "Herbivory2",
-                          arrow_scale = 50,
-                          fill_label = "Swimming type")
+  bgee_combined_long %>% saveRDS("./RDS/Bgee_combined_long.rds")
 
 ```
 
+#### Expression in other fish
+##### Aerobic respiration
+###### Expression in Bgee
+Variation in gene copies in the aerobic respiration module is linked with variation in tropic level, bodyshape, and aspect ratio which determines swimming speed. 
+The top five tissues with the highest expression across fishes are generally, muscle tissue, liver, other digestive tissues.  
+```{r}
+bgee_cafe_genes_plots(orths_in = (cafe_sig %>% filter(mod=="salmon") %>% pull(genes)),
+                       system = "Aerobic respiration",
+                       slice_size = 5)
+```
 
+###### Expression during embryonic and post-embryonic development
+```{r}
+comp_dev_danio_heatmap(system_proc = "Aerobic respiration")
+```
 
-## Phenotypic effect of genes
+###### Expression during metamorphosis
+```{r}
+purrr::map2(.x="Amphiprion_ocellaris", 
+            .y=(cafe_sig %>% filter(mod=="salmon") %>% pull(genes)),
+            ~meta_exp_cafe_genes(species = .x, orthogroup = .y))->clown_meta_cafe_exp
+patchwork::wrap_plots(clown_meta_cafe_exp)
+```
 
-In this section I check for the phenotypic effects of the rapidly evolving gene families whose variation in copy number if linked to phenotypic trait variation.
+```
 
 ```{r}
 read_csv("./08.ZFIN/Danio_biomart.csv")->Danio_biomart #Obtained from bioMart package
@@ -8679,6 +9136,8 @@ left_join(Danio_biomart, zfin_ids, by=c("Gene stable ID"="Ensembl_ID")) %>% dist
 
 pheno_orth_mods
 ```
+
+
 
 ### Blue module \~ brain and head size
 
@@ -8784,327 +9243,7 @@ df %>% filter(mod=="steelblue") %>%
 
 ```
 
-## Selection analysis
-##### Prepare the datasts for analysis
-```{r, eval=FALSE}
-#Prepare data of background 
-#orth %>% filter(sp %in% no_WGD_tree$tip.label & Orthogroup %in% danio_orth_net_in$dge_keep$genes$genes) %>% distinct(Orthogroup) %>% filter(!Orthogroup %in% homologous_genes$genes) %>% slice_sample(n = 2000)->bg_genes
 
-#bg_genes %>% saveRDS("./RDS/bg_genes_for_selection.rds")
-
-genomes<-read_tsv("./00.Sequences/NCBI_genomes.tsv")
-```
-
-```{r, eval=FALSE}
-rbind(
-    orth %>% filter(Orthogroup %in% homologous_genes$genes) %>% dplyr::count(Orthogroup) %>% mutate(type="homo"),
-    orth %>% filter(Orthogroup %in% full_orths$Orthogroup & !Orthogroup %in% homologous_genes$genes) %>% dplyr::count(Orthogroup)  %>% slice_sample(n = 1200) %>% mutate(type="non-homo")) %>% dplyr::select(Orthogroup)->genes_to_get
-
-rbind(
-  orth %>% filter(Orthogroup %in% homologous_genes$genes) %>% dplyr::count(Orthogroup) %>% mutate(type="homo"),
-  orth %>% filter(Orthogroup %in% full_orths$Orthogroup & !Orthogroup %in% homologous_genes$genes) %>% dplyr::count(Orthogroup) %>% slice_sample(n = 1200) %>% mutate(type="non-homo")) %>% 
-  ggplot(aes(x=log2(n), fill = type))+
-  geom_density(alpha=0.5)+
-  theme_bw()
-
-```
-
-```{r, eval=FALSE}
-orth %>% filter(sp %in% no_WGD_tree$tip.label & Orthogroup %in% genes_to_get$Orthogroup) %>% filter(!sp %in% c("Danio_rerio", "Amphiprion_ocellaris")) %>% 
-  mutate(fast_head=paste0(orths,"_",sp))->ncbi_genomes
-
-
-accn<-read_csv("./00.Sequences/accessions_genomes.csv",col_names = c("acc","sp"))
-
-ncbi_genomes %>% filter(sp %in% accn$sp) %>% write_tsv("./00.Sequences/genes_needed.tsv")
-```
-
-Here I check that we're selecting Orthogroups that do not drastically vary in number of gene copies between the homologous network gene set and the random null set. We can check the distributions using a box plot and test for difference in gene copy numbers between the two gene types. Using a bootstrapped Wilcoxon rank sum test we observe no significant difference between the two groups. Therefore the sets of orthogroups we use in the selection analyses are comparable in terms of number of gene copies. 
-```{r}
-seq_stats<-read_tsv("./10.HyPhy/seq_dat_clean.tsv") %>% mutate(type=case_when(Orthogroup %in% homologous_genes$genes ~ "Homologous", 
-                            .default = "Non homologous"))
-
-seq_stats  %>%
-    ggplot(aes(x=type, y=log10(number_of_seqs), fill=type))+
-    ggbeeswarm::geom_quasirandom(shape=21, color="grey40",alpha=0.5)+
-    geom_boxplot(alpha=0.5, outliers = FALSE, fill="grey")+
-    labs(subtitle = "Difference in number",
-         x=NULL,
-         y="log10(number of sequences)")+
-    ggsci::scale_fill_bmj()+
-    theme_bw()+
-    theme(axis.text.x = element_blank(),
-          axis.title.y = element_text(size=10))->seq_num
-
-wil_test_seq_stats<-function(metric){
-  
-    wilcox.test(x=seq_stats %>% filter(type=="Homologous") %>% slice_sample(n=200) %>% pull(metric),
-                y=seq_stats %>% filter(type=="Non homologous") %>% slice_sample(n=200) %>% pull(metric)
-  )->res
-    
-    tibble(test=metric,
-           pval=res$p.value) %>% return()
-  }
-  
-  purrr::map(1:100, ~wil_test_seq_stats(metric = "number_of_seqs")) %>% 
-    list_rbind() %>% mutate(padj=p.adjust(pval,"BH"))->wil_test_number_of_genes
-
-  
-```
-
-I also checked for difference in gene length and found that there is no difference in gene lengths between the genes from the homologous network and genes the random null set. 
-```{r}
-seq_stats<-read_tsv("./10.HyPhy/seq_dat_clean.tsv") %>% mutate(type=case_when(Orthogroup %in% homologous_genes$genes ~ "Homologous", 
-                            .default = "Non homologous")) 
-
-
-seq_stats  %>%
-    ggplot(aes(x=type, y=log10(avg_len), fill=type))+
-    ggbeeswarm::geom_quasirandom(shape=21, color="grey40",alpha=0.5)+
-    geom_boxplot(alpha=0.5, outliers = FALSE, fill="grey")+
-    labs(subtitle = "Difference in average length",
-         x=NULL,
-         y="log10(average length)")+
-    ggsci::scale_fill_bmj()+
-    theme_bw()+
-    theme(axis.text.x = element_blank(),
-          axis.title.y = element_text(size=10))->seq_length
-
-  
-  purrr::map(1:100, ~wil_test_seq_stats(metric = "avg_len")) %>% 
-    list_rbind() %>% mutate(padj=p.adjust(pval,"BH"))->wil_test_seq_len
-
-```
-
-```{r}
-  rbind(wil_test_number_of_genes, wil_test_seq_len) %>% 
-    ggplot(aes(x=padj))+facet_wrap(~test, scales="free")+
-    geom_density(fill="grey70", alpha=0.5)+
-    theme_bw()->pvaldist
-
-ggarrange((seq_length|seq_num)/pvaldist)
-```
-
-
-##### Global dN/dS using MG94 model
-```{r}
-#Parse the JSON file from HyPhy
-fitmg94_json_parse<-function(orth) {
-  library(jsonlite)
-  f<-read_json(paste0("./10.HyPhy/MG94/",orth,"_fitmg94.local.json"))
-  
-  tibble(
-    Orthogroup=orth,
-    omega=f$fits$`Standard MG94`$`Rate Distributions`$`non-synonymous/synonymous rate ratio`,
-    omega_ci_lb=f$fits$`Standard MG94`$`Confidence Intervals`$`non-synonymous/synonymous rate ratio`$LB,
-    omega_ci_ub=f$fits$`Standard MG94`$`Confidence Intervals`$`non-synonymous/synonymous rate ratio`$UB,
-    p_val=f$`test results`$`non-synonymous/synonymous rate ratio`$`p-value`,
-    lrt=f$`test results`$`non-synonymous/synonymous rate ratio`$LRT)
-}
-
-genes_needed<-read_tsv("./00.Sequences/genes_needed.tsv")
-
-rbind(
-  homologous_genes$genes %>%
-  purrr::map(safely(fitmg94_json_parse)) %>%
-  purrr::map("result") %>%       
-  compact() %>% 
-  list_rbind() %>% mutate(type="Homologous"),
-  
-  (genes_needed %>% distinct(Orthogroup) %>% 
-    filter(!Orthogroup %in% homologous_genes$genes))$Orthogroup %>%
-  purrr::map(safely(fitmg94_json_parse)) %>%
-  purrr::map("result") %>%       
-  compact() %>% 
-  list_rbind() %>% mutate(type="Non Homologous")) %>%
-      mutate(pval_adj=p.adjust(p_val,method = "BH"))->fitmg94_res
-
-```
-
-###### Distribution of dN/dS between homologous and non-homologous network genes
-```{r}
-rbind(fitmg94_res %>% filter(pval_adj < 0.05)) %>% 
-  ggplot(aes(x=type,y=log2(omega), fill=type))+
-  geom_quasirandom(shape=21, alpha=0.7, color="grey20",size=2)+
-  geom_boxplot(alpha=0.8, outliers = FALSE, fill="grey90", width=0.4)+
-  labs(subtitle = "Global MG94 estimate",
-       x=NULL,
-       fill="type of gene")+
-  ggsci::scale_fill_bmj()+
-  theme_bw()+
-  theme(axis.text.x = element_blank())
-```
-
-###### Wilcox rank sum test 
-```{r}
-
-test_wil<-function(){
-  
-  rbind(fitmg94_res %>% filter(pval_adj < 0.05) %>% slice_sample(n=200))->test_dat
-  
-  wilcox.test(x=test_dat %>% filter(type=="Homologous") %>% pull(omega) %>% log2(),
-              y=test_dat %>% filter(type=="Non Homologous") %>% pull(omega) %>% log2(),
-              alternative = "two.sided")->wil.res
-  
-  tibble(pval=wil.res$p.value,
-         test=wil.res$alternative) %>% return()
-  }
-
-
-purrr::map(1:100, ~test_wil()) %>% list_rbind() %>% mutate(padj=p.adjust(pval,"BH"))->global_sel_diff
-
-```
-
-##### FUBAR
-```{r}
-#Parse HyPhy output
-list.files("./10.HyPhy/FUBAR/") %>% 
-  str_remove_all("_cds_treeinput.fa.FUBAR.json")->og
-
-fubar_json_parse<- function(orth) {
-  f<-read_json(paste0("./10.HyPhy/FUBAR/",orth,"_cds_treeinput.fa.FUBAR.json"),
-               simplifyVector = )
-  headers <- map_chr(f$MLE$headers,1)
-  rows <- f$MLE$content$`0`
-  rows <- purrr::modify(rows, ~ modify(.x, ~ if (is.null(.x)) 0 else .x))
-  sites <- f$`data partitions`$`0`$coverage
-  
-  purrr::map(.x = rows, 
-      ~as_tibble(setNames(as.list(.x), c(headers,"q1","q2")))) %>% list_rbind() %>% 
-    mutate(sites=seq(1:length(sites[[1]])),
-           Orthogroup=orth) %>% 
-    dplyr::select(Orthogroup,sites, everything()) %>% 
-    return()
-}
-
-rbind(
-  homologous_genes$genes %>%
-    purrr::map(safely(fubar_json_parse)) %>%
-    purrr::map("result") %>%       
-    compact() %>% 
-    list_rbind() %>% mutate(type="Homologous"),
-  
-  (genes_needed %>% distinct(Orthogroup) %>% 
-     filter(!Orthogroup %in% homologous_genes$genes))$Orthogroup  %>%
-    purrr::map(safely(fubar_json_parse)) %>%
-    purrr::map("result") %>%       
-    compact() %>% 
-    list_rbind() %>% mutate(type="Non homologous")
-)->fubar_res
-
-
-fubar_res %>% saveRDS("./RDS/FUBAR_res.rds")
-
-fubar_res %>% mutate(selection=case_when(`Prob[alpha>beta]` > 0.9 ~ "purifying", 
-                                            `Prob[alpha<beta]` > 0.9 ~"diversifying",
-                                            .default = "low evidence")) %>% 
-  dplyr::count(selection,type) %>% mutate(n.per=((n/sum(n))*100) %>% round(2)) %>% 
-  mutate(selection=reorder(selection,-n.per)) %>% 
-  ggplot(aes(x=selection, y=n.per))+
-  geom_col(aes(fill=selection))+
-  geom_text(aes(label = n.per, y=n.per+1))+
-  scale_fill_manual(values=c("#4F868C","grey80","#D92B04"))+
-  labs(y="Percentage of sites", x="Selection")+
-  theme_bw()->site_freq_non_homol
-```
-
-```{r}
-fubar_res %>%  
-    mutate(selection=case_when(`Prob[alpha>beta]` > 0.9 ~ "Purifying", 
-    `Prob[alpha<beta]` > 0.9 ~"Diversifying",
-    .default = "Low evidence")) %>% 
-    dplyr::count(type,selection) %>% mutate(n.per=((n/sum(n))*100) %>% round(2)) %>% 
-    dplyr::select(-n.per) %>% 
-    pivot_wider(names_from = selection, values_from = n) %>% 
-    dplyr::select(-type) %>%
-    as.matrix() %>% chisq.test()->chisq
-  
- ggarrange( 
-  fubar_res %>% 
-    mutate(selection=case_when(`Prob[alpha>beta]` > 0.9 ~ "Purifying", 
-                               `Prob[alpha<beta]` > 0.9 ~"Diversifying",
-                               .default = "Low evidence")) %>% 
-    dplyr::count(type,selection) %>% 
-    mutate(n.per=((n/sum(n))*100) %>% round(2)) %>% 
-    ggplot(aes(x=type,y=n.per, fill=selection))+
-    geom_col(width = 0.65,position = "dodge",alpha=0.8)+
-    ggsci::scale_fill_aaas()+
-    labs(title = "FUBAR analysis",
-         x = "Gene class", 
-         y = "Proportion of genes (%)",
-         fill = "Selection type")+
-    theme_bw(),
-  
-  
-  as_tibble(chisq$stdres) %>% mutate(type=c("Homologous","Non homologous")) %>% 
-    pivot_longer(c(Diversifying, `Low evidence`, Purifying), names_to = "Selection type") %>% 
-    ggplot(aes(y=type,x=value, fill=`Selection type`))+
-    geom_col(width = 0.65,position = "dodge",alpha=0.8)+
-    labs(x = "Standardised residual", 
-         y = "Type of gene",
-         fill = "Selection type")+
-    ggsci::scale_fill_aaas()+
-    theme_bw(),
-  nrow = 1, common.legend = TRUE)
-```
-
-##### BUSTED
-```{r}
-busted_json_parse<- function(orth) {
-  library(jsonlite)
-  f<-read_json(paste0("./10.HyPhy/BUSTED/",orth, "_cds_treeinput.fa.BUSTED.json"),
-               simplifyVector = TRUE)
-  
-  tibble(Orthogroup=orth,
-         p_value=as.numeric(f$`test results`$`p-value`),
-         lrt=as.numeric(f$`test results`$LRT),
-         no_of_branches=length(f$tested$`0`)) %>% 
-    return()
-}
-
-
-rbind(
-  homologous_genes$genes %>%
-    purrr::map(safely(busted_json_parse)) %>%
-    purrr::map("result") %>%       
-    compact() %>% 
-    list_rbind() %>% 
-    mutate(type="Homologous"),
-  
-  (genes_needed %>% distinct(Orthogroup) %>% 
-     filter(!Orthogroup %in% homologous_genes$genes))$Orthogroup %>% 
-    purrr::map(safely(busted_json_parse)) %>%
-    purrr::map("result") %>%       
-    compact() %>% 
-    list_rbind() %>% 
-    mutate(type="Non homologous")
-) %>% mutate(p_adj=p.adjust(p_value, "BH"))->busted_res
-
-busted_res %>% saveRDS("./RDS/BUSTED_res.rds")
-```
-
-```{r}
-
-busted_res<-readRDS("./RDS/BUSTED_res.rds")
-
-busted_res %>% mutate(is_sig=case_when(p_adj<0.05 ~ "yes",.default = "no")) %>%
-  dplyr::count(type, is_sig) %>% pivot_wider(names_from = is_sig,
-                                             values_from = n,
-                                             values_fill = 0) %>% 
-  dplyr::select(yes,no) %>% as.matrix() %>% fisher.test()
-  
-busted_res %>% mutate(is_sig=case_when(p_adj<0.05 ~ "yes",.default = "no")) %>%
-  dplyr::count(type, is_sig)  %>%
-  mutate(prop=(n/sum(n))) %>% ungroup() %>% 
-  ggplot(aes(x=type, y=prop, fill=is_sig)) +
-  geom_col(width = 0.6, position = "dodge") +
-  scale_y_continuous(labels = scales::percent) +
-  labs(y = "Proportion", x = NULL) +
-  scale_fill_manual(values = c("#B39E88","#4EB5AA"))+
-  labs(subtitle = "BUSTED analysis",x="Gene class", fill="Is significant") +
-  theme_bw()
-  
-```
 
 
 ## Single cell expression and expression during metamorphosis
@@ -9289,6 +9428,7 @@ purrr::map2(.x="10dpf", .y=ann_list,
 meta_exp_cafe_genes <- function(species, orthogroup){
   
   make_plot <- function(dge_keep, orthogroup, species, rects = list()) {
+    danio_genes_modules_annot %>% left_join(Danio_biomart %>% dplyr::select(`Gene stable ID`, `Gene name`), by=c("orths"="Gene stable ID")) %>% distinct(orths, .keep_all = TRUE)->gene_annot
     
     samp <- dge_keep$samples %>%
       tibble::rownames_to_column("samples")
@@ -9305,16 +9445,16 @@ meta_exp_cafe_genes <- function(species, orthogroup){
       ungroup() %>% left_join(orth %>% filter(sp == species) %>%
           dplyr::select(Orthogroup, orths) %>% mutate(orths = stringr::str_remove(orths, "\\.[0-9]*")),
         by = "orths")
-    
-    p <- df %>%
+  
+    p <- df %>% left_join(gene_annot, by = c("Orthogroup"="gene")) %>%
       dplyr::filter(Orthogroup == orthogroup) %>%
       ggplot(ggplot2::aes(x = stages, y = z.score)) +
-      facet_wrap(~orths) +
-      geom_line(aes(group = orths, color = orths), linewidth = 0.6) +
+      facet_wrap(~`Gene name`) +
+      geom_line(aes(group = orths.x, color = orths.x), linewidth = 0.6) +
       ggsci::scale_color_aaas() +
       theme_bw() +
       theme(axis.text.x = ggplot2::element_text(angle = 90, hjust = 1, vjust = 0.5, size = 6),
-            strip.text.x.top = element_text(size=7))
+            strip.text.x.top = element_text(size=7), legend.position = "none")
     
     # add the rectangles for the metamorphosis transitions
     for (r in rects) {
@@ -9355,7 +9495,7 @@ meta_exp_cafe_genes <- function(species, orthogroup){
 
 ```{r}
 purrr::map2(.x="Amphiprion_ocellaris", 
-            .y=(cafe_sig %>% filter(mod=="blue") %>% pull(genes)),
+            .y=(cafe_sig %>% filter(mod=="salmon") %>% pull(genes)),
             ~meta_exp_cafe_genes(species = .x, orthogroup = .y))->clown_meta_cafe_exp
 ```
 
@@ -9365,108 +9505,4 @@ purrr::map2(.x="Epinephelus_malabaricus",
             ~meta_exp_cafe_genes(species = .x, orthogroup = .y))->grouper_meta_cafe_exp
 ```
 
-### Expression in other fish
-```{r}
-library(biomaRt)
-read_csv("./08.ZFIN/Danio_biomart.csv")->Danio_biomart #Obtained from bioMart package
-cafe_sig<-cafe_genefamily_outs
- tissues_to_remove<-c("early embryo", "embryo","gastrula",
-                      "granulocyte","larva","mature ovarian follicle",
-                      "sexually immature organism", "semen")
-#Get orthology and gene expression information from Bgee
-#Get Bgee Danio orthology info for the cafe sig genes:
-#metamorph_orthlist %>% filter(Orthogroup %in% cafe_sig$genes) 
-
-bgee_orth_json<-function(orth){
-  library(jsonlite)
-  f<-fromJSON(paste0("./11.Bgee_comparative_transcriptomics/",orth,".json "),flatten = TRUE)
-  f$data$orthologsByTaxon$genes %>% list_rbind() %>% 
-    mutate(danio_gene=orth, sp=paste0(species.genus,"_",species.speciesName)) %>% return()
-}
-
-
-(metamorph_orthlist %>% filter(Orthogroup %in% cafe_sig$genes) %>% filter(sp=="Danio_rerio"))$orths %>%
-  purrr::map(safely(bgee_orth_json)) %>%
-  purrr::map("result") %>%       
-  compact() %>% 
-  list_rbind() %>% left_join(metamorph_orthlist %>% 
-                               filter(Orthogroup %in% cafe_sig$genes) %>% 
-                               filter(sp=="Danio_rerio") %>% 
-                               dplyr::select(orths,Orthogroup), 
-                             by = c("danio_gene"="orths"))->bgee_orth_res
-
- rbind(
-   bgee_orth_res %>% dplyr::select(geneId, name, Orthogroup),
-   Danio_biomart %>% dplyr::select(`Gene stable ID`,`Gene name`) %>% 
-     left_join(bgee_orth_res %>% dplyr::select(c(danio_gene, Orthogroup)), 
-               by=c(`Gene stable ID`="danio_gene"), relationship = "many-to-many") %>% 
-     drop_na() %>% 
-     dplyr::rename(geneId=`Gene stable ID`, name=`Gene name`)
- ) %>% distinct(geneId, .keep_all = TRUE)->bgee_orth_res_to_use
-
-```
-
-```{r, eval=FALSE}
-bgee_dat<-readRDS("./RDS/Bgee_fish_rna.seq_more_fish.rds")
-
-make_exp_data_frames_Read.count<-function(.data, ...){
-  .data  %>% 
-    dplyr::select(Gene.ID, Read.count, Library.ID) %>% 
-    pivot_wider(names_from = Library.ID,values_from = Read.count) %>%
-    mutate(across(everything(), ~replace_na(.x, 0)))
-}
-
-build_data_frame_from_bgee<-function(dat, species){
-  library(edgeR)
-  library(DESeq2)
-  make_exp_data_frames_Read.count<-function(.data, ...){
-    .data  %>% 
-      dplyr::select(Gene.ID, Read.count, Library.ID) %>% 
-      pivot_wider(names_from = Library.ID,values_from = Read.count) %>%
-      mutate(across(everything(), ~replace_na(.x, 0)))
-  }
-  
-  design_matrix<-dat %>% 
-    dplyr::select(Experiment.ID,Library.ID,Anatomical.entity.name) %>% distinct()
-  
-  dge<-edgeR::DGEList(dat %>% make_exp_data_frames_Read.count() %>% 
-                        column_to_rownames("Gene.ID"), 
-                      group = factor(design_matrix$Anatomical.entity.name))
-  keep<-filterByExpr(cpm(dge), min.count = 1, group = factor(design_matrix$Experiment.ID))
-  dge<-dge[keep, ,keep.lib.sizes =T]
-  dge<-calcNormFactors(dge,method = "TMM")
-  dat_genes<-rownames(dge$counts)
-  dge<-edgeR::cpm(dge, normalized.lib.sizes = TRUE, log = FALSE)
-  dge %>% as_tibble() %>% 
-    mutate(genes=dat_genes) %>% 
-    pivot_longer(cols = c(-genes), names_to = "Library.ID", values_to = "cpm") %>%
-    left_join(design_matrix, by = "Library.ID") %>% 
-    filter(Anatomical.entity.name !="multicellular organism") %>% 
-    mutate(sp=species) %>% return()
-  }
-
-rbind(
-  build_data_frame_from_bgee(dat = bgee_dat$Anguilla_anguilla, species = "Anguilla_anguilla"),
-  build_data_frame_from_bgee(dat = bgee_dat$Astatotilapia_calliptera, species = "Astatotilapia_calliptera"),
-  build_data_frame_from_bgee(dat = bgee_dat$Danio_rerio, species = "Danio_rerio"),
-  build_data_frame_from_bgee(dat = bgee_dat$Esox_lucius, species = "Esox_lucius"),
-  build_data_frame_from_bgee(dat = bgee_dat$Lepisosteus_oculatus, species = "Lepisosteus_oculatus"),
-
-  build_data_frame_from_bgee(dat = bgee_dat$Nothobranchius_furzeri, species = "Nothobranchius_furzeri"),
-  build_data_frame_from_bgee(dat = bgee_dat$Oryzias_latipes, species = "Oryzias_latipes"),
-  build_data_frame_from_bgee(dat = bgee_dat$Poecilia_reticulata, species = "Poecilia_reticulata"),
-  build_data_frame_from_bgee(dat = bgee_dat$Salmo_salar, species = "Salmo_salar"),
-  build_data_frame_from_bgee(dat = bgee_dat$Scophthalmus_maximus, species = "Scophthalmus_maximus")
-)->bgee_combined_long
-
-  bgee_combined_long %>% saveRDS("./RDS/Bgee_combined_long.rds")
-
-```
-
-```{r}
-bgee_combined_long<-readRDS("./RDS/Bgee_combined_long.rds")
-read_csv("./08.ZFIN/Danio_biomart.csv")->Danio_biomart
-
-
-```
 
