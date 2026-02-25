@@ -2343,6 +2343,74 @@ ggarrange(
   
 annotate_figure(plots, top = text_grob(paste0(system_proc),face = "bold", size = 12)) %>% return()
 }
+
+meta_exp_cafe_genes <- function(species, orthogroup){
+  #dge_keep = clown$dge_keep
+  
+  make_plot <- function(dge_keep, orthogroup, species, rects = list()) {
+    danio_genes_modules_annot %>% left_join(Danio_biomart %>% dplyr::select(`Gene stable ID`, `Gene name`), by=c("orths"="Gene stable ID")) %>% distinct(orths, .keep_all = TRUE)->gene_annot
+    
+    samp <- dge_keep$samples %>%
+      tibble::rownames_to_column("samples")
+    
+    df <- dge_keep$counts %>%
+      edgeR::cpm(log = TRUE, prior.count = 1e-5, normalized.lib.sizes = TRUE) %>%
+      reshape2::melt() %>%
+      dplyr::rename(orths = Var1, samples = Var2, logCPM = value) %>%
+      left_join(samp, by = "samples") %>%
+      dplyr::rename(stages = group) %>%
+      summarise(mean_logCPM = mean(logCPM, na.rm = TRUE),
+                       .by = c(orths, stages)) %>% group_by(orths) %>%
+      mutate(z.score = (mean_logCPM - mean(mean_logCPM))/sd(mean_logCPM)) %>%
+      ungroup() %>% left_join(orth %>% filter(sp == species) %>%
+          dplyr::select(Orthogroup, orths) %>% mutate(orths = stringr::str_remove(orths, "\\.[0-9]*")),
+        by = "orths")
+  
+    p <- df %>% left_join(gene_annot, by = c("Orthogroup"="gene")) %>%
+      dplyr::filter(Orthogroup == orthogroup) %>%
+      ggplot(ggplot2::aes(x = stages, y = z.score)) +
+      facet_wrap(~`Gene name`) +
+      geom_line(aes(group = orths.x, color = orths.x), linewidth = 0.6) +
+      ggsci::scale_color_nejm() +
+      theme_bw() +
+      theme(axis.text.x = ggplot2::element_text(angle = 90, hjust = 1, vjust = 0.5, size = 6),
+            strip.text.x.top = element_text(size=7), legend.position = "none")
+    
+    # add the rectangles for the metamorphosis transitions
+    for (r in rects) {
+      p <- p + ggplot2::annotate(
+        geom = "rect",
+        xmin = r$xmin, xmax = r$xmax, ymin = -Inf, ymax = Inf,
+        fill = r$fill %||% "#594BE4",
+        alpha = r$alpha %||% 0.2
+      )
+    }
+    
+    p
+  }
+  
+
+  if (species == "Amphiprion_ocellaris") {
+    make_plot(
+      dge_keep = clown$dge_keep,
+      orth = orthogroup,
+      species = species,
+      rects = list(list(xmin = 4.5, xmax = 5.5, alpha = 0.2, fill = "#594BE4"))
+    )
+    
+  } else if (species == "Epinephelus_malabaricus") {
+    make_plot(
+      dge_keep = grouper$dge_keep,
+      orth = orthogroup,
+      species = species,
+      rects = list(
+        list(xmin = 1.5, xmax = 2.5, alpha = 0.15, fill = "#594BE4"),
+        list(xmin = 5.5, xmax = 6.5, alpha = 0.15, fill = "#594BE4")
+      )
+    )
+    
+  } 
+}
 ```
 
 ### Getting the data
@@ -9092,9 +9160,9 @@ rbind(
 
 #### Expression in other fish
 ##### Aerobic respiration
-###### Expression in Bgee
 Variation in gene copies in the aerobic respiration module is linked with variation in tropic level, bodyshape, and aspect ratio which determines swimming speed. 
-The top five tissues with the highest expression across fishes are generally, muscle tissue, liver, other digestive tissues.  
+The top five tissues with the highest expression across fishes are generally, muscle tissue, liver, other digestive tissues. 
+###### Expression in Bgee
 ```{r}
 bgee_cafe_genes_plots(orths_in = (cafe_sig %>% filter(mod=="salmon") %>% pull(genes)),
                        system = "Aerobic respiration",
@@ -9112,9 +9180,91 @@ purrr::map2(.x="Amphiprion_ocellaris",
             .y=(cafe_sig %>% filter(mod=="salmon") %>% pull(genes)),
             ~meta_exp_cafe_genes(species = .x, orthogroup = .y))->clown_meta_cafe_exp
 patchwork::wrap_plots(clown_meta_cafe_exp)
+
+purrr::map2(.x="Epinephelus_malabaricus", 
+            .y=(cafe_sig  %>% filter(mod=="salmon") %>% pull(genes)),
+            ~meta_exp_cafe_genes(species = .x, orthogroup = .y))->grouper_meta_cafe_exp
 ```
 
+```{r}
+patchwork::wrap_plots(clown_meta_cafe_exp)
+patchwork::wrap_plots(grouper_meta_cafe_exp)
 ```
+
+###### ZFIN data
+```{r}
+
+```
+
+##### Translation process
+Variation in gene copies in the translation module is linked with variation in age of maturity, bodyshape, and aspect ratio. 
+No clear pattern of specific gene expression as the genes are expressed across multiple tissue systems. 
+###### Expression in Bgee
+```{r}
+bgee_cafe_genes_plots(orths_in = (cafe_sig %>% filter(mod=="pink") %>% pull(genes)),
+                       system = "Translation",
+                       slice_size = 5)
+```
+
+###### Expression during embryonic and post-embryonic development
+```{r}
+comp_dev_danio_heatmap(system_proc = "Translation")
+```
+
+###### Expression during metamorphosis
+```{r}
+purrr::map2(.x="Amphiprion_ocellaris", 
+            .y=(cafe_sig %>% filter(mod=="pink") %>% pull(genes)),
+            ~meta_exp_cafe_genes(species = .x, orthogroup = .y))->clown_meta_cafe_exp
+purrr::map2(.x="Epinephelus_malabaricus", 
+            .y=(cafe_sig  %>% filter(mod=="pink") %>% pull(genes)),
+            ~meta_exp_cafe_genes(species = .x, orthogroup = .y))->grouper_meta_cafe_exp
+```
+
+```{r}
+patchwork::wrap_plots(clown_meta_cafe_exp)+plot_annotation(subtitle = "Expression during metamorphosis in clownfish")
+patchwork::wrap_plots(grouper_meta_cafe_exp)+plot_annotation(subtitle = "Expression during metamorphosis in grouper")
+```
+
+##### Synaptic signalling 
+Variation in gene copies in the Synaptic signalling module is linked with variation in growth coefficient, aspect ratio, and lower jaw length. 
+High expression in brain and eye, with additional expression in muscle and bone. 
+###### Expression in Bgee
+```{r}
+bgee_cafe_genes_plots(orths_in = (cafe_sig %>% filter(mod=="blue") %>% pull(genes)),
+                       system = "Synaptic signalling",
+                       slice_size = 5)
+```
+
+###### Expression during embryonic and post-embryonic development
+Overall low expression during embryonic development, with a peak at 3dpf. In posr=t-embryonic, there is high expression during the earlier stages which then reduced as the fish matures. 
+```{r}
+comp_dev_danio_heatmap(system_proc = "Synaptic signalling 1")
+```
+
+###### Expression during metamorphosis
+In clownfish expression peaks coincide with stages where thyroid hormone levels are high.  
+In grouper thee expression also coincides with the double peaks of thyroid hormone level.  
+```{r}
+purrr::map2(.x="Amphiprion_ocellaris", 
+            .y=(cafe_sig %>% filter(mod=="blue") %>% pull(genes)),
+            ~meta_exp_cafe_genes(species = .x, orthogroup = .y))->clown_meta_cafe_exp
+purrr::map2(.x="Epinephelus_malabaricus", 
+            .y=(cafe_sig  %>% filter(mod=="blue") %>% pull(genes)),
+            ~meta_exp_cafe_genes(species = .x, orthogroup = .y))->grouper_meta_cafe_exp
+```
+
+```{r}
+patchwork::wrap_plots(clown_meta_cafe_exp)+plot_annotation(subtitle = "Expression during metamorphosis in clownfish")
+patchwork::wrap_plots(grouper_meta_cafe_exp)+plot_annotation(subtitle = "Expression during metamorphosis in grouper")
+```
+
+###### ZFIN data
+```{r}
+
+```
+
+
 
 ```{r}
 read_csv("./08.ZFIN/Danio_biomart.csv")->Danio_biomart #Obtained from bioMart package
@@ -9451,7 +9601,7 @@ meta_exp_cafe_genes <- function(species, orthogroup){
       ggplot(ggplot2::aes(x = stages, y = z.score)) +
       facet_wrap(~`Gene name`) +
       geom_line(aes(group = orths.x, color = orths.x), linewidth = 0.6) +
-      ggsci::scale_color_aaas() +
+      ggsci::scale_color_nejm() +
       theme_bw() +
       theme(axis.text.x = ggplot2::element_text(angle = 90, hjust = 1, vjust = 0.5, size = 6),
             strip.text.x.top = element_text(size=7), legend.position = "none")
