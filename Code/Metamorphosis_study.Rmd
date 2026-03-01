@@ -320,7 +320,9 @@ heat<-ggplot(data = heat_plot_dat,aes(x = stages,y = as.factor(mod)))+
                        breaks = c(-qnt, 0, qnt), labels = c(paste0("<", round(-qnt)), "0", paste0(">", round(qnt))))+
   scale_x_discrete(guide = guide_axis(angle = 90))+
   ylab("Modules")+
-  theme_minimal()
+  theme_bw()+
+  theme(axis.text.y = element_text(size = 6),
+        strip.background = element_rect(fill = "grey95", color = "black"))
   return(list(heat=heat, sum=sum, dat=heat_plot_dat))
 }
 
@@ -626,14 +628,14 @@ get_jaccard_estimate<-function(col1,col2,net1,net2){
  
 # Homologous modules line plots
   homo_mods_lines<-function(mod.clown,mod.manini,mod.goby,mod.grouper,mod.danio,GO_dat){
-    
+    len=10
 #mod.clown=mods_combs$col.clown[1]
 #mod.manini=mods_combs$col.manini[1]
 #mod.goby=mods_combs$col.goby[1]
 #mod.grouper=mods_combs$col.grouper[1]
 #mod.danio=mods_combs$col.danio[1]
 
-    d.clown<-clown_orth_net_in$dge_keep$counts[(clown_orth_net$moduleColors)$moduleColors==mod.clown,] %>% cpm(log = T,prior.count = 1e-5,normalized.lib.sizes = T) %>% 
+    d.clown<-clown_orth_net_in$dge_keep$counts[(clown_orth_net$moduleColors)$moduleColors==mod.clown,] %>% edgeR::cpm(log = T,prior.count = 1e-5,normalized.lib.sizes = T) %>% 
       reshape2::melt() %>% 
       dplyr::rename(orths = Var1,stages = Var2, logCPM = value) %>% 
       summarise(mean_logCPM = mean(logCPM),.by = c(orths,stages)) %>% group_by(orths) %>% 
@@ -644,7 +646,7 @@ get_jaccard_estimate<-function(col1,col2,net1,net2){
       T ~ z.score
     )) %>% mutate(sp="clown")
     
-    d.manini<-manini_orth_net_in$dge_keep$counts[(manini_orth_net$moduleColors)$moduleColors==mod.manini,] %>% cpm(log = T,prior.count = 1e-5,normalized.lib.sizes = T) %>% 
+    d.manini<-manini_orth_net_in$dge_keep$counts[(manini_orth_net$moduleColors)$moduleColors==mod.manini,] %>% edgeR::cpm(log = T,prior.count = 1e-5,normalized.lib.sizes = T) %>% 
       reshape2::melt() %>% 
       dplyr::rename(orths = Var1,stages = Var2, logCPM = value) %>% 
       summarise(mean_logCPM = mean(logCPM),.by = c(orths,stages)) %>% group_by(orths) %>% 
@@ -655,7 +657,7 @@ get_jaccard_estimate<-function(col1,col2,net1,net2){
       T ~ z.score
     )) %>% mutate(sp="manini")
     
-    d.goby<-goby_orth_net_in$dge_keep$counts[(goby_orth_net$moduleColors)$moduleColors==mod.goby,] %>% cpm(log = T,prior.count = 1e-5,normalized.lib.sizes = T) %>%
+    d.goby<-goby_orth_net_in$dge_keep$counts[(goby_orth_net$moduleColors)$moduleColors==mod.goby,] %>% edgeR::cpm(log = T,prior.count = 1e-5,normalized.lib.sizes = T) %>%
       reshape2::melt() %>% 
       dplyr::rename(orths = Var1,stages = Var2, logCPM = value) %>% 
       summarise(mean_logCPM = mean(logCPM),.by = c(orths,stages)) %>% group_by(orths) %>% 
@@ -666,7 +668,7 @@ get_jaccard_estimate<-function(col1,col2,net1,net2){
       T ~ z.score
     )) %>% mutate(sp="goby")
     
-    d.grouper<-grouper_orth_net_in$dge_keep$counts[(grouper_orth_net$moduleColors)$moduleColors==mod.grouper,] %>% cpm(log = T,prior.count = 1e-5,normalized.lib.sizes = T) %>% 
+    d.grouper<-grouper_orth_net_in$dge_keep$counts[(grouper_orth_net$moduleColors)$moduleColors==mod.grouper,] %>% edgeR::cpm(log = T,prior.count = 1e-5,normalized.lib.sizes = T) %>% 
       reshape2::melt() %>% 
       dplyr::rename(orths = Var1,stages = Var2, logCPM = value) %>% 
       summarise(mean_logCPM = mean(logCPM),.by = c(orths,stages)) %>% group_by(orths) %>% 
@@ -677,7 +679,7 @@ get_jaccard_estimate<-function(col1,col2,net1,net2){
       T ~ z.score
     )) %>% mutate(sp="grouper")
     
-    d.danio<-danio_orth_net_in$dge_keep$counts[(danio_orth_net$moduleColors)$moduleColors==mod.danio,] %>% cpm(log = T,prior.count = 1e-5,normalized.lib.sizes = T) %>% 
+    d.danio<-danio_orth_net_in$dge_keep$counts[(danio_orth_net$moduleColors)$moduleColors==mod.danio,] %>% edgeR::cpm(log = T,prior.count = 1e-5,normalized.lib.sizes = T) %>% 
       reshape2::melt() %>% 
       dplyr::rename(orths = Var1,stages = Var2, logCPM = value) %>% 
       summarise(mean_logCPM = mean(logCPM),.by = c(orths,stages)) %>% group_by(orths) %>% 
@@ -722,9 +724,7 @@ get_jaccard_estimate<-function(col1,col2,net1,net2){
 
       geom_line(data = (d.all %>% filter(sp=="manini")
                         %>% summarise(mean_exp = mean(z.score),.by = "stages")),
-                aes(x = stages, y = mean_exp, group = 1),linewidth = 1, color = "black")+
-      annotate(geom = "rect", xmin = 1.5, xmax = 3.5, ymin = -Inf, ymax = Inf,
-               fill = "#594BE4", alpha = 0.15) + 
+                aes(x = stages, y = mean_exp, group = 1),linewidth = 1, color = "black") + 
       ylim(-2.2,2.2)+
       ylab("Z-score")+
       theme_linedraw()+
@@ -744,9 +744,7 @@ get_jaccard_estimate<-function(col1,col2,net1,net2){
             geom_boxplot(outliers = FALSE, fill = "grey90",alpha=0.5)+
       geom_line(data = (d.all %>% filter(sp=="goby")
                         %>% summarise(mean_exp = mean(z.score),.by = "stages")),
-                aes(x = stages, y = mean_exp, group = 1),linewidth = 1, color = "black")+
-      annotate(geom = "rect", xmin = 2.5, xmax = 3.5, ymin = -Inf, ymax = Inf,
-               fill = "#594BE4", alpha = 0.15) + 
+                aes(x = stages, y = mean_exp, group = 1),linewidth = 1, color = "black") + 
       ylim(-2.2,2.2)+
       ylab("Z-score")+
       theme_linedraw()+
@@ -826,11 +824,13 @@ get_jaccard_estimate<-function(col1,col2,net1,net2){
                nrow = 1, 
                ncol = 6, 
                widths = c(0.5,0.5,0.5,0.5,0.5,1),
-               heights = c(1,1,1,1,1,0.05)) &
+               heights = c(1,1,1,1,1,0.05)) +
       theme(plot.background = element_rect(fill='transparent'),
-            legend.background = element_rect(fill = 'transparent'))->wp
-    
-    ggsave(plot = wp, filename = paste0("./Plots/homo_mods_lineplots/",mod.clown,".png"), device = "png", width = 12, height = 2, units = "in",bg = "transparent")
+            legend.background = element_rect(fill = 'transparent'))+
+  plot_annotation(title = paste0(mod.clown))->wp
+    wp %>% return()
+    #change the destination per usage
+    #ggsave(plot = wp, filename = paste0("./Figures/FigS5/",mod.clown,".png"), device = "png", width = 12, height = 2, units = "in",bg = "transparent")
   }
 
 
@@ -1099,8 +1099,12 @@ complete_phylogenetic_analysis_possibly<-purrr::possibly(complete_phylogenetic_a
 
 
 validation_lines<-function(dat1,dat2,fill1,fill2,types){
+
+  #dat1 = clown_orth_net_in
+  #dat2 = full_thyroid_orths
+  
   d.clown<-dat1$dge_keep$counts %>% 
-    cpm(log = T,prior.count = 1e-5,normalized.lib.sizes = T)  %>% 
+    edgeR::cpm(log = T,prior.count = 1e-5,normalized.lib.sizes = T)  %>% 
     reshape2::melt() %>% 
     dplyr::rename(orths = Var1,stages = Var2, logCPM = value) %>% 
     filter(orths %in% dat2$Orthogroup) %>% group_by(orths) %>% 
@@ -1111,19 +1115,21 @@ validation_lines<-function(dat1,dat2,fill1,fill2,types){
     z.score > quantile(d.clown$z.score,0.95) ~ quantile(d.clown$z.score,0.95),
     z.score < -quantile(d.clown$z.score,0.95) ~ -quantile(d.clown$z.score,0.95),
     T ~ z.score)) %>% mutate(sp="clown")
+  
+  d.clown %>% mutate(orths=as.character(orths)) %>% 
+    left_join(dat2, by=c("orths"="Orthogroup"), relationship = "many-to-many") %>% group_by(orths,stages,external_gene_name) %>% slice_max(logCPM)->d.clown
 
 d.clown %>% 
-  ggplot(aes(x=stages, y=z.score, group=orths))+
-  facet_wrap(vars(orths), nrow =5)+
+  ggplot(aes(x=stages, y=z.score, group=external_gene_name))+
+  facet_wrap(vars(external_gene_name), nrow =5)+
   geom_point(shape=21, size=2, color="grey10", fill=fill1)+
-  geom_line(data = (d.clown %>% filter(sp=="clown")
-                    %>% summarise(mean_exp = mean(z.score),.by = c("stages","orths"))),
-            aes(x = stages, y = mean_exp, group = 1),linewidth = 1, color = fill2)+
+  geom_line(aes(x = stages, y = z.score, group = 1),linewidth = 1, color = fill2)+
   ylim(-2.2,2.2)+
   ylab("Z-score")+
   labs(subtitle =paste0(types))+
-  theme_light()+
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.1)) %>% return()
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.1),
+        strip.background = element_rect(fill = "grey95")) %>% return()
 }
 
 #Get the gene copy data for shapes species
@@ -2833,7 +2839,7 @@ manini_orth_net<-readRDS("./02.Gene_expression_and_network/manini_orth_net.rds")
 danio_orth_net<-readRDS("./02.Gene_expression_and_network/danio_orth_net.rds")
 ```
 
-2### Network stats
+### Network stats
 
 We see that the networks have almost the same number of modules. This is expected since the gene expression matrix has same number of orthogroups and the soft thresholds were similar. There is slight variation in the average module size and mean connectivity with zebrafish having the lowest average module size, while clownfish modules have the lowest average connectivity.
 ```{r}
@@ -2983,7 +2989,7 @@ get_GOterms_homomods<-function(cat,module,gene_set){
 
 ```
 
-```{r}
+```{r,eval=FALSE}
 #clown
 net<-clown_orth_net
 sp<-"ENSAOC"
@@ -3067,14 +3073,24 @@ th_genes<-read_csv("./07.Systems_genes/T.hormones_genes.csv")
 vision_genes<-read_csv("./07.Systems_genes/vision_genes.csv")
 lipids_genes<-read_csv("./07.Systems_genes/metabolism.lipids_genes.csv")
 
-th_signalling_genes<-clown_ensembl %>% filter(ensembl_gene_id %in% th_genes$id) %>% distinct(ensembl_gene_id_version)
+#Thyroid
+th_signalling_genes<-clown_ensembl %>% filter(ensembl_gene_id %in% th_genes$id) %>% distinct(ensembl_gene_id_version,.keep_all = TRUE)
 full_orths %>% filter(Orthogroup %in% (orth %>% filter(orths %in% th_signalling_genes$ensembl_gene_id_version) %>% pull(Orthogroup)))->full_thyroid_orths
 
-vis_system<-clown_ensembl %>% filter(ensembl_gene_id %in% vision_genes$id) %>% distinct(ensembl_gene_id_version)
+full_thyroid_orths %>% left_join((orth %>% filter(orths %in% th_signalling_genes$ensembl_gene_id_version)) %>% left_join(th_signalling_genes %>% dplyr::select(ensembl_gene_id_version,external_gene_name), by = c("orths"="ensembl_gene_id_version")))->full_thyroid_orths
+
+#Vision
+vis_system<-clown_ensembl %>% filter(ensembl_gene_id %in% vision_genes$id) %>% distinct(ensembl_gene_id_version,.keep_all = TRUE)
 full_orths %>% filter(Orthogroup %in% (orth %>% filter(orths %in% vis_system$ensembl_gene_id_version) %>% pull(Orthogroup)))->full_vision_orths
-  
-lipid_synth<-clown_ensembl %>% filter(ensembl_gene_id %in% lipids_genes$id) %>% distinct(ensembl_gene_id_version)
+
+full_vision_orths %>% left_join((orth %>% filter(orths %in% vis_system$ensembl_gene_id_version)) %>% left_join(vis_system %>% dplyr::select(ensembl_gene_id_version,external_gene_name), by = c("orths"="ensembl_gene_id_version")))->full_vision_orths
+
+#Lipid 
+lipid_synth<-clown_ensembl %>% filter(ensembl_gene_id %in% lipids_genes$id) %>% distinct(ensembl_gene_id_version,.keep_all = TRUE)
 full_orths %>% filter(Orthogroup %in% (orth %>% filter(orths %in% lipid_synth$ensembl_gene_id_version) %>% pull(Orthogroup)))->full_lipid_orths
+
+full_lipid_orths%>% left_join((orth %>% filter(orths %in% 
+                                                 lipid_synth$ensembl_gene_id_version)) %>% left_join(lipid_synth %>% dplyr::select(ensembl_gene_id_version,external_gene_name), by = c("orths"="ensembl_gene_id_version")))->full_lipid_orths
 ```
 
 ```{r, eval=FALSE}
@@ -3195,10 +3211,10 @@ co_occurence_tests %>% dplyr::rename("Target gene set p-value"=target_set_pval,
                                      "Random gene set p-value"=random_set_pval) %>% 
   pivot_longer(c(`Target gene set p-value`,`Random gene set p-value`)) %>% 
   ggplot(aes(x=sp,y=sys,fill=value))+
-  facet_wrap(~name)+
+  facet_wrap(~name,ncol=1)+
   geom_tile(color="black", linewidth = 0.2, alpha=0.8)+
   geom_text(aes(label = round(value, 4)), size = 2.5, colour="black")+
-  viridis::scale_fill_viridis(option = "A", direction = -1, limits = c(0, 0.7))+
+  scale_fill_gradient(high = "#C97A5A",low ="#2AA198", limits = c(0, 0.7))+
   labs(x="species", y="system")+
   theme_bw()+
   theme(axis.text.x = element_text(angle=90,size=8,hjust = 1, vjust = 0.5),
@@ -3211,20 +3227,12 @@ co_occurence_tests %>% dplyr::rename("Target gene set p-value"=target_set_pval,
 Genes associated with thyroid hormone regulation were distributed across multiple modules, with roughly one-third (~33%) expressed equally across two modules. Genes related to lipid metabolism and vision also spanned multiple modules, with the majority (~80%) co-expressed in modules containing multiple genes from each system. Comparable patterns were observed in other species as well.
 ```{r}
 ggarrange(  
-  three_system_col_plots(orth_net = clown_orth_net, col = "#e77515")+
-  three_system_col_plots(orth_net = grouper_orth_net, col = "#A99522")+
-  three_system_col_plots(orth_net = goby_orth_net, col = "#BA4566")+
-  three_system_col_plots(orth_net = manini_orth_net, col = "#7aa328")+
-  three_system_col_plots(orth_net = danio_orth_net, col = "#343BC2")| 
-  co_ocurence_plot,
-  nrow = 3, ncol = 3)
-
-cowplot::plot_grid(three_system_col_plots(orth_net = clown_orth_net, col = "#e77515"),
-                   three_system_col_plots(orth_net = grouper_orth_net, col = "#A99522"),
-                   three_system_col_plots(orth_net = goby_orth_net, col = "#BA4566"),
-                   three_system_col_plots(orth_net = manini_orth_net, col = "#7aa328"),
-                   three_system_col_plots(orth_net = danio_orth_net, col = "#343BC2"),
-                   co_ocurence_plot)
+  three_system_col_plots(orth_net = clown_orth_net, col = "#e77515"),
+  three_system_col_plots(orth_net = grouper_orth_net, col = "#A99522"),
+  three_system_col_plots(orth_net = goby_orth_net, col = "#BA4566"),
+  three_system_col_plots(orth_net = manini_orth_net, col = "#7aa328"),
+  three_system_col_plots(orth_net = danio_orth_net, col = "#343BC2"),
+  ncol = 3,nrow = 2)
 ```
 
 #### Thyroid hormone signalling
@@ -3236,37 +3244,31 @@ validation_lines(dat1 = clown_orth_net_in,
                  fill2 = "#a9552b",
                  types = "Thyroid signalling")->clown_valid_thyroid
 
-validation_lines(dat1 = clown_orth_net_in, 
-                 dat2 = full_iridiophore_orths, 
-                 fill1 = "#e77515",
-                 fill2 = "#a9552b",
-                 types = "Iridiophores")->clown_valid_iridiophore
-
 
 validation_lines(dat1 = grouper_orth_net_in, 
                  dat2 = full_thyroid_orths, 
                  fill1 = "#D9C343",
                  fill2 = "#D9AD22",
-                 types = "Thyroid signalling")->grouper_valid
+                 types = "Thyroid signalling")->grouper_valid_thyroid
 
 validation_lines(dat1 = goby_orth_net_in, 
                  dat2 = full_thyroid_orths, 
                  fill1 = "#BA4566",
                  fill2 = "#BA45A1",
-                 types = "Thyroid signalling")->goby_valid
+                 types = "Thyroid signalling")->goby_valid_thyroid
 
 validation_lines(dat1 = manini_orth_net_in, 
                  dat2 = full_thyroid_orths, 
                  fill1 = "#9acd32",
                  fill2 = "#4CCD32",
-                 types = "Thyroid signalling")->manini_valid
+                 types = "Thyroid signalling")->manini_valid_thyroid
 validation_lines(dat1 = danio_orth_net_in, 
                  dat2 = full_thyroid_orths, 
                  fill1 = "#2968D6",
                  fill2 = "#82D1E6",
-                 types = "Thyroid signalling")->danio_valid
+                 types = "Thyroid signalling")->danio_valid_thyroid
 
-ggpubr::ggarrange(clown_valid,grouper_valid,goby_valid,manini_valid,danio_valid,
+ggpubr::ggarrange(clown_valid_thyroid,manini_valid_thyroid,goby_valid_thyroid,grouper_valid_thyroid,danio_valid_thyroid,
                   ncol = 5)->all_sp_valid_thy
 ```
 
@@ -3398,11 +3400,11 @@ STRING_perm_test_res<-readRDS("./RDS/STRING_perm_test_res.rds")
 STRING_perm_test_res %>% mutate(sig=case_when(empirical_P < 0.05 ~ "Yes",
                                               .default = "No")) %>% mutate(module.X=reorder(module.X, empirical_P)) %>% 
     ggplot(aes(x=1, y=module.X, fill=sig))+
-    geom_tile()+geom_text(aes(label=round(empirical_P,2), x=1),color="white",size=3)+
-    ggsci::scale_fill_jama(name="Is significant")+
-  labs(x="empirical p-value", y="module", subtitle = "STRING comparison test")+
+    geom_tile(alpha=0.8)+geom_text(aes(label=round(empirical_P,2), x=1),color="white",size=3)+
+    scale_fill_manual(values = c("#C97A5A","#2AA198"))+
+    labs(x="empirical p-value", y="module", subtitle = "STRING comparison test")+
     theme_bw()+
-  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+    theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
 ```
 
 #### Expression in species
@@ -5289,8 +5291,8 @@ safe_homo <- purrr::safely(homo_mods_lines, otherwise = NULL, quiet = TRUE)
                                     mod.grouper = ..4,
                                     mod.danio = ..5,
                                GO_dat = homologous_mods_BP_proc %>% list_rbind() %>% 
-                           filter(mod %in% mods_combs$col.clown))) #%>%
-  #purrr::map("result") %>% purrr::compact()->homo_lines
+                           filter(mod %in% mods_combs$col.clown))) %>%
+  purrr::map("result") %>% purrr::compact()->homo_lines
   
   
 
@@ -5398,14 +5400,19 @@ homologous_modules %>% filter(col.clown %in% homologous_genes$mod) %>% pivot_lon
                                       clown.ref.pres.grouper,goby.ref.pres.clown,danio.ref.pres.clown,
                                       manini.ref.pres.clown,grouper.ref.pres.clown), 
                                     names_to = "comparisons", values_to = "module_pres") %>% 
-  dplyr::count(module_pres) %>% mutate(n.per=(n/sum(n))*100) %>% 
-  ggplot(aes(x=module_pres, y=n.per))+
-  geom_col(fill="grey60", color="black", linewidth=0.2)+
-  geom_text(aes(label = paste0(round(n.per,1),"%"), y=n.per-3), size=3, color="white")+
-  labs(x="module\npreservation", y="percentage in\npairwise comparisons")+
-  theme_linedraw()+
-  theme(axis.text.x = element_text(angle=90,size=8, hjust = 1,vjust = 0.5),
-        axis.text.y = element_text(size=8))->homo_pres_plots
+  dplyr::count(module_pres) %>% mutate(n.per=n/sum(n)) %>% 
+  ggplot(aes(x=module_pres, y=n.per, fill=module_pres))+
+  geom_col(color="black", linewidth=0.2)+
+  scale_fill_manual(values = c("#8C6BB1", "#2AA198", "#C97A5A"))+
+  scale_y_continuous(labels = scales::percent)+
+  geom_text(aes(label = paste0(round(n.per,2)*100,"%"), y=n.per-0.03), size=3, color="white")+
+  labs(x="Module\npreservation", y="Percentage in\npairwise comparisons")+
+  theme_bw()+
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_text(size=8),
+        legend.position = "none",
+        panel.grid.major = element_line(colour = "grey95"),
+        panel.grid.minor = element_line(colour = "grey95"))->homo_pres_plots
 
 homologous_modules %>% filter(col.clown %in% homologous_genes$mod) %>% 
   pivot_longer(c(jaccard.index.clown.goby, jaccard.index.clown.danio,
@@ -5432,8 +5439,6 @@ ggarrange(jacc_plots|homo_pres_plots)
 The homologous genes on an average have higher connectivity than the other genes. Therefore, they represent hub genes.
 ```{r}
 homologous_genes<-readRDS("./RDS/homologous_genes.rds")
-
-
 
 #non_homologous_genes<-readRDS("./RDS/non_homologous_genes.rds")
 rbind(
@@ -5550,7 +5555,7 @@ ss_test %>%  ggplot(aes(y=log2(n), x=type, fill = type))+
 
 
 ### Annotate homologous modules
-```{r}
+```{r,eval=FALSE}
 homologous_genes<-readRDS("./RDS/homologous_genes.rds")
 non_homologous_genes<-readRDS("./RDS/non_homologous_genes.rds")
 
@@ -5900,6 +5905,10 @@ ss_test_wang_wl_res_CC %>% mutate(padj=p.adjust(wl.pval, "BH")) %>% saveRDS("./R
 ss_test %>% saveRDS("./RDS/ss_test_Wang.rds")
 
 
+```
+
+```{r}
+ss_test<-readRDS("./RDS/ss_test_Wang.rds")
 ```
 
 ## Comparative genomics
@@ -6283,7 +6292,6 @@ rbind(
 ```
 
 #### Connectivity of the fast evolving genes
-
 The connectivity of the fast evolving homologous genes estimated by CAFE, is not significantly different from all the other homologous genes. Therefore, the fast evolving genes are not hyper-hubs.
 
 ```{r}
@@ -6324,7 +6332,7 @@ rbind(
        y="Connectivity")+
   theme_bw()+
   theme(strip.background = element_rect(fill="grey96"),
-        axis.text.x = element_text(angle = 90))
+        axis.text.x = element_text(angle = 90))->cafe_conn_dist
 
 
 wil_test_boot<-function(dat,species){
@@ -6383,7 +6391,7 @@ cafe_model_outs %>% filter(mod_type=="Homologous")->cafe_homo_plot_dat
   facet_wrap(~mod, scales="free_y")+
   geom_point(shape=21, color="grey20", size=3)+
   ggsci::scale_fill_aaas()+
-  labs(subtitle = "Homologous network")+
+  labs(subtitle = "Conserved network")+
   theme_linedraw()+
   theme(axis.text.x = element_blank(),
          strip.background = element_rect(fill = "#67980C"))->cafe_homo_model_plots
@@ -6408,8 +6416,10 @@ Doing the test without the re-sampling gives a significant difference in proport
 
 fisher_boot_test<-function(){
   rbind(
-    cafe_genefamily_outs %>% filter(mod_type=="Homologous") %>% slice_sample(n=500,replace = TRUE),
-    cafe_genefamily_outs %>% filter(mod_type=="Non homologous") %>% slice_sample(n=500,replace = TRUE)) %>% 
+    cafe_genefamily_outs %>% filter(mod_type=="Homologous") %>% 
+      slice_sample(n=500,replace = TRUE),
+    cafe_genefamily_outs %>% filter(mod_type=="Non homologous") %>% 
+      slice_sample(n=500,replace = TRUE)) %>% 
     dplyr::count(is_sig, mod_type) %>% 
     pivot_wider(names_from = is_sig, 
                 values_from = n, 
@@ -7092,10 +7102,12 @@ test_wil<-function(){
 
 purrr::map(1:100, ~test_wil()) %>% list_rbind() %>% mutate(padj=p.adjust(pval,"BH"))->global_sel_diff
 
+global_sel_diff %>% summarise(mean_padj=mean(padj))
+
 ```
 
 ##### FUBAR
-```{r}
+```{r,eval=FALSE}
 #Parse HyPhy output
 list.files("./10.HyPhy/FUBAR/") %>% 
   str_remove_all("_cds_treeinput.fa.FUBAR.json")->og
@@ -7131,18 +7143,24 @@ rbind(
     list_rbind() %>% mutate(type="Non homologous")
 )->fubar_res
 
-
 fubar_res %>% saveRDS("./RDS/FUBAR_res.rds")
+
+```
+
+```{r}
+fubar_res<-readRDS("./RDS/FUBAR_res.rds")
 
 fubar_res %>% mutate(selection=case_when(`Prob[alpha>beta]` > 0.9 ~ "purifying", 
                                             `Prob[alpha<beta]` > 0.9 ~"diversifying",
                                             .default = "low evidence")) %>% 
-  dplyr::count(selection,type) %>% mutate(n.per=((n/sum(n))*100) %>% round(2)) %>% 
+  dplyr::count(selection,type) %>% mutate(n.per=(n/sum(n))) %>% 
   mutate(selection=reorder(selection,-n.per)) %>% 
   ggplot(aes(x=selection, y=n.per))+
+    facet_wrap(~type)+
   geom_col(aes(fill=selection))+
-  geom_text(aes(label = n.per, y=n.per+1))+
+  geom_text(aes(label = round(n.per*100,1)),position = position_stack(vjust = 0.5))+
   scale_fill_manual(values=c("#4F868C","grey80","#D92B04"))+
+  scale_y_continuous(labels = scales::percent)+
   labs(y="Percentage of sites", x="Selection")+
   theme_bw()->site_freq_non_homol
 ```
@@ -7164,13 +7182,16 @@ fubar_res %>%
                                `Prob[alpha<beta]` > 0.9 ~"Diversifying",
                                .default = "Low evidence")) %>% 
     dplyr::count(type,selection) %>% 
-    mutate(n.per=((n/sum(n))*100) %>% round(2)) %>% 
+    mutate(n.per=((n/sum(n)))) %>% 
     ggplot(aes(x=type,y=n.per, fill=selection))+
-    geom_col(width = 0.65,position = "dodge",alpha=0.8)+
+    geom_col(width = 0.65,position = position_dodge(width = 0.7),alpha=0.8)+
+    geom_text(aes(label = round(n.per*100,1), x=type, y=n.per+0.01),
+              position = position_dodge(width = 0.7))+
+    scale_y_continuous(labels = scales::percent)+
     ggsci::scale_fill_aaas()+
     labs(title = "FUBAR analysis",
          x = "Gene class", 
-         y = "Proportion of genes (%)",
+         y = "Proportion of genes",
          fill = "Selection type")+
     theme_bw(),
   
@@ -7237,12 +7258,58 @@ busted_res %>% mutate(is_sig=case_when(p_adj<0.05 ~ "yes",.default = "no")) %>%
   mutate(prop=(n/sum(n))) %>% ungroup() %>% 
   ggplot(aes(x=type, y=prop, fill=is_sig)) +
   geom_col(width = 0.6, position = "dodge") +
+geom_text(aes(label = round(n.per*100,1), 
+              x=type, 
+              y=n.per+0.01),
+position = position_dodge(width = 0.7))+
   scale_y_continuous(labels = scales::percent) +
   labs(y = "Proportion", x = NULL) +
   scale_fill_manual(values = c("#B39E88","#4EB5AA"))+
   labs(subtitle = "BUSTED analysis",x="Gene class", fill="Is significant") +
   theme_bw()
   
+```
+
+
+```{r}
+ggarrange(
+  fubar_res %>% 
+    mutate(selection=case_when(`Prob[alpha>beta]` > 0.9 ~ "Purifying", 
+                               `Prob[alpha<beta]` > 0.9 ~"Diversifying",
+                               .default = "Low evidence")) %>% 
+    dplyr::count(type,selection) %>% 
+    mutate(n.per=((n/sum(n)))) %>% 
+    ggplot(aes(x=type,y=n.per, fill=selection))+
+    geom_col(width = 0.65,position = position_dodge(width = 0.7),alpha=0.9)+
+    geom_text(aes(label = paste0(round(n.per*100,1),"%"), 
+                  x=type, 
+                  y=n.per+0.02),
+              size=3,
+              position = position_dodge(width = 0.7))+
+    scale_y_continuous(labels = scales::percent)+
+    scale_fill_manual(values = c("#355C7D","#E07A5F","#D9A441"))+
+    labs(title = "FUBAR analysis",
+         x = "Gene class", 
+         y = "Proportion of genes",
+         fill = "Selection type")+
+    theme_bw(),
+  
+  busted_res %>% mutate(is_sig=case_when(p_adj<0.05 ~ "yes",.default = "no")) %>%
+    dplyr::count(type, is_sig)  %>%
+    mutate(prop=(n/sum(n))) %>% ungroup() %>% 
+    ggplot(aes(x=type, y=prop, fill=is_sig)) +
+    geom_col(width = 0.65,position = position_dodge(width = 0.7),alpha=0.9)+
+    geom_text(aes(label = paste0(round(prop*100,1),"%"), 
+                  x=type, 
+                  y=prop+0.02),
+              size=3,
+              position = position_dodge(width = 0.7))+
+    scale_y_continuous(labels = scales::percent) +
+    labs(y = "Proportion of genes", x = NULL) +
+    scale_fill_manual(values = c("#B39E88","#4EB5AA"))+
+    labs(subtitle = "BUSTED analysis",x="Gene class", fill="Is significant") +
+    theme_bw()
+)
 ```
 
 ## PGLMM
