@@ -1487,6 +1487,7 @@ cafe_get_age_of_change<-function(tree, change_dat, cafe_genefamily_res){
   library(ggtree)
   library(ggnewscale)
   
+  
    trees <- if (inherits(tree, "phylo")) list(tree) else tree
   if (is.null(names(trees))) names(trees) <- paste0("OG", seq_along(trees))
   
@@ -1550,15 +1551,16 @@ cafe_get_age_of_change<-function(tree, change_dat, cafe_genefamily_res){
       contraction > 0 ~ "contraction", 
       .default = "remains"))->exp_cont_dat
   
-  ggtree::ggtree(tree_data_list,layout="rectangular")->g
-  
-  left_join(tree_data_list,exp_cont_dat %>%
-              dplyr::select(node, genes, type_of_change) %>% 
-              mutate(genes=paste0("OG",exp_cont_dat$genes)) %>% 
-              dplyr::rename("join_col"="node"),
-            by=c("genes","join_col"), relationship = "many-to-many")->g$data
-  
-  g$data %>% return()
+  tree_data_list %>%
+  left_join(
+    exp_cont_dat %>%
+      dplyr::select(node, genes, type_of_change) %>%
+      mutate(genes = paste0("OG", genes)) %>%
+      dplyr::rename(join_col = node),
+    by = c("genes", "join_col"),
+    relationship = "many-to-many"
+  ) %>%
+  return()
   
  
 }
@@ -6454,7 +6456,7 @@ cafe_genefamily_outs %>% dplyr::count(mod_type, is_sig)  %>%
 
 ##### Processes with significant expansion and contractions
 ```{r}
-cafe_genefamily_outs %>% drop_na() %>% filter(is_sig=="y") %>% dplyr::count(annot) %>% 
+cafe_genefamily_outs %>% drop_na() %>% filter(is_sig=="y" & mod_type=="Homologous") %>% dplyr::count(annot) %>% 
   mutate(annot=reorder(annot,n)) %>% 
   ggplot(aes(y=annot, x=n))+
   geom_col()+
@@ -6471,9 +6473,9 @@ The expansions and contractions are all significant.
 
 ###### Along the tree
 
-```{r}
+```{r, warning=FALSE}
 #CAFE colors
-cafe_genefamily_outs %>% filter(is_sig=="y") %>% janitor::get_dupes(mod) %>% distinct(mod) %>% pull(mod)->cafe_cols
+cafe_genefamily_outs %>% filter(is_sig=="y" & mod_type=="Homologous") %>% janitor::get_dupes(mod) %>% distinct(mod) %>% pull(mod)->cafe_cols
 
 #cafe_genefamily_outs %>% filter(is_sig=="n") %>% slice_sample(n=167) %>% janitor::get_dupes(mod) %>% drop_na() %>% distinct(mod) %>% pull(mod)->cafe_cols 
 
@@ -6491,7 +6493,7 @@ purrr::map2(.x=tree_list, .y=change_dat_list,
 Save the random gene sets
 
 ```{r}
-list(cafe_model_outs_random3,cafe_genefamily_outs_random3,all_tree_dat_random3,node_sum_random3)->randam_dat3_cafe
+#list(cafe_model_outs_random3,cafe_genefamily_outs_random3,all_tree_dat_random3,node_sum_random3)->randam_dat3_cafe
 #randam_dat3_cafe %>% saveRDS("./RDS/random_dat5_cafe.rds")
 #randam_dat1_cafe<-RDS("./RDS/random_dat1_cafe.rds")
 ```
@@ -6506,7 +6508,7 @@ all_tree_dat %>% filter(isSig=="yes") %>% dplyr::select(node, type_of_change) %>
     total = expansion + contraction,
     net   = expansion - contraction)->node_sum
 
-g <- ggtree(all_tree_dat, layout = "rectangular") + geom_tree() +
+g <- ggtree::ggtree(all_tree_dat, layout = "rectangular") + geom_tree() +
   geom_tiplab(aes(label=str_replace_all(species,pattern = "_",replacement = " ")),
               as_ylab = FALSE,offset = 5, size=3, align = TRUE, fontface="italic")+ hexpand(.7)
   
