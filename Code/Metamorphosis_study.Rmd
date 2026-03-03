@@ -1760,57 +1760,73 @@ model_plot_dat %>%
   return()
 }
 
-brms_significance_plot<-function(model_list, submodel, trait){
-  
-##Use to test:
-    model_list<- model_bodyshape
-    submodel<-"model_brms_bodyshape"
-  trait<-"bodyshape"
+brms_significance_plot<-function(model_list, submodel, trait, var_type) {
     
-  map_dfr(
-    model_list,
-    ~{fit <- purrr::pluck(.x, submodel, "fit", .default = NULL)
-    summary(fit, probs = c(0.025, 0.975))$summary %>%
-      as.data.frame() %>%
-      rownames_to_column("model_vars")
-    },
-    .id = "model_id"
-  ) %>%
-    filter(str_detect(model_vars, paste0(trait))) %>% 
-    mutate(eigengene=str_split(model_vars, pattern = "_",simplify = T)[,2],
-           feature=str_split(model_vars, pattern = "_",simplify = T)[,3]) %>%
-    mutate(feature=reorder(feature,`97.5%`))->model_plot_dat
-  
-  model_plot_dat %>%
-    mutate(
-      eigengene  = factor(eigengene),
-      model_id   = factor(model_id),
-    sig95      = (`2.5%` > 0 & `97.5%` > 0 | `2.5%` < 0 & `97.5%` < 0)# CI excludes 0
-    ) %>% mutate(feature=reorder(feature, sig95))->plot_dat
-  
- left_join(plot_dat,module_annot,by = c("model_id"="mod"))->plot_dat
-  ggplot(plot_dat, aes(y = mean, x = feature, group = eigengene, fill = sig95)) +
-    facet_grid(rows = vars(annot), cols = vars(eigengene), scales = "free_x", space = "free_x") +
-    geom_hline(yintercept = 0, linetype = 2, color="red") +
-    geom_errorbar(aes(ymin = `2.5%`, ymax = `97.5%`),
-                  width = 0.15, 
-                  alpha = 0.9) +
-    geom_point(aes(shape = sig95, color=sig95), size = 2) +
-    scale_color_manual(values = c("#6B9650","#E674EA"))+
-    labs(x = "Model estimate",
-         y = NULL) +
-    theme_classic() +
-    theme(panel.spacing = unit(5, "pt"),
-          strip.background = element_rect(fill = "grey95"),
-          strip.text.x.top =  element_text(angle = 0, size = 8),
-          strip.text.y.right =  element_text(angle = 360, size = 6,hjust = -0.01),
-          legend.position = "bottom",
-          axis.text.x = element_text(angle = 90,
-                                     hjust = 1, 
-                                     vjust = 0.3,
-                                     size = 8)) %>% 
-    return()
-}
+    
+    ##Use to test:
+    #model_list<- model_aspect_ratio
+    #submodel<-"model_brms_aspect_ratio"
+    #trait<-"aspect_ratio"
+    #var_type<-"categorical"
+    
+   model_plot_dat <- if (var_type=="categorical") {
+     map_dfr(
+       model_list,
+       ~{fit <- purrr::pluck(.x, submodel, "fit", .default = NULL)
+       summary(fit, probs = c(0.025, 0.975))$summary %>%
+         as.data.frame() %>%
+         rownames_to_column("model_vars")},
+       .id = "model_id") %>%
+       filter(str_detect(model_vars, "\\.cpy")) %>% 
+       mutate(feature=str_split(model_vars, pattern = "_",simplify = T)[,2],
+              eigengene=str_split(model_vars, pattern = "_",simplify = T)[,3]) %>%
+       mutate(feature=reorder(feature,`97.5%`)) 
+     } else if (var_type=="continuous") {
+       map_dfr(
+         model_list,
+         ~{fit <- purrr::pluck(.x, submodel, "fit", .default = NULL)
+         summary(fit, probs = c(0.025, 0.975))$summary %>%as.data.frame() %>%
+           rownames_to_column("model_vars")},
+         .id = "model_id") %>%
+        filter(str_detect(model_vars, "\\.cpy")) %>% 
+        mutate(feature=trait,
+               eigengene=str_split(model_vars, pattern = "_",simplify = T)[,2]) %>%
+        mutate(feature=reorder(feature,`97.5%`))
+     } else {
+       stop("var_type must be 'categorical' or 'continuous'")
+       }
+    
+   model_plot_dat %>%
+      mutate(eigengene  = factor(eigengene),
+             model_id   = factor(model_id),
+             sig95      = (`2.5%` >= 0 & `97.5%` >= 0 | `2.5%` <= 0 & `97.5%` <= 0)# CI doe not overlap 0
+             ) %>% mutate(feature=reorder(feature, sig95)) %>% 
+     filter(feature != "Intercept")->plot_dat
+    
+    left_join(plot_dat,module_annot,by = c("model_id"="mod"))->plot_dat
+    ggplot(plot_dat, aes(y = mean, x = feature, group = eigengene, fill = sig95)) +
+      facet_grid(rows = vars(annot), cols = vars(eigengene), scales = "free_x", space = "free_x") +
+      geom_hline(yintercept = 0, linetype = 2, color="red") +
+      geom_errorbar(aes(ymin = `2.5%`, ymax = `97.5%`),
+                    width = 0.15, 
+                    alpha = 0.9) +
+      geom_point(aes(shape = sig95, color=sig95), size = 2) +
+      scale_color_manual(values = c("#6B9650","#E674EA"))+
+      labs(x = "Model estimate",
+           y = NULL) +
+      theme_classic() +
+      theme(panel.spacing = unit(5, "pt"),
+            strip.background = element_rect(fill = "grey95"),
+            strip.text.x.top =  element_text(angle = 0, size = 8),
+            strip.text.y.right =  element_text(angle = 360, size = 6,hjust = -0.01),
+            legend.position = "bottom",
+            axis.text.x = element_text(angle = 90,
+                                       hjust = 1, 
+                                       vjust = 0.3,
+                                       size = 8)) %>% 
+      return()
+  }
+
 
 brms_plot_random<-function(model_list, submodel, trait){
   
@@ -2265,22 +2281,23 @@ build_data_frame_from_bgee<-function(dat, species){
    # Reorder tissues within each species facet, keeing original tissue names for fill
    plot_dat <- plot_dat %>%
      mutate(tissue_ord = tidytext::reorder_within(
-       Anatomical.entity.name,-m_log10_cpm,sp),
+       Anatomical.entity.name,m_log10_cpm,sp),
        Anatomical.entity.name = factor(Anatomical.entity.name, levels = tissue_levels))
    
    plot_dat %>% 
-   ggplot(aes(x = tissue_ord, y = m_log10_cpm, fill = Anatomical.entity.name)) +
-     ggh4x::facet_wrap2(~ sp, scales = "free_x", strip.position = "top") +
+   ggplot(aes(y = tissue_ord, x = m_log10_cpm, fill = Anatomical.entity.name)) +
+     ggh4x::facet_wrap2(~ sp, scales = "free", strip.position = "right", ncol = 3,nrow = 4) +
      geom_col(color = "black", linewidth = 0.2, alpha = 0.7) +
-     tidytext::scale_x_reordered() +
+     tidytext::scale_y_reordered() +
      scale_fill_manual(values = my_colors, drop = FALSE) +
      labs(subtitle = system,
-          x = NULL,
-          y = "Mean expression (log10cpm)") +
+          y = NULL,
+          x = "Mean expression (log10cpm)") +
      theme_bw() +
      theme(
-       axis.text.x = element_text(angle = 90, size = 8, hjust = 1, vjust = 0.5),
+       #axis.text.x = element_text(angle = 90, size = 8, hjust = 1, vjust = 0.5),
        legend.position = "none",
+       strip.background = element_rect(fill="grey96"),
        strip.text = element_text(size = 7))
  }
  
@@ -6018,10 +6035,6 @@ species_avg_size <- orth %>%  distinct(sp, Orthogroup) %>%
 orth %>% group_by(Orthogroup) %>% dplyr::count(sp,name = "no_of_gene_copies") %>% ungroup()->orth_gene_copy
 orth_gene_copy<-orth_gene_copy %>% left_join(taxa, by="sp")
 
-orth_gene_copy  %>%
-    dplyr::select(-c(Family, Order, SpecCode)) %>% pivot_wider(names_from = Orthogroup, values_from = no_of_gene_copies) %>% 
-    replace(is.na(.), 0) %>% pivot_longer(-sp)-> orth_gene_copy_long
-
 ```
 
 ### Find orthogroups
@@ -6412,56 +6425,16 @@ cafe_model_outs %>% filter(mod_type=="Homologous")->cafe_homo_plot_dat
          strip.background = element_rect(fill = "#67980C"))->cafe_nonhomo_model_plots
 ```
 
-##### Proportion of turnover between homologous and random genes
-Doing the test without the re-sampling gives a significant difference in proportions between homologous and non-homologous networks. I perform the re-sampling to ensure there is consistency in the data sampling and results.
-```{r}
-
-fisher_boot_test<-function(){
-  rbind(
-    cafe_genefamily_outs %>% filter(mod_type=="Homologous") %>% 
-      slice_sample(n=500,replace = TRUE),
-    cafe_genefamily_outs %>% filter(mod_type=="Non homologous") %>% 
-      slice_sample(n=500,replace = TRUE)) %>% 
-    dplyr::count(is_sig, mod_type) %>% 
-    pivot_wider(names_from = is_sig, 
-                values_from = n, 
-                values_fill = 0) %>% dplyr::select(y,n) %>%
-    as.matrix() %>% fisher.test()->test_res
-  
-  tibble(pval=test_res$p.value) %>% return()
-}
-
-purrr::map(1:1000, ~fisher_boot_test()) %>% 
-  list_rbind() %>% mutate(padj=p.adjust(pval,"BH"))->fisher_boot_test_res
-
-fisher_boot_test_res %>% 
-  ggplot(aes(x=padj))+
-  geom_histogram(bins=100, fill="grey70", color="black", linewidth = 0.2)+
-  geom_vline(xintercept = 0.1, color="red", linetype="dashed")+
-  geom_vline(xintercept = mean(fisher_boot_test_res$padj), color="blue", linetype="dashed")+
-  theme_bw()
-
-
-
-cafe_genefamily_outs %>% dplyr::count(mod_type, is_sig)  %>%
-  mutate(prop=(n/sum(n))) %>% 
-  ggplot(aes(x=mod_type, y=prop, fill=is_sig)) +
-  geom_col(width = 0.6, position = "stack") +
-  scale_y_continuous(labels = scales::percent) +
-  labs(y = "Proportion", x = NULL) +
-  scale_fill_manual(values = c("#B39E88","#4EB5AA"))+
-  labs(subtitle = "CAFE5 analysis",x="Gene class", fill="Is significant") +
-  theme_bw()
-```
 
 ##### Processes with significant expansion and contractions
 ```{r}
-cafe_genefamily_outs %>% drop_na() %>% filter(is_sig=="y" & mod_type=="Homologous") %>% dplyr::count(annot) %>% 
-  mutate(annot=reorder(annot,n)) %>% 
-  ggplot(aes(y=annot, x=n))+
-  geom_col()+
-  geom_text(aes(x=n+1.3, label = n), size=3)+
-  labs(x="Number of genes",
+cafe_genefamily_outs %>% drop_na() %>% filter(is_sig=="y" & mod_type=="Homologous") %>% dplyr::count(annot) %>% mutate(prop=(n/sum(n))) %>%  
+  mutate(annot=reorder(annot,prop)) %>% 
+  ggplot(aes(y=annot, x=prop))+
+  geom_col(fill="#5C6B8A", color="black", linewidth=0.2)+
+  geom_text(aes(x=prop+0.009, label = paste0(round(prop*100,1),"%")), size=3)+
+  scale_x_continuous(labels = scales::percent)+
+  labs(x="Proportion of high turnover genes",
        y="Module annotation")+
   theme_bw()
 ```
@@ -6509,8 +6482,7 @@ all_tree_dat %>% filter(isSig=="yes") %>% dplyr::select(node, type_of_change) %>
     net   = expansion - contraction)->node_sum
 
 g <- ggtree::ggtree(all_tree_dat, layout = "rectangular") + geom_tree() +
-  geom_tiplab(aes(label=str_replace_all(species,pattern = "_",replacement = " ")),
-              as_ylab = FALSE,offset = 5, size=3, align = TRUE, fontface="italic")+ hexpand(.7)
+    geom_tiplab(aes(label=str_replace_all(species,pattern = "_",replacement = " ")),as_ylab = FALSE,offset = 5, size=3,geom = "text", fontface="italic")+ hexpand(.7)
   
 gdat <- g$data %>% left_join(node_sum, by = "node")
 
@@ -6538,333 +6510,77 @@ g+
 
 ```
 
-###### Proportion of Ohnologs
-
-Here I look for the proportion of ohnologs in the fast evolving genes estimated from cafe. I use the ohnolog list form zebrafish (<http://ohnologs.curie.fr/>) to cross-reference the zebrafish orthologs in my data and estimate the proportions. I see that a majority (74%) of the genes are not classified as ohnologs. When looking at each module, we see some are comprised of a mix of ohnologs and non-ohnologs, while many contain only non-ohnologs. The cyan module comprises entirely of ohnologs. When looking at the time of duplication I see that a majority of the ohnologs were duplicated during the teleost whole genome duplication.
-
-###### Third round of whole genome duplication
-
-```{r}
-#Search for the clownfish and the danio orthologs in the orthgroups. 
-#orth<-readRDS("./04.Orthogroups/Orthologer_latest.rds")
-left_join(danio_orth_net$connectivity,orth %>% filter(sp=="Danio_rerio") %>% filter(Orthogroup %in% danio_all_orth_exp_mat$Orthogroup),by=c("gene"="Orthogroup")) %>% dplyr::select(module,gene,orths)->danio_orth_genes_modules
-
-left_join(clown_orth_net$connectivity,orth %>% filter(sp=="Amphiprion_ocellaris") %>% filter(Orthogroup %in% clown_all_orth_exp_mat$Orthogroup),by=c("gene"="Orthogroup")) %>% dplyr::select(module,gene,orths)->clown_orth_genes_modules
-
-left_join(clown_orth_net$connectivity,orth %>% filter(sp=="Grouper") %>% filter(Orthogroup %in% grouper_all_orth_exp_mat$Orthogroup),by=c("gene"="Orthogroup")) %>% dplyr::select(module,gene,orths)->grouper_orth_genes_modules
-
-left_join(manini_orth_net$connectivity,orth %>% filter(sp=="Manini") %>% filter(Orthogroup %in% manini_all_orth_exp_mat$Orthogroup),by=c("gene"="Orthogroup")) %>% dplyr::select(module,gene,orths)->manini_orth_genes_modules
-
-left_join(goby_orth_net$connectivity,orth %>% filter(sp=="Goby") %>% filter(Orthogroup %in% goby_all_orth_exp_mat$Orthogroup),by=c("gene"="Orthogroup")) %>% dplyr::select(module,gene,orths)->goby_orth_genes_modules
-
-
-```
-
-```{r}
-#GO annotations of danio modules
-danio_homo_mods_proc<-readRDS("./03.Annotations/danio_orth_net_GO_orth_univ.rds")
-#Ohnolog data for danio 
-danio_ohno_3R<-read_tsv("./04.Orthogroups/drerio.Pairs.Strict.3R.txt")
-danio_ohno_3R %>% 
-  pivot_longer(c("Ohno1", "Ohno2"))->danio_ohno_3R_long
-
-
-#Number of rapid cafe genes that are ohnologs
-danio_orth_genes_modules  %>% 
-  filter(gene %in% cafe_genefamily_outs$genes) %>% 
-  mutate(orths=str_remove(orths,"\\.[0-9]*")) %>%
-  mutate(is.ohno=case_when(orths %in% danio_ohno_3R_long$value ~ "yes", .default = "no"))->danio_cafe_ohno_3R
-
-danio_cafe_ohno_3R %>% dplyr::count(is.ohno) %>% 
-  mutate(n.per=((n/sum(n))*100) %>% round()) %>% 
-  ggplot(aes(x=is.ohno, y=n.per))+
-  geom_col(fill="grey",color="black",linewidth=0.2)+
-  scale_y_continuous(labels = function(x) paste0(x, "%"))+
-  geom_text(aes(y=n.per+2, label = paste0(n.per,"%")))+
-  labs(y ="Percentage of zebrafish ohnologs",
-       x = "Is ohnolog")+
-  theme_minimal()->perc_is.ohno
-
-danio_cafe_ohno_3R %>% group_by(module) %>% dplyr::count(is.ohno) %>%
-  mutate(yes_count = sum(n[is.ohno == "yes"])) %>% 
-  ungroup() %>% 
-  mutate(module=reorder(module,-yes_count)) %>% 
-  ggplot(aes(x=module, y=n, fill = is.ohno))+
-  geom_col(position = "fill", color="black",linewidth=0.2)+
-  geom_text(aes(label=n))+
-  scale_y_continuous(labels = scales::percent)+
-  ggsci::scale_fill_aaas()+
-  labs(y =NULL,
-       x = "Module")+
-  theme_minimal()+
-  theme(axis.text.x = element_text(angle=90, hjust = 1, vjust = 0.3))->perc_is.ohno_per_module
-
-left_join(danio_cafe_ohno_3R %>% filter(is.ohno=="yes"),
-          danio_ohno_3R_long %>% 
-            dplyr::select(value,`Duplication time`,`Gene type`), by=c("orths"="value")) %>% 
-  group_by(module,`Duplication time`) %>% dplyr::count() %>% ungroup() %>% group_by(module) %>% 
-  mutate(young_count = sum(n[`Duplication time` == "Younger"])) %>% ungroup() %>% 
-  mutate(module=reorder(module,-young_count)) %>% 
-  ggplot(aes(x=module, y=n, fill =  `Duplication time` ))+
-  geom_col(position = "fill", color="black",linewidth=0.2)+
-  scale_y_continuous(labels = scales::percent)+
-  ggsci::scale_fill_jco()+
-  labs(y =NULL,
-       x = "Module")+
-  theme_minimal()+
-  theme(axis.text.x = element_text(angle=90, hjust = 1, vjust = 0.3))->duplication_time_ohno
-
-
-
-ggpubr::ggarrange(perc_is.ohno | perc_is.ohno_per_module/duplication_time_ohno)->threeR_plots
- 
-```
-
-###### Vertebrate whole genome duplication
-
-```{r}
-danio_ohno_2R<-read_tsv("./04.Orthogroups/drerio.Pairs.Strict.2R.txt")
-
-danio_ohno_2R %>% 
-  pivot_longer(c("Ohno1", "Ohno2"))->danio_ohno_2R_long
-
-danio_ohno_2R %>% 
-  pivot_longer(c("Ohno1", "Ohno2")) %>% 
-  filter(value %in%
-           (danio_orth_genes_modules %>% filter(gene %in% cafe_genefamily_outs$genes) %>% 
-              mutate(orths=str_remove(orths,"\\.[0-9]*")) %>%
-              pull(orths)))->danio_cafe_ohno_2R
-
-#Number of rapid cafe genes that are ohnologs
-danio_orth_genes_modules  %>% 
-  filter(gene %in% cafe_genefamily_outs$genes) %>% 
-  mutate(orths=str_remove(orths,"\\.[0-9]*")) %>%
-  mutate(is.ohno=case_when(orths %in% danio_ohno_2R_long$value ~ "yes", .default = "no"))->danio_cafe_ohno_2R
-
-danio_cafe_ohno_2R %>% dplyr::count(is.ohno) %>% 
-  mutate(n.per=((n/sum(n))*100) %>% round()) %>% 
-  ggplot(aes(x=is.ohno, y=n.per))+
-  geom_col(fill="grey",color="black",linewidth=0.2)+
-  scale_y_continuous(labels = function(x) paste0(x, "%"))+
-  geom_text(aes(y=n.per+2, label = paste0(n.per,"%")))+
-  labs(y ="Percentage of zebrafish ohnologs",
-       x = "Is ohnolog")+
-  theme_minimal()->perc_is.ohno
-
-danio_cafe_ohno_2R %>% group_by(module) %>% dplyr::count(is.ohno) %>%
-  mutate(yes_count = sum(n[is.ohno == "yes"])) %>% 
-  ungroup() %>% 
-  mutate(module=reorder(module,-yes_count)) %>% 
-  ggplot(aes(x=module, y=n, fill = is.ohno))+
-  geom_col(position = "fill", color="black",linewidth=0.2)+
-  scale_y_continuous(labels = scales::percent)+
-  ggsci::scale_fill_aaas()+
-  labs(y =NULL,
-       x = "Module")+
-  theme_minimal()+
-  theme(axis.text.x = element_text(angle=90, hjust = 1, vjust = 0.3))->perc_is.ohno_per_module
-
-left_join(danio_cafe_ohno_2R %>% filter(is.ohno=="yes"),
-          danio_ohno_2R_long %>% 
-            dplyr::select(value,`Duplication time`,`Gene type`), by=c("orths"="value")) %>% 
-  group_by(module,`Duplication time`) %>% dplyr::count() %>% ungroup() %>% group_by(module) %>% 
-  mutate(young_count = sum(n[`Duplication time` == "Younger"])) %>% ungroup() %>% 
-  mutate(module=reorder(module,-young_count)) %>% 
-  ggplot(aes(x=module, y=n, fill =  `Duplication time` ))+
-  geom_col(position = "fill", color="black",linewidth=0.2)+
-  scale_y_continuous(labels = scales::percent)+
-  ggsci::scale_fill_jco()+
-  labs(y =NULL,
-       x = "Module")+
-  theme_minimal()+
-  theme(axis.text.x = element_text(angle=90, hjust = 1, vjust = 0.3))->duplication_time_ohno
-
-
-
-ggpubr::ggarrange(perc_is.ohno | perc_is.ohno_per_module/duplication_time_ohno)->twoR_plots
- 
-```
-
-```{r}
-left_join(danio_cafe_ohno_3R %>% filter(is.ohno=="yes"),
-          danio_ohno_3R_long %>% 
-            dplyr::select(value,`Duplication time`,`Gene type`), by=c("orths"="value")) %>% arrange(orths)->info_3R
-
-left_join(danio_cafe_ohno_2R %>% filter(is.ohno=="yes"),
-          danio_ohno_2R_long %>% 
-            dplyr::select(value,`Duplication time`,`Gene type`), by=c("orths"="value"))->info_2R
-
-
-rbind(info_2R %>% filter(!orths %in% info_3R),info_3R) %>% 
-    group_by(module,`Duplication time`) %>% dplyr::count() %>% ungroup() %>% group_by(module) %>% 
-    mutate(young_count = sum(n[`Duplication time` == "Vertebrata"])) %>% ungroup() %>% 
-    mutate(module=reorder(module,young_count)) %>% 
-    ggplot(aes(x=module, y=n, fill =  `Duplication time` ))+
-    geom_col(position = "fill", color="black",linewidth=0.2)+
-    scale_y_continuous(labels = scales::percent)+
-    ggsci::scale_fill_jco()+
-    labs(y =NULL,
-         x = "Module")+
-    theme_minimal()+
-    theme(axis.text.x = element_text(angle=90, hjust = 1, vjust = 0.3))
-```
-
-###### At the tips
-
-Focusing on the changes taking place in the branches leading up to the tips, we observed different degrees of expansion and contraction. At the species level, *Danio rerio* displayed the highest degree of expansion likely due to the high retention of 3R ohnologs. There were species that had only expansion and contractions.\
-At the Order level, Perciformes and Syngnathiformes had the highest degrees of expansion/contraction.
-
-```{r}
-
-#Expansion/Contraction per species
-  all_tree_dat %>% filter(isSig=="yes" & isTip==TRUE) %>% left_join(taxa, by=c("species"="sp")) %>% 
-    mutate(species=str_replace_all(species,pattern = "_",replacement = " ")) %>% 
-    dplyr::count(type_of_change, species) %>% 
-    mutate(species=reorder(species, -n)) %>% 
-  ggplot(aes(x=species, y=n, fill = type_of_change))+ 
-geom_col(alpha=0.8, position = "stack", linewidth=0.05, color="black")+  scale_fill_manual(values = c("#5430D9","#D90467"))+
-  labs(y="Number of expansion/contraction")+
-  theme_minimal()+
-  theme(axis.text.x = element_text(angle = 90,hjust = 1, vjust = 0.3, 
-                                   size = 9, face = "italic"))
-```
-
-###### Per Order
-
-```{r}
-#Expansion/Contraction per Order
-  all_tree_dat %>% filter(isSig=="yes" & isTip==TRUE) %>% left_join(taxa, by=c("species"="sp")) %>% 
-    mutate(species=str_replace_all(species,pattern = "_",replacement = " ")) %>% 
-    dplyr::count(type_of_change, Order) %>% 
-    mutate(Order=reorder(Order, -n)) %>% 
-  ggplot(aes(x=Order, y=n, fill = type_of_change))+ 
-geom_col(alpha=0.8, position = "stack", linewidth=0.05, color="black")+  scale_fill_manual(values = c("#5430D9","#D90467"))+
-  labs(y="Number of expansion/contraction")+
-  theme_minimal()+
-  theme(axis.text.x = element_text(angle = 90,hjust = 1, vjust = 0.3, 
-                                   size = 9, face = "italic"))->per_order
-```
-
-###### Per Family
-
-```{r}
-  #Expansion/Contraction per Family
-all_tree_dat %>% filter(isSig=="yes" & isTip==TRUE) %>% left_join(taxa, by=c("species"="sp")) %>% 
-    mutate(species=str_replace_all(species,pattern = "_",replacement = " ")) %>% 
-    dplyr::count(type_of_change, Family) %>% 
-    mutate(Family=reorder(Family, -n)) %>% 
-    ggplot(aes(x=Family, y=n, fill = type_of_change))+ 
-geom_col(alpha=0.8, position = "stack", linewidth=0.05, color="black")+    scale_fill_manual(values = c("#5430D9","#D90467"))+
-    labs(y="Number of expansion/contraction")+
-    theme_minimal()+
-    theme(axis.text.x = element_text(angle = 90,hjust = 1, vjust = 0.3, 
-                                     size = 9, face = "italic"))->per_family
-```
 
 ###### Specific nodes
-
 ```{r}
-all_tree_dat %>% filter(isSig=="yes" & node %in% c("265","138","249","188","200","202","160")) %>% 
-  mutate(genes=str_remove_all(genes, "OG")) %>% 
-  left_join(cafe_genefamily_outs, by = "genes") %>% 
-  dplyr::count(type_of_change, annot, node) %>%
-  mutate(node=
-           case_when(
-             node=="265" ~ "Base of Anguiliformes",
-             node=="138" ~ "Base of Anguiliformes",
-             node=="249" ~ "Base of Siluriformes",
-             node=="188" ~ "Base of Syngnathiformes",
-             node=="200" ~ "Base of Scombriformes",
-             node=="202" ~ "Base of Thunnus",
-             node=="160" ~ "Base of Cichliformes"
-             )) %>% 
-  mutate(node=reorder(node, -n)) %>% 
-  ggplot(aes(y=annot, x=n, fill = type_of_change))+ 
-  facet_wrap(~node, scale="free")+
-  geom_col(alpha=0.8, position = "stack", linewidth=0.05, color="black")+
-  scale_fill_manual(values = c("#5430D9","#D90467"))+
-  labs(y="Number of expansion/contraction")+
-  theme_bw()+
-  theme(axis.text.x = element_text( size = 9),
-        strip.background = element_rect(fill = "grey95"))
+all_tree_dat %>% filter(isSig=="yes" & node %in% c("136","265","249","188","200","160")) %>% 
+    mutate(genes=str_remove_all(genes, "OG")) %>% 
+    left_join(cafe_genefamily_outs, by = "genes") %>% 
+    dplyr::count(type_of_change, annot, node) %>%
+    mutate(node=
+               case_when(
+                   node=="136" ~ "Base of Teleost WGD",
+                   node=="265" ~ "Base of Anguiliformes",
+                   node=="249" ~ "Base of Siluriformes",
+                   node=="188" ~ "Base of Syngnathiformes",
+                   node=="200" ~ "Base of Scombriformes",
+                   #node=="202" ~ "Base of Thunnus",
+                   node=="160" ~ "Base of Cichliformes"
+               ))  %>% mutate(annot=tidytext::reorder_within(annot,n,node)) %>% 
+    ggplot(aes(y=annot, x=n, fill = type_of_change))+ 
+    facet_wrap(~node, scale="free")+
+    geom_col(alpha=0.8, position = "stack", linewidth=0.05, color="black")+
+    scale_fill_manual(values = c("#5430D9","#D90467"))+
+    labs(x="Number of expansion/contraction")+
+    tidytext::scale_y_reordered() +
+    theme_bw()+
+    theme(axis.text.x = element_text( size = 9),
+          strip.background = element_rect(fill = "grey95"))
 ```
 
+##### Proportion of turnover between homologous and random genes
+Doing the test without the re-sampling gives a significant difference in proportions between homologous and non-homologous networks. I perform the re-sampling to ensure there is consistency in the data sampling and results.
 ```{r}
 
-all_tree_dat %>% filter(isSig=="yes" & isTip==TRUE) %>% left_join(taxa, by=c("species"="sp")) %>% 
-  filter(Family=="Syngnathidae") %>% mutate(genes=str_remove_all(genes, "OG")) %>% 
-  left_join(cafe_genefamily_outs, by = "genes") %>% 
-  mutate(species=str_replace_all(species,pattern = "_",replacement = " ")) %>% 
-  dplyr::count(type_of_change, species, annot) %>% 
-  mutate(annot=reorder(annot, -n)) %>% 
-  mutate(species=reorder(species, -n)) %>% 
-  ggplot(aes(y=annot, x=n, fill = type_of_change))+ 
-  facet_grid(~species)+
-  geom_col(alpha=0.8, position = "stack", linewidth=0.05, color="black")+    scale_fill_manual(values = c("#5430D9","#D90467"))+
-  labs(x="Number of expansion/contraction")+
-  theme_bw()+
-  theme(axis.text.y = element_text(angle = 0,hjust = 1, vjust = 0.3, 
-                                   size = 9, face="italic"),
-                axis.text.x = element_text(angle = 0,hjust = 1, vjust = 0.3, 
-                                   size = 7))->per_Syngnathidae
+fisher_boot_test<-function(){
+  rbind(
+    cafe_genefamily_outs %>% filter(mod_type=="Homologous") %>% 
+      slice_sample(n=500,replace = TRUE),
+    cafe_genefamily_outs %>% filter(mod_type=="Non homologous") %>% 
+      slice_sample(n=500,replace = TRUE)) %>% 
+    dplyr::count(is_sig, mod_type) %>% 
+    pivot_wider(names_from = is_sig, 
+                values_from = n, 
+                values_fill = 0) %>% dplyr::select(y,n) %>%
+    as.matrix() %>% fisher.test()->test_res
   
+  tibble(pval=test_res$p.value) %>% return()
+}
 
-all_tree_dat %>% filter(isSig=="yes" & isTip==TRUE) %>% left_join(taxa, by=c("species"="sp")) %>% 
-  filter(Family=="Cichlidae") %>% mutate(genes=str_remove_all(genes, "OG")) %>% 
-  left_join(cafe_genefamily_outs, by = "genes") %>% 
-  mutate(species=str_replace_all(species,pattern = "_",replacement = " ")) %>% 
-  dplyr::count(type_of_change, species, annot) %>% 
-  mutate(annot=reorder(annot, -n)) %>% 
-  mutate(species=reorder(species, -n)) %>% 
-  ggplot(aes(y=annot, x=n, fill = type_of_change))+ 
-  facet_grid(~species)+
-  geom_col(alpha=0.8, position = "stack", linewidth=0.05, color="black")+    scale_fill_manual(values = c("#5430D9","#D90467"))+
-  labs(x="Number of expansion/contraction")+
-  theme_bw()+
-  theme(axis.text.y = element_text(angle = 0,hjust = 1, vjust = 0.3, 
-                                   size = 9, face="italic"),
-        axis.text.x = element_text(angle = 0,hjust = 1, vjust = 0.3, 
-                                   size = 7))->per_Cichlidae
+purrr::map(1:1000, ~fisher_boot_test()) %>% 
+  list_rbind() %>% mutate(padj=p.adjust(pval,"BH"))->fisher_boot_test_res
+
+fisher_boot_test_res %>% 
+  ggplot(aes(x=padj))+
+  geom_histogram(bins=100, fill="grey70", color="black", linewidth = 0.2)+
+  geom_vline(xintercept = 0.1, color="red", linetype="dashed")+
+  geom_vline(xintercept = mean(fisher_boot_test_res$padj), color="blue", linetype="dashed")+
+  theme_bw()
 
 
-all_tree_dat %>% filter(isSig=="yes" & isTip==TRUE) %>% left_join(taxa, by=c("species"="sp")) %>% 
-  filter(Family=="Epinephelidae") %>% mutate(genes=str_remove_all(genes, "OG")) %>% 
-  left_join(cafe_genefamily_outs, by = "genes") %>% 
-  mutate(species=str_replace_all(species,pattern = "_",replacement = " ")) %>% 
-  dplyr::count(type_of_change, species, annot) %>% 
-  mutate(annot=reorder(annot, -n)) %>% 
-  mutate(species=reorder(species, -n)) %>% 
-  ggplot(aes(y=annot, x=n, fill = type_of_change))+ 
-  facet_grid(~species)+
-  geom_col(alpha=0.8, position = "stack", linewidth=0.05, color="black")+    scale_fill_manual(values = c("#5430D9","#D90467"))+
-  labs(x="Number of expansion/contraction")+
-  theme_bw()+
-  theme(axis.text.y = element_text(angle = 0,hjust = 1, vjust = 0.3, 
-                                   size = 9, face="italic"),
-        axis.text.x = element_text(angle = 0,hjust = 1, vjust = 0.3, 
-                                   size = 7))->per_Epinephelidae
 
-all_tree_dat %>% filter(isSig=="yes" & isTip==TRUE) %>% left_join(taxa, by=c("species"="sp")) %>% 
-  filter(Family=="Scombridae") %>% mutate(genes=str_remove_all(genes, "OG")) %>% 
-  left_join(cafe_genefamily_outs, by = "genes") %>% 
-  mutate(species=str_replace_all(species,pattern = "_",replacement = " ")) %>% 
-  dplyr::count(type_of_change, species, annot) %>% 
-  mutate(annot=reorder(annot, -n)) %>% 
-  mutate(species=reorder(species, -n)) %>% 
-  ggplot(aes(y=annot, x=n, fill = type_of_change))+ 
-  facet_grid(~species)+
-  geom_col(alpha=0.8, position = "stack", linewidth=0.05, color="black")+    scale_fill_manual(values = c("#5430D9","#D90467"))+
-  labs(x="Number of expansion/contraction")+
-  theme_bw()+
-  theme(axis.text.y = element_text(angle = 0,hjust = 1, vjust = 0.3, 
-                                   size = 9, face="italic"),
-        axis.text.x = element_text(angle = 0,hjust = 1, vjust = 0.3, 
-                                   size = 7))->per_Scombridae
-
+cafe_genefamily_outs %>% dplyr::count(mod_type, is_sig)  %>%
+  mutate(prop=(n/sum(n))) %>% 
+  ggplot(aes(x=mod_type, y=prop, fill=is_sig)) +
+  geom_col(width = 0.6, position = "stack") +
+  scale_y_continuous(labels = scales::percent) +
+  labs(y = "Proportion", x = NULL) +
+  scale_fill_manual(values = c("#B39E88","#4EB5AA"))+
+  labs(subtitle = "CAFE5 analysis",x="Gene class", fill="Is significant") +
+  theme_bw()
 ```
 
 By module
-
 ```{r}
 all_tree_dat %>% filter(isSig=="yes" & isTip==TRUE) %>% left_join(taxa, by=c("species"="sp")) %>% mutate(genes=str_remove_all(genes, "OG")) %>% 
     left_join(cafe_genefamily_outs, by = "genes") %>% 
@@ -7317,11 +7033,20 @@ ggarrange(
 ## PGLMM
 
 In this section I take the rapidly evolving genes estimated from cafe and check whether there is any relationship between copy number, phenotypic traits, and ecological traits. For this I use a phylogenetic generalised linear mixed model implemented in brms.\
-Since there are multiple genes in each module, I use phylogenetic PCA scores and estimate correlations between the first two PC axes of the gene count matrix and the trait of interest. I model the PCs of the genes as a multivariate response variable essentially allowing me to test for relationships between gene copy variation and phenotypic trait variation.  
-I use data primarily from the FishLife package, with has curated estimates from FishBase. For data on encephalisation coefficient I use data directly from FishBase.  The traits of interest are both categorical and continuous. 
+Since there are multiple genes in each module, I use phylogenetic PCA scores and estimate correlations between the first two PC axes of the gene count matrix and the trait of interest. I model the PCs of the genes as a predictor variables essentially allowing me to test for relationships between gene copy variation and phenotypic trait variation.  
+I use data primarily from the FishLife package, with has curated estimates from FishBase. The traits of interest are both categorical and continuous. 
 
 ```{r}
-shapes_dat<-readRDS("./RDS/shapes_dat.rds")
+shapes_dat<-readRDS("./RDS/shapes_dat.rds")#Need this as it contains the speices list to include in the analysis. This data is incorporated into FishLife, primarily the aspect ration measure
+
+#Prune the no_WGD_tree
+pglmm_tree<-drop.tip(no_WGD_tree,no_WGD_tree$tip.label[-match(shapes_dat$sp, no_WGD_tree$tip.label)])
+is.rooted(pglmm_tree)
+is.ultrametric(pglmm_tree)
+
+library(archetypes)
+library(FishLife)
+data(FishBase_and_Morphometrics)
 ```
 
 
@@ -8311,8 +8036,8 @@ Body shape categories
       family = categorical(),
       chains = 4, 
       cores = 4,
-      iter = 5000, 
-      warmup = 1000,
+      iter = 10000, 
+      warmup = 3000,
       backend = "cmdstanr",
       control = list(adapt_delta=0.999, max_treedepth = 12)
     )
@@ -8707,7 +8432,7 @@ plot(model_habitat$royalblue$model_brms_habitat, nvariables = 8, ask = FALSE)
 
 ### Aspect ratio ~ gene copy variation
 Caudal fin height and length divided by area (dimensionless)
-```{r}
+```{r,eval=FALSE}
 
 
   brms_model_aspect_ratio<-function(col){
@@ -9141,10 +8866,6 @@ bgee_combined_long<-readRDS("./RDS/Bgee_combined_long.rds")
 
 ### Process the data 
 ```{r, eval=FALSE}
-#Remove these low sampled and inconsistelty distributed tissues
-tissues_to_remove<-c("early embryo", "embryo","gastrula",
-                      "granulocyte","larva","mature ovarian follicle",
-                      "sexually immature organism", "semen")
 rbind(
   build_data_frame_from_bgee(dat = bgee_dat$Anguilla_anguilla, species = "Anguilla_anguilla"),
   build_data_frame_from_bgee(dat = bgee_dat$Astatotilapia_calliptera, species = "Astatotilapia_calliptera"),
@@ -9178,6 +8899,33 @@ left_join(Danio_biomart, zfin_ids, by=c("Gene stable ID"="Ensembl_ID")) %>% dist
 left_join(Danio_biomart, zfin_ids, by=c("Gene stable ID"="Ensembl_ID")) %>% distinct(ZFIN_ID, .keep_all = TRUE) %>% 
   left_join(danio_orth_genes_modules, by = c("Gene stable ID version"="orths")) %>% drop_na(gene) %>% filter(ZFIN_ID %in% pheno$`Gene ID`) %>% left_join(pheno, by=c("ZFIN_ID"="Gene ID")) %>% 
   dplyr::select(`Gene Symbol`,"Gene description",`Affected Structure or Process 1 superterm ID`,`Affected Structure or Process 1 superterm Name`,"Phenotype Keyword ID" , "Phenotype Keyword Name", "Publication ID", "Gene stable ID", gene) %>% filter(gene %in% cafe_genefamily_outs$genes) %>% left_join(cafe_genefamily_outs, by=c("gene"="genes"))->pheno_orth_mods
+
+
+cafe_sig<-cafe_genefamily_outs %>% filter(is_sig=="y" & mod_type=="Homologous")
+(metamorph_orthlist %>% filter(Orthogroup %in% cafe_sig$genes) %>% filter(sp=="Danio_rerio"))$orths %>%
+  purrr::map(safely(bgee_orth_json)) %>%
+  purrr::map("result") %>%       
+  compact() %>% 
+  list_rbind() %>% left_join(metamorph_orthlist %>% 
+                               filter(Orthogroup %in% cafe_sig$genes) %>% 
+                               filter(sp=="Danio_rerio") %>% 
+                               dplyr::select(orths,Orthogroup), 
+                             by = c("danio_gene"="orths"))->bgee_orth_res
+
+  #adds the danio genes at the bottom. To be used for filtering 
+ rbind(
+   bgee_orth_res %>% dplyr::select(geneId, name, Orthogroup),
+   Danio_biomart %>% dplyr::select(`Gene stable ID`,`Gene name`) %>% 
+     left_join(bgee_orth_res %>% dplyr::select(c(danio_gene, Orthogroup)), 
+               by=c(`Gene stable ID`="danio_gene")) %>% 
+     drop_na() %>% 
+     dplyr::rename(geneId=`Gene stable ID`, name=`Gene name`)
+ )->bgee_orth_res_to_use
+ 
+ #Remove these low sampled and inconsistelty distributed tissues
+tissues_to_remove<-c("early embryo", "embryo","gastrula",
+                      "granulocyte","larva","mature ovarian follicle",
+                      "sexually immature organism", "semen")
 ```
 
 ```{r}
