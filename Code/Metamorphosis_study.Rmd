@@ -1771,14 +1771,15 @@ design_matrix<-.data  %>%
     
 }
 #Building the tau data frame 
-build_exp_data_frame<-function(.data, sp) {
+build_exp_data_frame<-function(.data, Species) {
   left_join(.data %>% pivot_longer(!Gene.ID,names_to = "Library.ID",values_to = "cpm"),
-            bgee_dat %>% filter(Species == sp) %>% 
+            bgee_dat$Danio_rerio %>% 
               dplyr::select(Library.ID,Anatomical.entity.name),by = "Library.ID") %>% 
     group_by(Gene.ID,Anatomical.entity.name) %>% 
     summarise(cpm = mean(cpm)) %>% 
     spread(Anatomical.entity.name,cpm) %>% ungroup() %>% return()
 }
+
 bgee_orth_json<-function(orth){
   library(jsonlite)
   f<-fromJSON(paste0("./11.Bgee_comparative_transcriptomics/",orth,".json "),flatten = TRUE)
@@ -1815,59 +1816,117 @@ build_data_frame_from_bgee<-function(dat, species){
     mutate(sp=species) %>% return()
   }
 
- bgee_cafe_genes_plots <- function(orths_in, system, slice_size) {
-   library(dplyr)
-   library(ggplot2)
-   library(stringr)
-   library(tidytext)
-   library(ggh4x)
-   library(randomcoloR)
-   
-   
-   genes_to_use <- bgee_orth_res_to_use %>%
-     filter(Orthogroup %in% orths_in) %>%
-     pull(geneId)
-   
-   #making the plot data
-   plot_dat <- bgee_combined_long %>%
-     filter(genes %in% genes_to_use) %>%
-     filter(!Anatomical.entity.name %in% tissues_to_remove) %>%
-     filter(cpm > 1) %>%
-     group_by(sp, Anatomical.entity.name) %>%
-     summarise(m_cpm = mean(cpm, na.rm = TRUE),.groups = "drop") %>%
-     mutate(m_log10_cpm = log10(m_cpm)) %>% group_by(sp) %>%
-     slice_max(order_by = m_log10_cpm, n = slice_size, with_ties = FALSE) %>% ungroup() %>%
-     mutate(sp = str_replace(sp, "_", " "))
-   
-   # Create a stable color vector
-   tissue_levels <- plot_dat %>% distinct(Anatomical.entity.name) %>%
-     arrange(Anatomical.entity.name) %>%pull(Anatomical.entity.name)
-   
-   my_colors <- randomcoloR::distinctColorPalette(length(tissue_levels))
-   names(my_colors) <- tissue_levels
-   
-   # Reorder tissues within each species facet, keeing original tissue names for fill
-   plot_dat <- plot_dat %>%
-     mutate(tissue_ord = tidytext::reorder_within(
-       Anatomical.entity.name,m_log10_cpm,sp),
-       Anatomical.entity.name = factor(Anatomical.entity.name, levels = tissue_levels))
-   
-   plot_dat %>% 
-   ggplot(aes(y = tissue_ord, x = m_log10_cpm, fill = Anatomical.entity.name)) +
-     ggh4x::facet_wrap2(~ sp, scales = "free", strip.position = "right", ncol = 3,nrow = 4) +
-     geom_col(color = "black", linewidth = 0.2, alpha = 0.7) +
-     tidytext::scale_y_reordered() +
-     scale_fill_manual(values = my_colors, drop = FALSE) +
-     labs(subtitle = system,
-          y = NULL,
-          x = "Mean expression (log10cpm)") +
-     theme_bw() +
-     theme(
-       #axis.text.x = element_text(angle = 90, size = 8, hjust = 1, vjust = 0.5),
-       legend.position = "none",
-       strip.background = element_rect(fill="grey96"),
-       strip.text = element_text(size = 7))
- }
+bgee_cafe_genes_plots <- function(orths_in, system, slice_size, ncol, nrow) {
+  #Cleaned this up with LLM
+  library(dplyr)
+  library(ggplot2)
+  library(stringr)
+  library(tidytext)
+  library(ggh4x)
+  library(randomcoloR)
+  
+  # Predefined anatomical-entity colors
+  anatomical_cols <- c(
+    "ovary" = "#355C7D",
+    "muscle tissue" = "#E07A5F",
+    "mesonephros" = "#D9A441",
+    "heart" = "#C06C84",
+    "intestine" = "#6C5B7B",
+    "blastula" = "#7FB069",
+    "camera-type eye" = "#4E9F8A",
+    "tail" = "#F2CC8F",
+    "testis" = "#8D99AE",
+    "head kidney" = "#A44A3F",
+    "nose" = "#5B8E7D",
+    "bone element" = "#E6B8A2",
+    "caudal fin" = "#8C6F9C",
+    "zone of skin" = "#7A9E9F",
+    "liver" = "#B86F52",
+    "brain" = "#A7C957",
+    "animal zygote" = "#B8A1D9",
+    "adult organism" = "#C9ADA7",
+    "pharyngeal gill" = "#6D597A",
+    "spleen" = "#90BE6D",
+    "actinopterygian pyloric caecum" = "#4D908E"
+  )
+  
+  genes_to_use <- bgee_orth_res_to_use %>%
+    filter(Orthogroup %in% orths_in) %>%
+    pull(geneId)
+  
+  # Make plot data
+  plot_dat <- bgee_combined_long %>%
+    filter(genes %in% genes_to_use) %>%
+    filter(!Anatomical.entity.name %in% tissues_to_remove) %>%
+    filter(cpm > 1) %>%
+    group_by(sp, Anatomical.entity.name) %>%
+    summarise(m_cpm = mean(cpm, na.rm = TRUE), .groups = "drop") %>%
+    mutate(m_log10_cpm = log10(m_cpm)) %>%
+    group_by(sp) %>%
+    slice_max(order_by = m_log10_cpm, n = slice_size, with_ties = FALSE) %>%
+    ungroup() %>%
+    mutate(sp = str_replace(sp, "_", " "))
+  
+  # All tissues present in this plot
+  tissue_levels <- plot_dat %>%
+    distinct(Anatomical.entity.name) %>%
+    arrange(Anatomical.entity.name) %>%
+    pull(Anatomical.entity.name) %>%
+    as.character()
+  
+  # Keep predefined colors for matching tissues
+  matched_cols <- anatomical_cols[names(anatomical_cols) %in% tissue_levels]
+  
+  # Assign random colors to tissues not in the predefined palette
+  missing_tissues <- setdiff(tissue_levels, names(anatomical_cols))
+  
+  if (length(missing_tissues) > 0) {
+    set.seed(123)
+    random_cols <- randomcoloR::distinctColorPalette(length(missing_tissues))
+    names(random_cols) <- missing_tissues
+  } else {
+    random_cols <- character(0)
+  }
+  
+  # Final named color vector
+  my_colors <- c(matched_cols, random_cols)
+  
+  # Reorder tissues within each species facet, keeping original names for fill
+  plot_dat <- plot_dat %>%
+    mutate(
+      tissue_ord = tidytext::reorder_within(
+        Anatomical.entity.name,
+        m_log10_cpm,
+        sp
+      ),
+      Anatomical.entity.name = factor(Anatomical.entity.name, levels = tissue_levels)
+    )
+  
+  plot_dat %>%
+    filter(sp != "Poecilia reticulata") %>%
+    ggplot(aes(y = tissue_ord, x = m_log10_cpm, fill = Anatomical.entity.name)) +
+    ggh4x::facet_wrap2(
+      ~ sp,
+      scales = "free",
+      strip.position = "right",
+      ncol = ncol,
+      nrow = nrow
+    ) +
+    geom_col(color = "black", linewidth = 0.2, alpha = 0.9) +
+    tidytext::scale_y_reordered() +
+    scale_fill_manual(values = my_colors, drop = FALSE) +
+    labs(
+      subtitle = system,
+      y = NULL,
+      x = "Mean expression (log10cpm)"
+    ) +
+    theme_bw() +
+    theme(
+      legend.position = "none",
+      strip.background = element_rect(fill = "grey96"),
+      strip.text = element_text(size = 7)
+    )
+}
  
 comp_dev_danio_heatmap<-function(system_proc){
   #read_csv("./08.ZFIN/Danio_biomart.csv")->Danio_biomart #Obtained from bioMart package
@@ -2994,59 +3053,6 @@ STRING_perm_test_res %>% mutate(sig=case_when(empirical_P < 0.05 ~ "Yes",
     theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
 ```
 
-#### Expression in species
-
-Use expression pattern in multiple tissues across species to functionally annotate the modules.
-
-```{r}
-
-bgee_dat$Danio_rerio %>% Bgee_dge() %>% build_exp_data_frame(sp = "Danio_rerio")->Danio_rerio_bgee_exp
-Danio_rerio_bgee_exp<-log10((Danio_rerio_bgee_exp %>% column_to_rownames("Gene.ID"))+1e-5) %>% rownames_to_column("Gene.ID") %>% dplyr::select(Gene.ID, everything()) %>% janitor::clean_names()
-#Danio homologous modules
-left_join(danio_orth_net$connectivity,orth %>% filter(sp=="Danio_rerio") %>% filter(Orthogroup %in% danio_all_orth_exp_mat$Orthogroup),by=c("gene"="Orthogroup")) %>% dplyr::select(module,gene,orths) %>% mutate(orths=str_remove(orths,"\\.[0-9]*"))->danio_genes_modules 
-
-danio_tissue_exp_dist<-function(mod){
-danio_genes_modules %>% filter(module==mod)->mod_d
-Danio_rerio_bgee_exp %>% filter(gene_id %in% mod_d$orths) %>% pivot_longer(cols = -gene_id, names_to = "tissue") %>% 
-  summarise(mean_tpm = mean(value),.by = c(tissue)) %>% 
-  mutate(z_score = (mean_tpm - mean(mean_tpm))/sd(mean_tpm)) %>% ungroup()->plot_dat
-
-plot_dat %>% mutate(tissue=reorder(tissue,z_score)) %>% ggplot(aes(x=tissue, y=z_score))+
-  geom_col(fill=as.factor(mod), alpha=0.7,color="black", linewidth=0.2)+
-  labs(subtitle = paste0(mod))+
-  theme_bw()+
-  coord_flip()->bars
-  
-#homo_mods_proc_BP %>% filter(danio.mod==mod)
-
-#homo_mods_proc_BP %>% 
-#  filter(danio.mod==mod) %>%
-#  mutate(homo_mods_proc_BP %>% filter(danio.mod==mod) %>% 
-#           reframe(fold.enr=Count/Size))->go_dat
-
-#go_dat %>% filter(FDR < quantile(go_dat$FDR,.25) & fold.enr > quantile(go_dat$fold.enr,.5)) %>% 
-#  arrange(desc(fold.enr))-> go_dat
-
-#go_dat %>% mutate(Term=reorder(Term,-FDR)) %>% distinct(Term, .keep_all = T) %>% 
-#  ggplot(aes(y=Term, x=-log10(FDR), size = fold.enr))+
-#  geom_point(shape=21, fill=as.factor(mod), alpha=0.7,color="black")+
-#  theme_linedraw()->terms
-
-ggpubr::ggarrange(bars, ncol = 1) %>% return()
-}
-#cols[1:5]
-
-purrr::map(.x=danio_genes_modules %>% filter(gene %in% homologous_genes$genes) %>% pull(module) %>% as.list(),
-    ~danio_tissue_exp_dist(mod = .x))->go_and_exp_plot
-names(go_and_exp_plot)<-danio_genes_modules %>% filter(gene %in% homologous_genes$genes) %>% pull(module)
-go_and_exp_plot %>% saveRDS("./03.Annotations/Bgee_danio_tissues.rds")
-
-purrr::map(.x=c(colors[21],colors[22]),
-    ~danio_tissue_exp_dist(mod = .x))->go_and_exp_plot
-names(go_and_exp_plot)<-homologous_filtered %>% distinct(col.danio) %>% pull(col.danio)
-
-danio_homo_mods_proc <-readRDS("./03.Annotations/danio_orth_net_GO_orth_univ.rds")
-```
 
 #### Single-cell data
 
@@ -8433,6 +8439,7 @@ read_csv("./08.ZFIN/Danio_biomart.csv")->Danio_biomart #Obtained from bioMart pa
 read_tsv("./08.ZFIN/phenoGeneCleanData_fish_2023.05.07.tsv")->pheno #Download from ZFIN
 read_tsv("./08.ZFIN/ensembl_1_to_1_2025.08.26.txt")->zfin_ids #Download from ZFIN
 zfin_ids$...5<-NULL
+zhub_dat<-readRDS("../For_submission/Teleost_convergence/RDS/zhub_full_log.rds")# Zebrahub data
 bgee_combined_long<-readRDS("./RDS/Bgee_combined_long.rds")
 ```
 
@@ -8500,16 +8507,17 @@ tissues_to_remove<-c("early embryo", "embryo","gastrula",
                       "sexually immature organism", "semen")
 
 #Need to load bgee to make danio_genes_module
-bgee_dat<-readRDS("./RDS/Bgee_fish_rna.seq_more_fish.rds")
-bgee_dat$Danio_rerio %>% Bgee_dge() %>% build_exp_data_frame(sp = "Danio_rerio")->Danio_rerio_bgee_exp
-Danio_rerio_bgee_exp<-log10((Danio_rerio_bgee_exp %>% column_to_rownames("Gene.ID"))+1e-5) %>% rownames_to_column("Gene.ID") %>% dplyr::select(Gene.ID, everything()) %>% janitor::clean_names()
-#Danio homologous modules
 left_join(danio_orth_net$connectivity,orth %>% filter(sp=="Danio_rerio") %>% filter(Orthogroup %in% danio_all_orth_exp_mat$Orthogroup),by=c("gene"="Orthogroup")) %>% dplyr::select(module,gene,orths) %>% mutate(orths=str_remove(orths,"\\.[0-9]*"))->danio_genes_modules 
-#remove to save space
-rm(bgee_dat)
+
+#annotated danio expression data with high turnover genes
+danio_orth_exp %>% 
+  filter(Orthogroup %in% homologous_genes$genes) %>% 
+  left_join(homologous_genes, by=c("Orthogroup"="genes")) %>% 
+  left_join(module_annot,by="mod") %>% 
+  filter(Orthogroup %in% cafe_sig$genes)->danio_genes_modules_annot
 ```
 
-```{r}
+```{r, eval=FALSE}
 ######## Plot the UMAPS for the genes ##########
 
 danio_genes_modules_annot<-danio_genes_modules %>% filter(gene %in% homologous_genes$genes) %>% left_join(homologous_genes, by=c("gene"="genes")) %>% dplyr::select(gene, orths, mod) %>% left_join(module_annot, by="mod") %>% filter(gene %in% (cafe_genefamily_outs %>% filter(mod_type=="Homologous" & is_sig=="y") %>% pull(genes)))
