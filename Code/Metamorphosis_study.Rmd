@@ -2058,7 +2058,7 @@ annotate_figure(plots, top = text_grob(paste0(system_proc),face = "bold", size =
 }
 
 meta_exp_cafe_genes <- function(species, orthogroup){
-  #dge_keep = clown$dge_keep
+  #dge_keep = grouper$dge_keep
   
   make_plot <- function(dge_keep, orthogroup, species, rects = list()) {
     danio_genes_modules_annot %>% left_join(Danio_biomart %>% dplyr::select(`Gene stable ID`, `Gene name`), by=c("orths"="Gene stable ID")) %>% distinct(orths, .keep_all = TRUE)->gene_annot
@@ -2079,7 +2079,7 @@ meta_exp_cafe_genes <- function(species, orthogroup){
           dplyr::select(Orthogroup, orths) %>% mutate(orths = stringr::str_remove(orths, "\\.[0-9]*")),
         by = "orths")
   
-    p <- df %>% left_join(gene_annot, by = c("Orthogroup"="gene")) %>%
+    p <- df %>% left_join(gene_annot, by = c("Orthogroup")) %>%
       dplyr::filter(Orthogroup == orthogroup) %>%
       ggplot(ggplot2::aes(x = stages, y = z.score)) +
       facet_wrap(~`Gene name`) +
@@ -2970,7 +2970,10 @@ danio_biomart<-read_csv("./Danio_biomart.csv") %>%
 string<-read_csv("./7955.protein.links.v12.0.csv")
 string<-string %>% mutate(protein1=str_remove(protein1,"7955."), 
                           protein2=str_remove(protein2,"7955."))
-#string<-string %>% filter(combined_score >= quantile(string$combined_score, 0.5)) # can try using a score threshold
+
+# can try using a score threshold
+# the outcome is the same with or without a threshold
+#string<-string %>% filter(combined_score >= quantile(string$combined_score, 0.5)) 
 danio_orth_mods<-left_join(danio_orth_net$connectivity, orth_danio, by=c("gene"="Orthogroup")) %>% 
   left_join(danio_biomart, by=c("orths"="Gene stable ID")) %>% na.omit()
 
@@ -2989,9 +2992,6 @@ intra_module_ppis_counts<-intra_module_ppis %>%
 total_interactions_per_module <- ppi_mods %>%
   dplyr::count(module.X, name = "Total_Interactions") 
 
-#ppi_mods %>% saveRDS("./02.Gene_expression_and_network/ppi_mods_0.5_score.rds")
-
-
 intra_module_ppis_counts %>%
   left_join(total_interactions_per_module, by = "module.X") %>%
   mutate(Enrichment_Score = Num_Interactions / Total_Interactions)->intra_module_ppis_summary
@@ -2999,7 +2999,16 @@ intra_module_ppis_counts %>%
 danio_orth_net$connectivity  %>% group_by(module) %>% mutate(mean_connectivity=mean(degree)) %>% ungroup() %>% distinct(module, .keep_all = TRUE)->mean_connect
 
 left_join(intra_module_ppis_summary, mean_connect, by=c("module.X"="module"))->ppi_summ_connectivity
+```
 
+Correlation test between enrichment score ~ connectivity
+```{r}
+cor.test(ppi_summ_connectivity$Enrichment_Score,ppi_summ_connectivity$mean_connectivity, method = "spearman")
+
+
+```
+
+```{r, eval=FALSE}
 #permuted_counts <- replicate(n_permu, {
 #make random module assignments  
 permute_counts<-function(){
@@ -8741,7 +8750,6 @@ comp_dev_danio_heatmap(system_proc = "Aerobic respiration")
 purrr::map2(.x="Amphiprion_ocellaris", 
             .y=(cafe_sig %>% filter(mod=="salmon") %>% pull(genes)),
             ~meta_exp_cafe_genes(species = .x, orthogroup = .y))->clown_meta_cafe_exp
-patchwork::wrap_plots(clown_meta_cafe_exp)
 
 purrr::map2(.x="Epinephelus_malabaricus", 
             .y=(cafe_sig  %>% filter(mod=="salmon") %>% pull(genes)),
