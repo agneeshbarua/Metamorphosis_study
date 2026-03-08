@@ -3005,7 +3005,6 @@ Correlation test between enrichment score ~ connectivity
 ```{r}
 cor.test(ppi_summ_connectivity$Enrichment_Score,ppi_summ_connectivity$mean_connectivity, method = "spearman")
 
-
 ```
 
 ```{r, eval=FALSE}
@@ -5978,9 +5977,7 @@ all_fish_wil_test_cafe_res %>%
 
 ```
 
-#### Plotting CAFE results
-
-##### Model fit
+#### Model fit
 
 The plot below shows the negative log-likelihoods for two models implemented in CAFE. The Base model, with a single rate acorss the entire tree, and a multi-lambda model where the acanthomorpha and non-acanthomorpha fish have different rates. For all of the homologous modules, except royalblue, the multi-lambda model is a better fit to the data.
 
@@ -6012,8 +6009,59 @@ cafe_model_outs %>% filter(mod_type=="Homologous")->cafe_homo_plot_dat
          strip.background = element_rect(fill = "#67980C"))->cafe_nonhomo_model_plots
 ```
 
+#### Difference in rates
+Here I check whether these ins actual difference in the rate estimates from CAFE for the conserved network and the random set. Plotting the values between the two gene classes shows that the genes in conserved network evolve at a lower rate. I use a bootsrapped one-sided wilcoxon rank sum test to test whether the rate estimates is significantly lower for the genes in the conserved network. 
+```{r}
+rbind(
+cafe_model_outs %>% filter(model_type != "base" & mod_type=="Non homologous" & mod != "random_mod25") %>% 
+  pivot_longer(cols = c(lambda1,lambda2), names_to = "lam", values_to = "rate") %>% 
+  mutate(mod_type="Non-Conserved"),
+cafe_model_outs %>% filter(model_type != "base" & mod_type=="Homologous") %>% 
+  pivot_longer(cols = c(lambda1,lambda2), names_to = "lam", values_to = "rate") %>% 
+  mutate(mod_type="Conserved"))->lambda_rates_dat
 
-##### Processes with significant expansion and contractions
+lambda_rates_dat %>% 
+  ggplot(aes(y=log2(rate), x=mod_type, fill=lam))+
+  facet_wrap(~lam)+
+  geom_quasirandom(method = "tukey", 
+                   shape=21, 
+                   size=3,
+                   color="black",
+                   linewidth=0.2, alpha=0.8)+
+  geom_boxplot(
+               alpha=0.9,
+               fill="grey95",
+               width=0.3,
+               outliers = FALSE)+
+  scale_fill_manual(values = c("#8E5572","#6B8E23"))+
+  theme_bw()
+```
+
+```{r}
+wil_test_cafe_rates<-function(lambda){
+wilcox.test(
+  x=lambda_rates_dat %>% filter(lam==lambda & mod_type=="Conserved") %>% 
+    slice_sample(n=50,replace = TRUE) %>% pull(rate),
+  y=lambda_rates_dat %>% filter(lam==lambda & mod_type=="Non-Conserved") %>%  
+    slice_sample(n=50,replace = TRUE) %>% pull(rate),
+  alternative = "less")->test_out
+  
+  tibble(lam=lambda, pval=test_out$p.value) %>% return()
+}
+
+rbind(
+purrr::map(1:200, ~wil_test_cafe_rates(lambda = "lambda1")) %>% 
+  list_rbind() %>% mutate(padj=p.adjust(pval,"BH")),
+purrr::map(1:200, ~wil_test_cafe_rates(lambda = "lambda2")) %>% 
+  list_rbind() %>% mutate(padj=p.adjust(pval,"BH"))) %>% 
+  ggplot(aes(x=padj))+
+  facet_wrap(~lam)+
+  geom_density()+
+  geom_vline(xintercept = 0.05, color="red")+
+  theme_bw()
+```
+
+#### Processes with significant expansion and contractions
 ```{r}
 cafe_genefamily_outs %>% drop_na() %>% filter(is_sig=="y" & mod_type=="Homologous") %>% dplyr::count(annot) %>% mutate(prop=(n/sum(n))) %>%  
   mutate(annot=reorder(annot,prop)) %>% 
@@ -6026,7 +6074,7 @@ cafe_genefamily_outs %>% drop_na() %>% filter(is_sig=="y" & mod_type=="Homologou
   theme_bw()
 ```
 
-##### Expansion and contraction of gene families
+#### Expansion and contraction of gene families
 
 Here we plot the relative expansion and contraction of homologous gene families estimated by CAFE. We see that there are different points of expansion/contraction along the tree occurring at different nodes. The highest expansion occurred at the root of teleost as a result of the teleost specific whole genome duplication (3R). The second point of expansion appears at the branch leading to *Danio rerio*. This is signal is likely due to the fact that *Danio rerio* has a large proportion of retained ohnologs from the 3R.\
 The expansions and contractions are all significant.
@@ -6128,6 +6176,15 @@ all_tree_dat %>% filter(isSig=="yes" & node %in% c("136","265","249","188","200"
 ##### Proportion of turnover between homologous and random genes
 Doing the test without the re-sampling gives a significant difference in proportions between homologous and non-homologous networks. I perform the re-sampling to ensure there is consistency in the data sampling and results.
 ```{r}
+#Test with all data
+rbind(
+    cafe_genefamily_outs %>% filter(mod_type=="Homologous"),
+    cafe_genefamily_outs %>% filter(mod_type=="Non homologous")) %>% 
+    dplyr::count(is_sig, mod_type) %>% 
+    pivot_wider(names_from = is_sig, 
+                values_from = n, 
+                values_fill = 0) %>% dplyr::select(y,n) %>%
+    as.matrix() %>% fisher.test()->test_res
 
 fisher_boot_test<-function(){
   rbind(
@@ -6141,7 +6198,8 @@ fisher_boot_test<-function(){
                 values_fill = 0) %>% dplyr::select(y,n) %>%
     as.matrix() %>% fisher.test()->test_res
   
-  tibble(pval=test_res$p.value) %>% return()
+  tibble(pval=test_res$p.value,
+         odds=test_res$estimate) %>% return()
 }
 
 purrr::map(1:1000, ~fisher_boot_test()) %>% 
@@ -6412,6 +6470,8 @@ global_sel_diff %>% summarise(mean_padj=mean(padj))
 ```
 
 ##### FUBAR
+We estimated dN/dS on a per-site basis using the FUBAR (Fast Unconstrained Bayesian Approximation) approach (Murrell et al. 2013). FUBAR provides site-wise estimates for purifying and diversifying selection regimes, or uncertain sites with low evidence for either regime. The analyses revealed that a majority of the sites in genes from the conserved network evolve under a purifying selection with very few sites evolving under diversifying selection (Fig 2B). The same was observed for the sites in genes from the non-conserved null set. This suggests that these orthologs are generally under higher evolutionary constraint at the site level, highlighting their potential housekeeping functions?. However, the distribution of evolutionary regimes differs significantly between the two groups (χ² = 651.4, P < 2.2×10⁻¹⁶) with the genes in the conserved network having slightly higher proportion of sites under purifying selection and lower proportion of genes under diversifying selection, as compared to the null set. Although the difference between the groups is significant, the effect size is small (Cramer’s V = 0.019).
+
 ```{r,eval=FALSE}
 #Parse HyPhy output
 list.files("./10.HyPhy/FUBAR/") %>% 
@@ -6452,25 +6512,10 @@ fubar_res %>% saveRDS("./RDS/FUBAR_res.rds")
 
 ```
 
+
 ```{r}
 fubar_res<-readRDS("./RDS/FUBAR_res.rds")
 
-fubar_res %>% mutate(selection=case_when(`Prob[alpha>beta]` > 0.9 ~ "purifying", 
-                                            `Prob[alpha<beta]` > 0.9 ~"diversifying",
-                                            .default = "low evidence")) %>% 
-  dplyr::count(selection,type) %>% mutate(n.per=(n/sum(n))) %>% 
-  mutate(selection=reorder(selection,-n.per)) %>% 
-  ggplot(aes(x=selection, y=n.per))+
-    facet_wrap(~type)+
-  geom_col(aes(fill=selection))+
-  geom_text(aes(label = round(n.per*100,1)),position = position_stack(vjust = 0.5))+
-  scale_fill_manual(values=c("#4F868C","grey80","#D92B04"))+
-  scale_y_continuous(labels = scales::percent)+
-  labs(y="Percentage of sites", x="Selection")+
-  theme_bw()->site_freq_non_homol
-```
-
-```{r}
 fubar_res %>%  
     mutate(selection=case_when(`Prob[alpha>beta]` > 0.9 ~ "Purifying", 
     `Prob[alpha<beta]` > 0.9 ~"Diversifying",
@@ -6479,36 +6524,52 @@ fubar_res %>%
     dplyr::select(-n.per) %>% 
     pivot_wider(names_from = selection, values_from = n) %>% 
     dplyr::select(-type) %>%
-    as.matrix() %>% chisq.test()->chisq
+    as.matrix()->fubar_mat
+
+    fubar_mat%>% chisq.test()->chisq #Homologous (conserved) is column 1
+                                        #Non-homologous (null) is column 3
+
+#Effect size calculation
+x2<-unname(chisq$statistic)
+n<-sum(fubar_mat)
+r<-nrow(fubar_mat)
+c<-ncol(fubar_mat)
+
+cramers_v<-sqrt(x2/(n * min(r - 1, c - 1)))
+cramers_v
   
  ggarrange( 
-  fubar_res %>% 
-    mutate(selection=case_when(`Prob[alpha>beta]` > 0.9 ~ "Purifying", 
-                               `Prob[alpha<beta]` > 0.9 ~"Diversifying",
-                               .default = "Low evidence")) %>% 
-    dplyr::count(type,selection) %>% 
-    mutate(n.per=((n/sum(n)))) %>% 
-    ggplot(aes(x=type,y=n.per, fill=selection))+
-    geom_col(width = 0.65,position = position_dodge(width = 0.7),alpha=0.8)+
-    geom_text(aes(label = round(n.per*100,1), x=type, y=n.per+0.01),
-              position = position_dodge(width = 0.7))+
-    scale_y_continuous(labels = scales::percent)+
-    ggsci::scale_fill_aaas()+
-    labs(title = "FUBAR analysis",
-         x = "Gene class", 
-         y = "Proportion of genes",
-         fill = "Selection type")+
-    theme_bw(),
+fubar_res %>% 
+  mutate(selection=case_when(`Prob[alpha>beta]` > 0.9 ~ "Purifying", 
+                             `Prob[alpha<beta]` > 0.9 ~"Diversifying",
+                             .default = "Low evidence")) %>% 
+  dplyr::count(type,selection) %>% 
+  mutate(n.per=((n/sum(n)))) %>% 
+  mutate(type=case_when(type=="Homologous" ~ "Conserved",
+                        type=="Non homologous" ~ "Non-conserved")) %>% 
+  ggplot(aes(x=type,y=n.per, fill=selection))+
+  facet_wrap(~selection, scales = "free_y")+
+  geom_col(width = 0.65,position = position_dodge(width = 0.7),
+           alpha=1, linewidth = 0.2, color="black")+
+  #geom_text(aes(label = round(n.per*100,3), x=type, y=n.per+0.001),
+  #          position = position_dodge(width = 0.7))+
+  scale_y_continuous(labels = scales::percent)+
+  scale_fill_manual(values = c("#355C7D","#E07A5F","#D9A441"))+
+  labs(title = "FUBAR analysis",
+       x = "Gene class", 
+       y = "Proportion of sites",
+       fill = "Selection type")+
+  theme_bw(),
   
   
   as_tibble(chisq$stdres) %>% mutate(type=c("Homologous","Non homologous")) %>% 
     pivot_longer(c(Diversifying, `Low evidence`, Purifying), names_to = "Selection type") %>% 
     ggplot(aes(y=type,x=value, fill=`Selection type`))+
-    geom_col(width = 0.65,position = "dodge",alpha=0.8)+
+    geom_col(width = 0.65,position = "dodge",alpha=1,  linewidth = 0.2)+
     labs(x = "Standardised residual", 
          y = "Type of gene",
          fill = "Selection type")+
-    ggsci::scale_fill_aaas()+
+    scale_fill_manual(values = c("#355C7D","#E07A5F","#D9A441"))+
     theme_bw(),
   nrow = 1, common.legend = TRUE)
 ```
@@ -6556,7 +6617,13 @@ busted_res %>% mutate(is_sig=case_when(p_adj<0.05 ~ "yes",.default = "no")) %>%
   dplyr::count(type, is_sig) %>% pivot_wider(names_from = is_sig,
                                              values_from = n,
                                              values_fill = 0) %>% 
-  dplyr::select(yes,no) %>% as.matrix() %>% fisher.test()
+  dplyr::select(yes,no) %>% as.matrix() %>% fisher.test() #First row is Conserved
+
+busted_res %>% mutate(is_sig=case_when(p_adj<0.05 ~ "yes",.default = "no")) %>%
+  dplyr::count(type, is_sig) %>% pivot_wider(names_from = is_sig,
+                                             values_from = n,
+                                             values_fill = 0) %>% 
+  dplyr::select(yes,no) %>% as.matrix() %>% fisher.test(alternative = "greater") #First row is Conserved
   
 busted_res %>% mutate(is_sig=case_when(p_adj<0.05 ~ "yes",.default = "no")) %>%
   dplyr::count(type, is_sig)  %>%
