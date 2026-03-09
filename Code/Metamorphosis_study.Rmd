@@ -6027,7 +6027,7 @@ lambda_rates_dat %>%
                    shape=21, 
                    size=3,
                    color="black",
-                   linewidth=0.2, alpha=0.8)+
+                   stroke=0.2, alpha=0.8)+
   geom_boxplot(
                alpha=0.9,
                fill="grey95",
@@ -6037,14 +6037,13 @@ lambda_rates_dat %>%
   theme_bw()
 ```
 
-```{r}
+```{r,eval=FALSE}
 wil_test_cafe_rates<-function(lambda){
 wilcox.test(
   x=lambda_rates_dat %>% filter(lam==lambda & mod_type=="Conserved") %>% 
     slice_sample(n=50,replace = TRUE) %>% pull(rate),
   y=lambda_rates_dat %>% filter(lam==lambda & mod_type=="Non-Conserved") %>%  
-    slice_sample(n=50,replace = TRUE) %>% pull(rate),
-  alternative = "less")->test_out
+    slice_sample(n=50,replace = TRUE) %>% pull(rate))->test_out
   
   tibble(lam=lambda, pval=test_out$p.value) %>% return()
 }
@@ -6053,7 +6052,18 @@ rbind(
 purrr::map(1:200, ~wil_test_cafe_rates(lambda = "lambda1")) %>% 
   list_rbind() %>% mutate(padj=p.adjust(pval,"BH")),
 purrr::map(1:200, ~wil_test_cafe_rates(lambda = "lambda2")) %>% 
-  list_rbind() %>% mutate(padj=p.adjust(pval,"BH"))) %>% 
+  list_rbind() %>% mutate(padj=p.adjust(pval,"BH")))->cafe_rates_wil_res
+
+cafe_rates_wil_res %>% saveRDS("./RDS/cafe_rates_wil_res.rds")
+```
+
+
+```{r,eval=TRUE}
+cafe_rates_wil_res<-readRDS("./RDS/cafe_rates_wil_res.rds")
+
+cafe_rates_wil_res %>% summarise(m_padj = mean(padj),.by = lam)
+
+cafe_rates_wil_res %>% 
   ggplot(aes(x=padj))+
   facet_wrap(~lam)+
   geom_density()+
@@ -6619,12 +6629,7 @@ busted_res %>% mutate(is_sig=case_when(p_adj<0.05 ~ "yes",.default = "no")) %>%
                                              values_fill = 0) %>% 
   dplyr::select(yes,no) %>% as.matrix() %>% fisher.test() #First row is Conserved
 
-busted_res %>% mutate(is_sig=case_when(p_adj<0.05 ~ "yes",.default = "no")) %>%
-  dplyr::count(type, is_sig) %>% pivot_wider(names_from = is_sig,
-                                             values_from = n,
-                                             values_fill = 0) %>% 
-  dplyr::select(yes,no) %>% as.matrix() %>% fisher.test(alternative = "greater") #First row is Conserved
-  
+
 busted_res %>% mutate(is_sig=case_when(p_adj<0.05 ~ "yes",.default = "no")) %>%
   dplyr::count(type, is_sig)  %>%
   mutate(prop=(n/sum(n))) %>% ungroup() %>% 
