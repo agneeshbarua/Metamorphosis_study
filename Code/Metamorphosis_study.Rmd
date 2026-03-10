@@ -6710,6 +6710,7 @@ data(FishBase_and_Morphometrics)
 
 
 ### Maximum age ~ gene copy number
+log of maximum age (years)
 ```{r, eval=FLASE}
 #log of maximum age (years)
  brms_model_age<-function(col){
@@ -6862,6 +6863,7 @@ plot(model_age$midnightblue$model_brms_age, nvariables = 8, ask = FALSE)
 
 
 ### Age of maturity ~ gene copy variation
+age at 50% sexual maturity (years)
 ```{r}
  #age at 50% sexual maturity (years)
   brms_model_age_maturity<-function(col){
@@ -7186,13 +7188,13 @@ Average temperature from portion of population sampled (celcius)
                        PC1.cpy + PC2.cpy +(1 |gr(sp, cov = A)),  
                          data = model_dat,
                          data2   = list(A = A),
-                         family = skew_normal())
+                         family = skew_normal(link = "identity"))
    #Model
    model_brms_temp <- brm(mean_temp ~ PC1.cpy + PC2.cpy +(1 |gr(sp, cov = A)),
      data = model_dat,
      data2   = list(A = A),
      prior = priors,
-     family = skew_normal(),
+     family = skew_normal(link = "identity"),
      chains = 4, 
      cores = 4,
      iter = 5000, 
@@ -7366,13 +7368,13 @@ plot(model_temp$orange$model_brms_temp, nvariables = 8, ask = FALSE)
                        PC1.cpy + PC2.cpy +(1 |gr(sp, cov = A)),  
                      data = model_dat,
                      data2   = list(A = A),
-                     family = skew_normal())
+                     family = skew_normal(link = "identity"))
    #Model
    model_brms_trophic <- brm(trophic_level ~ PC1.cpy + PC2.cpy +(1 |gr(sp, cov = A)),
      data = model_dat,
      data2   = list(A = A),
      prior = priors,
-     family = skew_normal(),
+     family = skew_normal(link = "identity"),
      chains = 4, 
      cores = 4,
      iter = 5000, 
@@ -7458,7 +7460,7 @@ plot(model_trophic$midnightblue$model_brms_trophic, nvariables = 8, ask = FALSE)
 
 
 ### Growth coefficient ~ gene copy variation
-von Bertalannffy growth coefficient (year^-1)
+von Bertalanffy growth coefficient (year^-1)
 
 ```{r}
    brms_model_growthcoeff<-function(col){
@@ -8020,19 +8022,18 @@ Demersal type for habitat category
     A<-MCMCglmm::inverseA(pglmm_tree_fishbase,scale = TRUE,nodes = "TIPS")
     A<-A$Ainv
     #Priors
-    priors<-get_prior(mvbind(PC1.cpy,PC2.cpy) ~  
-                        habitat +(1 |gr(sp, cov = A)),  
+    priors<-get_prior(habitat ~  
+                        PC1.cpy + PC2.cpy +(1 |gr(sp, cov = A)),  
                       data = model_dat,
                       data2   = list(A = A),
-                      family = skew_normal())
+                      family = categorical())
     #Model
     model_brms_habitat <- brm(
-      mvbind(PC1.cpy,PC2.cpy) ~  
-        habitat +(1 |gr(sp, cov = A)),
+      habitat ~  PC1.cpy + PC2.cpy + (1 |gr(sp, cov = A)),
       data = model_dat,
       data2   = list(A = A),
       prior = priors,
-      family = skew_normal(),
+      family = categorical(),
       chains = 4, 
       cores = 4,
       iter = 5000, 
@@ -8059,18 +8060,10 @@ Demersal type for habitat category
 model_habitat<-readRDS("./RDS/model_habitat.rds")
 brms_significance_plot(model_list = model_habitat,
                   submodel = "model_brms_habitat",
-                  trait = "habitat")
+                  trait = "habitat",
+                  var_type = "categorical")
 ```
 
-##### RNA processing (unreliable)
-###### Trait and PCA plot
-```{r,message=FALSE}
-  make_pca_trait_model_plot(model = model_habitat$royalblue$model_brms_habitat,
-                            pca_dat = model_habitat$royalblue$pca_gene_pca,
-                            trait = "habitat",
-                            arrow_scale = 40,
-                            fill_label = "Habitat")
-```
 ###### Diagnostics
 The posteriors probability checks looks fine with ample overlap between sample predictor distribution and sampled posterior space. The ECDF overlays shows good coverage.
 ```{r,message=FALSE}
@@ -8368,7 +8361,8 @@ cafe_cols<-cafe_sig %>% filter(is_sig=="y" & mod_type=="Homologous") %>%
 ```
 
 ```{r}
-  brms_significance_plot(model_list = model_lower_jaw_length,
+  model_lower_jaw_length<-readRDS("./RDS/model_lower_jaw_length.rds")
+brms_significance_plot(model_list = model_lower_jaw_length,
                          submodel = "model_brms_lower_jaw_length",
                          trait = "lower_jaw_length",
                          var_type = "continuous")
@@ -8401,7 +8395,7 @@ plot(model_lower_jaw_length$magenta$model_brms_lower_jaw_length, nvariables = 8,
 #plot(loo(model_brms))
 ```
 
-##### Neuron migration and placode module (unreliable)
+##### Neuron migration and placode module
 ###### Trait and PCA plot
 ```{r,message=FALSE}
   make_pca_trait_model_plot(model = model_lower_jaw_length$lightgreen$model_brms_lower_jaw_length,
@@ -8428,7 +8422,7 @@ plot(model_lower_jaw_length$lightgreen$model_brms_lower_jaw_length, nvariables =
 #plot(loo(model_brms))
 ```
 
-##### Peroxisome process module (unreliable)
+##### Peroxisome process module 
 ###### Trait and PCA plot
 ```{r,message=FALSE}
   make_pca_trait_model_plot(model = model_lower_jaw_length$black$model_brms_lower_jaw_length,
