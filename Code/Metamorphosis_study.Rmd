@@ -1292,7 +1292,7 @@ ggtree::ggtree(tree_data_list,layout="rectangular")->g
 
   left_join(tree_data_list,exp_cont_dat %>%
             dplyr::select(node, genes, type_of_change) %>% 
-              mutate(genes=paste0("OG",exp_cont_dat$genes)) %>% 
+              mutate(genes=paste0("OG",genes)) %>% 
               dplyr::rename("join_col"="node"),
           by=c("genes","join_col"), relationship = "many-to-many")->g$data
 
@@ -1317,14 +1317,18 @@ fill_values_cp <- c(
   
   g+
     facet_wrap(~genes)+
-    geom_tree(aes(color=type_of_change), show.legend=TRUE)+
+    geom_tree(color = "grey80", show.legend = FALSE) +
+    geom_tree(data = function(x) dplyr::filter(x, !isTip),
+              aes(color = type_of_change),
+              show.legend = TRUE)+
     scale_color_manual(values = c("#5430D9","#D90467","grey"))+
     ggnewscale::new_scale_color()+
-    geom_point(aes(x=x, y=y, 
+    geom_point(data = function(x) dplyr::filter(x, !isTip),
+               aes(x=x, y=y, 
                  fill=gene_copy_disp,
                  color=isSig,
                  stroke=ifelse(isSig == "yes", 0.5, 0),
-                 size   = ifelse(isSig == "yes", 2, 1.5)),
+                 size=ifelse(isSig == "yes", 2, 1.5)),
              shape=21)+
   scale_size_identity()+
   scale_fill_manual(values=fill_values_cp)+
@@ -1333,6 +1337,13 @@ fill_values_cp <- c(
 }
 
 cafe_get_age_of_change<-function(tree, change_dat, cafe_genefamily_res){
+  #use to test
+  #tree=readNexus("./06.CAFE5/New_results/salmon_trees.tre")
+  #change_dat=read_tsv("./06.CAFE5/New_results/results_cafe_red/Multi_lambda_model_1/Base_change.tab")
+
+  cafe_genefamily_res=cafe_genefamily_outs
+    
+    
   library(ggtree)
   library(ggnewscale)
   
@@ -1341,11 +1352,12 @@ cafe_get_age_of_change<-function(tree, change_dat, cafe_genefamily_res){
   if (is.null(names(trees))) names(trees) <- paste0("OG", seq_along(trees))
   
   concat_trees<-function(trees_in,name){
+    trees_in=trees
     tr<-trees_in
     
     
     #This is used to get the gene copy number at the root
-    (str_split(tr$node.label[1],"_",simplify = TRUE))[,2] %>% 
+    (str_split(tr[[1]]$node.label[1],"_",simplify = TRUE))[,2] %>% 
       as.numeric()->root_node_copy
     
     
@@ -1356,7 +1368,7 @@ cafe_get_age_of_change<-function(tree, change_dat, cafe_genefamily_res){
     #Change the CAFE naming format
     g$data %>%
       tidyr::extract(
-        label, into = c("species", "angle_tag", "suffix"),
+        label, into = c("species", "angle_tag", "suffix"),#suffix is the gene copy number
         regex = "^([^<]*)(<\\d+>)(?:\\*)?(_\\d+)$", remove = FALSE) %>%
       mutate(species=na_if(species, ""),
              gene_copy=dplyr::case_when(
@@ -1514,7 +1526,7 @@ brms_significance_plot<-function(model_list, submodel, trait, var_type) {
     
     left_join(plot_dat,module_annot,by = c("model_id"="mod"))->plot_dat
     ggplot(plot_dat, aes(y = mean, x = feature, group = eigengene, fill = sig95)) +
-      facet_grid(rows = vars(annot), cols = vars(eigengene), scales = "free_x", space = "free_x") +
+      facet_grid(rows = vars(annot), cols = vars(eigengene), scales = "free", space = "free_x") +
       geom_hline(yintercept = 0, linetype = 2, color="red") +
       geom_errorbar(aes(ymin = `2.5%`, ymax = `97.5%`),
                     width = 0.15, 
@@ -1594,18 +1606,35 @@ brms_plot_random<-function(model_list, submodel, trait){
 
 make_pca_trait_model_plot<-function(model,pca_dat,trait,arrow_scale,fill_label){
     
-#model = model_aspect_ratio$salmon$model_brms_aspect_ratio
-#pca_dat = model_aspect_ratio$salmon$pca_gene_pca
-#trait = "aspect_ratio"
-#arrow_scale = 30
-#fill_label = "Scaled aspect ratio"
-  
+    #Use for testing
+    #model = model_aspect_ratio$salmon$model_brms_aspect_ratio
+    #pca_dat = model_aspect_ratio$salmon$pca_gene_pca
+    #trait = "aspect_ratio"
+    #arrow_scale = 30
+    #fill_label = "Scaled aspect ratio"
+    
     as_tibble(diag(pca_dat$Eval)/sum(pca_dat$Eval)*100) %>% 
       mutate(PCs=rownames(pca_dat$Eval)) %>% 
       pivot_wider(names_from = PCs, values_from = value)->var_exp
     
-    pca_dat$Evec %>% as_tibble() %>% 
-      mutate(genes=rownames(pca_dat$Evec))->vec_dat
+    #pca_dat$Evec %>% as_tibble() %>% 
+    # mutate(genes=rownames(pca_dat$Evec))->vec_dat
+    
+    pca_dat$Evec %>% as.tibble() %>% 
+      mutate(genes=rownames(pca_dat$Evec)) %>% 
+      left_join(danio_orth_mods,by=c("genes"="gene")) %>% 
+      distinct(genes, .keep_all = TRUE) %>% 
+      dplyr::rename("gene.name"=`Gene name`)->vec_dat
+    
+    #this is the data for the geom segment
+      arrow_tip_dat <- vec_dat %>%
+        dplyr::mutate(
+          xend = PC1 * arrow_scale,
+          yend = PC2 * arrow_scale,
+        #offset for label
+        r = sqrt(xend^2 + yend^2),
+        x_lab = xend + (xend / r) * 0.6,   # 0.6 controls how far from tip
+        y_lab = yend + (yend / r) * 0.6)
     
     #remove '_'
     trait_label<-str_replace_all(trait,pattern = "_", replacement = " ")
@@ -1619,14 +1648,14 @@ make_pca_trait_model_plot<-function(model,pca_dat,trait,arrow_scale,fill_label){
           z < -quantile(z, 0.95) ~ -quantile(z, 0.95),
           .default = z)) %>% 
         mutate(sp_shrt=str_match(sp, "^([A-Za-z]{2})[A-Za-z]*_([A-Za-z]{3})[A-Za-z]*$") %>%
-            { paste0(.[,2], .[,3]) })->scaled_dat
+                 { paste0(.[,2], .[,3]) })->scaled_dat
       
       qnt<-quantile(scaled_dat$z,0.95) #used for plotting
       
       #Plot properties for labels
       pal_fun <- scales::col_numeric(palette = c("#F5D33D", "#e4e4e4", "#346168"),
                                      domain  = c(-qnt, qnt),na.color = "grey80")
-
+      
       #choose text color based on perceived luminance
       pick_text_contrast <- function(hex, threshold = 0.6) {
         rgb <- grDevices::col2rgb(hex) / 255
@@ -1634,11 +1663,11 @@ make_pca_trait_model_plot<-function(model,pca_dat,trait,arrow_scale,fill_label){
           rgb <= 0.03928,
           rgb / 12.92,
           ((rgb + 0.055) / 1.055)^2.4)
-  
-      #relative luminance
+        
+        #relative luminance
         lum <- 0.2126 * rgb_lin[1, ] + 0.7152 * rgb_lin[2, ] + 0.0722 * rgb_lin[3, ]
         ifelse(lum < threshold, "white", "black")
-        }
+      }
       
       scaled_dat %>%
         mutate(
@@ -1654,7 +1683,7 @@ make_pca_trait_model_plot<-function(model,pca_dat,trait,arrow_scale,fill_label){
                      size=0.5, 
                      show.legend = FALSE, 
                      inherit.aes = FALSE)+
-        geom_label(aes(label = sp_shrt, fill = z.clipped, color = label_text),
+        geom_label(aes(label = sp_shrt, fill  = z.clipped, color = label_text),
                    position = position_jitter(width = 3, height = 3, seed = 42),
                    alpha=0.9,
                    size = 2.5,                      # small text
@@ -1665,13 +1694,18 @@ make_pca_trait_model_plot<-function(model,pca_dat,trait,arrow_scale,fill_label){
                              breaks = c(-qnt, 0, qnt), 
                              labels  = c(paste0("<", round(-qnt)), "0", paste0(">", round(qnt))),
                              oob = scales::squish)+
-        scale_color_identity() +   #precomputed color values
+        scale_color_identity()+   #precomputed color values
+        geom_text(aes(x = x_lab, y = y_lab, label = gene.name),
+                  data = arrow_tip_dat,
+                  color="#D3004F",
+                  size = 3,
+                  inherit.aes = FALSE)+
         labs(x=paste0("PC1 gene copy","(",round(var_exp$PC1),"%)"), 
              y=paste0("PC2 gene copy","(",round(var_exp$PC2),"%)"),
              fill=paste0(fill_label))+
         theme_bw()->pc_plot
       
-
+      
       
       scaled_dat  %>% 
         ggplot(aes(y=PC1.cpy,x=scaled_dat[[trait]]))+
@@ -1750,13 +1784,19 @@ make_pca_trait_model_plot<-function(model,pca_dat,trait,arrow_scale,fill_label){
                    linewidth = 0.10,               
                    label.padding = unit(0.06, "lines")) +
         ggsci::scale_fill_jama()+
+        geom_text(aes(x = x_lab, y = y_lab, label = gene.name),
+                  data = arrow_tip_dat,
+                  color="#D3004F",
+                  size = 3,
+                  inherit.aes = FALSE)+
         labs(x=paste0("PC1 gene copy","(",round(var_exp$PC1),"%)"), 
              y=paste0("PC2 gene copy","(",round(var_exp$PC2),"%)"), 
              fill=paste0(fill_label))+
         theme_bw()
       
     }
-}
+  }
+
 
 #Processing Bgee data
 Bgee_dge<-function(.data){
@@ -6086,7 +6126,7 @@ cafe_genefamily_outs %>% drop_na() %>% filter(is_sig=="y" & mod_type=="Homologou
 
 #### Expansion and contraction of gene families
 
-Here we plot the relative expansion and contraction of homologous gene families estimated by CAFE. We see that there are different points of expansion/contraction along the tree occurring at different nodes. The highest expansion occurred at the root of teleost as a result of the teleost specific whole genome duplication (3R). The second point of expansion appears at the branch leading to *Danio rerio*. This is signal is likely due to the fact that *Danio rerio* has a large proportion of retained ohnologs from the 3R.\
+Here we plot the relative expansion and contraction of homologous gene families estimated by CAFE. We see that there are different points of expansion/contraction along the tree occurring at different nodes. The highest expansion occurred at the root of teleost as a result of the teleost specific whole genome duplication (3R).  
 The expansions and contractions are all significant.
 
 ###### Along the tree
@@ -6094,6 +6134,7 @@ The expansions and contractions are all significant.
 ```{r, warning=FALSE}
 #CAFE colors
 cafe_genefamily_outs %>% filter(is_sig=="y" & mod_type=="Homologous") %>% janitor::get_dupes(mod) %>% distinct(mod) %>% pull(mod)->cafe_cols
+
 
 #cafe_genefamily_outs %>% filter(is_sig=="n") %>% slice_sample(n=167) %>% janitor::get_dupes(mod) %>% drop_na() %>% distinct(mod) %>% pull(mod)->cafe_cols 
 
@@ -6116,6 +6157,25 @@ Save the random gene sets
 #randam_dat1_cafe<-RDS("./RDS/random_dat1_cafe.rds")
 ```
 
+```{r}
+#For the random data
+#CAFE colors
+cafe_genefamily_outs %>% filter(is_sig=="y" & mod_type=="Non homologous") %>% janitor::get_dupes(mod) %>% distinct(mod) %>% pull(mod)->cafe_cols_random
+
+
+#cafe_genefamily_outs %>% filter(is_sig=="n") %>% slice_sample(n=167) %>% janitor::get_dupes(mod) %>% drop_na() %>% distinct(mod) %>% pull(mod)->cafe_cols 
+
+#CAFE trees
+paste0("./06.CAFE5/random/",cafe_cols_random,"_trees.tre") %>% as.list()->tree_list_random
+#CAFE change results
+paste0("./06.CAFE5/random/results_cafe_",cafe_cols_random,"/Multi_lambda_model_1/Base_change.tab") %>% as.list()->change_dat_list_random
+purrr::map2(.x=tree_list_random, .y=change_dat_list_random,
+            ~cafe_get_age_of_change(tree = readNexus(.x), 
+                                    change_dat = read_tsv(.y),
+                                    cafe_genefamily_res = cafe_genefamily_outs)) %>% 
+  list_rbind()->all_tree_dat_random
+```
+ 
 ```{r}
 #Expansion/Contraction ratio per node
 #Shows which nodes have more expansion/contraction; inclusive of all genes
@@ -6237,13 +6297,13 @@ cafe_genefamily_outs %>% dplyr::count(mod_type, is_sig)  %>%
 
 By module
 ```{r}
-all_tree_dat %>% filter(isSig=="yes" & isTip==TRUE) %>% left_join(taxa, by=c("species"="sp")) %>% mutate(genes=str_remove_all(genes, "OG")) %>% 
+all_tree_dat %>% filter(isSig=="yes" & isTip==FALSE) %>% left_join(taxa, by=c("species"="sp")) %>% mutate(genes=str_remove_all(genes, "OG")) %>% 
     left_join(cafe_genefamily_outs, by = "genes") %>% 
     mutate(species=str_replace_all(species,pattern = "_",replacement = " ")) %>% 
     dplyr::count(type_of_change, annot) %>% 
     mutate(annot=reorder(annot, n)) %>% 
     ggplot(aes(y=annot, x=n, fill = type_of_change))+ 
-    geom_col(alpha=0.8, position = "stack", linewidth=0.05, color="black")+    scale_fill_manual(values = c("#5430D9","#D90467"))+
+    geom_col(alpha=0.8, position = position_dodge(width=0.9), linewidth=0.05, color="black")+    scale_fill_manual(values = c("#5430D9","#D90467"))+
     labs(x="Number of expansion/contraction", y="Modules")+
     theme_bw()+
     theme(axis.text.y = element_text(angle = 0,hjust = 1, vjust = 0.3, 
@@ -6252,16 +6312,32 @@ all_tree_dat %>% filter(isSig=="yes" & isTip==TRUE) %>% left_join(taxa, by=c("sp
                                      size = 6))
 ```
 
+##### Difference in number of expansions and contractions
+There are no differences in number of expansion and contraction events. Suggesting that the network doesnt prefereentially evolve via expansion and contraction. 
+```{r}
+  all_tree_dat %>% filter(isSig=="yes"& isTip==FALSE) %>% 
+    left_join(taxa, by=c("species"="sp")) %>% 
+    mutate(genes=str_remove_all(genes, "OG")) %>% 
+    left_join(cafe_genefamily_outs, by = "genes") %>% group_by(genes) %>%
+    dplyr::count(type_of_change) %>% ungroup() %>% 
+    pivot_wider(names_from = type_of_change, values_from = n) %>% 
+    replace_na(list(contraction=0, expansion=0)) %>% 
+    mutate(diff = expansion - contraction)->d
+    
+  wilcox.test(d$expansion, d$contraction, paired = TRUE, alternative = "two.sided")
+```
+
+
 ##### Specific modules
 
 Here I look at the changes in gene copy for the genes making up the turqoise, brown, and red module.
 
-####### Turquoise
+####### Salmon
 
 ```{r}
-cafe_trait_tree(tree = readNexus("./06.CAFE5/New_results/turquoise_trees.tre"),
-                change_dat = read_tsv("./06.CAFE5/New_results/results_cafe_turquoise/Multi_lambda_model_1/Base_change.tab"),
-                model = model_brain$turquoise$model_brms_brain)
+cafe_trait_tree(tree = readNexus("./06.CAFE5/New_results/salmon_trees.tre"),
+                change_dat = read_tsv("./06.CAFE5/New_results/results_cafe_salmon/Multi_lambda_model_1/Base_change.tab"),
+                model = model_aspect_ratio$salmon$model_brms_aspect_ratio)
 ```
 
 ####### Brown
@@ -7045,7 +7121,7 @@ plot(model_age_maturity$midnightblue$model_brms_age_maturity, nvariables = 8, as
 #plot(loo(model_brms))
 ```
 
-##### Peroxisome process module
+##### Peroxisome process module (unreliable)
 ###### Trait and PCA plot
 ```{r,message=FALSE}
   make_pca_trait_model_plot(model = model_age_maturity$black$model_brms_age_maturity,
@@ -7072,13 +7148,13 @@ plot(model_age_maturity$black$model_brms_age_maturity, nvariables = 8, ask = FAL
 ```
 
 
-##### RNA processing 1 module
+##### RNA processing 2 module
 ###### Trait and PCA plot
 ```{r,message=FALSE}
-  make_pca_trait_model_plot(model = model_age_maturity$orange$model_brms_age_maturity,
-                            pca_dat = model_age_maturity$orange$pca_gene_pca,
+  make_pca_trait_model_plot(model = model_age_maturity$royalblue$model_brms_age_maturity,
+                            pca_dat = model_age_maturity$royalblue$pca_gene_pca,
                             trait = "age_maturity",
-                            arrow_scale = 10,
+                            arrow_scale = 40,
                             fill_label = "Scaled age of maturity")
 ```
 ###### Diagnostics
@@ -7098,32 +7174,6 @@ plot(model_age_maturity$orange$model_brms_age_maturity, nvariables = 8, ask = FA
 #plot(loo(model_brms))
 ```
 
-
-##### Translation module
-###### Trait and PCA plot
-```{r,message=FALSE}
-  make_pca_trait_model_plot(model = model_age_maturity$pink$model_brms_age_maturity,
-                            pca_dat = model_age_maturity$pink$pca_gene_pca,
-                            trait = "age_maturity",
-                            arrow_scale = 20,
-                            fill_label = "Scaled age of maturity")
-```
-###### Diagnostics
-```{r,message=FALSE}
-ggarrange(
-  pp_check(model_age_maturity$pink$model_brms_age_maturity,ndraws = 200, resp = "PC1cpy"),
-  pp_check(model_age_maturity$pink$model_brms_age_maturity,ndraws = 200, resp = "PC2cpy"),
-  pp_check(model_age_maturity$pink$model_brms_age_maturity, type = "ecdf_overlay", ndraws = 200, resp = "PC1cpy"),
-  pp_check(model_age_maturity$pink$model_brms_age_maturity, type = "ecdf_overlay", ndraws = 200, resp = "PC2cpy")
-)
-
-plot(model_age_maturity$pink$model_brms_age_maturity, nvariables = 8, ask = FALSE)
-
-#Additional diagnostic plots.
-#Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
-#pairs(model_brms, regex = "^b_")
-#plot(loo(model_brms))
-```
 
 ### Average temperature ~ gene copy number
 Average temperature from portion of population sampled (celcius)
@@ -7252,7 +7302,7 @@ plot(model_temp$magenta$model_brms_temp, nvariables = 8, ask = FALSE)
 #plot(loo(model_brms))
 ```
 
-##### Neuron migration module
+##### Neuron migration module (unreliable)
 ###### Trait and PCA plot
 ```{r,message=FALSE}
   make_pca_trait_model_plot(model = model_temp$lightgreen$model_brms_temp,
@@ -7876,7 +7926,7 @@ plot(model_bodyshape$red$model_brms_bodyshape, nvariables = 8, ask = FALSE)
 #plot(loo(model_brms))
 ```
 
-##### Neuron migration and placode module
+##### Neuron migration and placode module (unreliable)
 ###### Trait and PCA plot
 ```{r,message=FALSE}
   make_pca_trait_model_plot(model = model_bodyshape$lightgreen$model_brms_bodyshape,
@@ -8449,6 +8499,33 @@ plot(model_lower_jaw_length$black$model_brms_lower_jaw_length, nvariables = 8, a
 #plot(loo(model_brms))
 ```
 
+##### Ribosome related (unreliable)
+###### Trait and PCA plot
+```{r,message=FALSE}
+  make_pca_trait_model_plot(model = model_lower_jaw_length$orange$model_brms_lower_jaw_length,
+                            pca_dat = model_lower_jaw_length$orange$pca_gene_pca,
+                            trait = "lower_jaw_length",
+                            arrow_scale = 50,
+                            fill_label = "Scaled lower jaw length")
+```
+###### Diagnostics
+The posteriors probability checks looks fine with ample overlap between sample predictor distribution and sampled posterior space. The ECDF overlays shows good coverage.
+```{r,message=FALSE}
+ggarrange(
+  pp_check(model_lower_jaw_length$orange$model_brms_lower_jaw_length,ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_lower_jaw_length$orange$model_brms_lower_jaw_length,ndraws = 200, resp = "PC2cpy"),
+  pp_check(model_lower_jaw_length$orange$model_brms_lower_jaw_length, type = "ecdf_overlay", ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_lower_jaw_length$orange$model_brms_lower_jaw_length, type = "ecdf_overlay", ndraws = 200, resp = "PC2cpy")
+)
+
+plot(model_lower_jaw_length$orange$model_brms_lower_jaw_length, nvariables = 8, ask = FALSE)
+
+#Additional diagnostic plots.
+#Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
+#pairs(model_brms, regex = "^b_")
+#plot(loo(model_brms))
+```
+
 ##### RNA processing module (unreliable)
 ###### Trait and PCA plot
 ```{r,message=FALSE}
@@ -8803,7 +8880,7 @@ The top five tissues with the highest expression across fishes are generally, mu
 ```{r}
 bgee_cafe_genes_plots(orths_in = (cafe_sig %>% filter(mod=="salmon") %>% pull(genes)),
                        system = "Aerobic respiration",
-                       slice_size = 5)
+                       slice_size = 5, nrow = 5, ncol = 2)
 ```
 
 ###### Expression during embryonic and post-embryonic development
@@ -8991,14 +9068,14 @@ pheno_alluvial(col = "magenta",freq_req = 1)
 ```
 
 
-##### RNA processing 1  
+##### RNA processing 2  
 Variation in gene copies in the cell cycle process module is linked with variation in age of mturity.
 These genes are highest expressed in gonads and blastula.
 ###### Expression in Bgee
 ```{r}
-bgee_cafe_genes_plots(orths_in = (cafe_sig %>% filter(mod=="orange") %>% pull(genes)),
+bgee_cafe_genes_plots(orths_in = (cafe_sig %>% filter(mod=="royalblue") %>% pull(genes)),
                        system = "RNA processing",
-                       slice_size = 5)
+                       slice_size = 5,ncol = 2,nrow = 5)
 ```
 
 ###### Expression during embryonic and post-embryonic development
@@ -9011,10 +9088,10 @@ comp_dev_danio_heatmap(system_proc = "RNA processing 1")
 In both clonwfish and grouper, the genes have decreased expression as development progresses.
 ```{r}
 purrr::map2(.x="Amphiprion_ocellaris", 
-            .y=(cafe_sig %>% filter(mod=="orange") %>% pull(genes)),
+            .y=(cafe_sig %>% filter(mod=="royalblue") %>% pull(genes)),
             ~meta_exp_cafe_genes(species = .x, orthogroup = .y))->clown_meta_cafe_exp
 purrr::map2(.x="Epinephelus_malabaricus", 
-            .y=(cafe_sig  %>% filter(mod=="orange") %>% pull(genes)),
+            .y=(cafe_sig  %>% filter(mod=="royalblue") %>% pull(genes)),
             ~meta_exp_cafe_genes(species = .x, orthogroup = .y))->grouper_meta_cafe_exp
 ```
 
@@ -9026,7 +9103,7 @@ patchwork::wrap_plots(grouper_meta_cafe_exp)+plot_annotation(subtitle = "Express
 ###### ZFIN data
 There are no genes from this module with perturbation data.
 ```{r}
-pheno_alluvial(col = "orange",freq_req = 1)
+pheno_alluvial(col = "royalblue",freq_req = 1)
 ```
 
 ##### DNA replication  
