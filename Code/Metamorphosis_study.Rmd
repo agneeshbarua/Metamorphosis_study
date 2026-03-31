@@ -6113,12 +6113,12 @@ all_fish_wil_test_cafe_res %>%
 The plot below shows the negative log-likelihoods for two models implemented in CAFE. The Base model, with a single rate acorss the entire tree, and a multi-lambda model where the acanthomorpha and non-acanthomorpha fish have different rates. For all of the homologous modules, except royalblue, the multi-lambda model is a better fit to the data.
 
 ```{r}
-cafe_model_outs %>% filter(mod_type=="Homologous") ->cafe_homo_plot_dat
+cafe_model_outs %>% filter(mod_type=="Homologous") %>% left_join(module_annot, by="mod")->cafe_homo_plot_dat
   cafe_homo_plot_dat %>% 
     mutate(model_type=cafe_homo_plot_dat$model_type %>% str_remove_all("_[1-3]")) %>% 
   filter(mod !="white") %>% 
-  ggplot(aes(x=model_type,y=neglogL, group=mod, fill=model_type))+
-  facet_wrap(~mod, scales="free_y")+
+  ggplot(aes(x=model_type,y=neglogL, group=annot, fill=model_type))+
+  facet_wrap(~annot, scales="free_y")+
   geom_point(shape=21, color="grey20", size=3)+
   ggsci::scale_fill_aaas()+
   labs(subtitle = "Conserved network")+
@@ -6142,6 +6142,22 @@ cafe_model_outs %>% filter(mod_type=="Homologous") ->cafe_homo_plot_dat
 
 #### Difference in rates
 Here I check whether these ins actual difference in the rate estimates from CAFE for the conserved network and the random set. Plotting the values between the two gene classes shows that the genes in conserved network evolve at a lower rate. I use a bootsrapped one-sided wilcoxon rank sum test to test whether the rate estimates is significantly lower for the genes in the conserved network. 
+
+```{r}
+cafe_model_outs %>% filter(model_type != "base" 
+                           & mod_type=="Homologous") %>% 
+  summarise(mean_lambda1=mean(lambda1), mean_lambda2=mean(lambda2),.by = mod) %>% 
+  pivot_longer(cols = contains("mean"), names_to = "lam", values_to = "rate") %>% 
+  mutate(mod=reorder(mod, -rate)) %>% 
+  left_join(module_annot,  by="mod") %>% 
+  ggplot(aes(y=rate, x=annot, fill = lam))+
+  facet_wrap(~annot, scales="free")+
+  geom_col(position = position_dodge(width = 1))+
+  scale_fill_manual(values = c("#8E5572","#6B8E23"))+
+  theme_bw()+
+  theme(axis.text.x = element_blank())
+```
+
 ```{r}
 rbind(
 cafe_model_outs %>% filter(model_type != "base" & mod_type=="Non homologous" & mod != "random_mod25") %>% 
@@ -8190,12 +8206,8 @@ brms_significance_plot(model_list = model_habitat,
 ###### Diagnostics
 The posteriors probability checks looks fine with ample overlap between sample predictor distribution and sampled posterior space. The ECDF overlays shows good coverage.
 ```{r,message=FALSE}
-ggarrange(
-  pp_check(model_habitat$royalblue$model_brms_habitat,ndraws = 200, resp = "PC1cpy"),
-  pp_check(model_habitat$royalblue$model_brms_habitat,ndraws = 200, resp = "PC2cpy"),
-  pp_check(model_habitat$royalblue$model_brms_habitat, type = "ecdf_overlay", ndraws = 200, resp = "PC1cpy"),
-  pp_check(model_habitat$royalblue$model_brms_habitat, type = "ecdf_overlay", ndraws = 200, resp = "PC2cpy")
-)
+pp_check(model_habitat$royalblue$model_brms_habitat, type = "bars",ndraws = 200)
+
 
 plot(model_habitat$royalblue$model_brms_habitat, nvariables = 8, ask = FALSE)
 
