@@ -1,5 +1,5 @@
 ---
-title: "Conserved post-embryonic developmental networks underlie phenotypic variation in teleosts."
+title: "Conserved developmental networks underlie post-embryonic remodelling in teleosts"
 output:
   html_document:
     code_folding: hide
@@ -1309,8 +1309,9 @@ fill_values_cp <- c(
   )
 
   g <- if (isTRUE(with_tips)) {
-    g + geom_tiplab(aes(label=str_replace_all(species,pattern = "_",replacement = " ")),
-                as_ylab = FALSE,offset = 5, size=2, align = TRUE, fontface="italic")+ hexpand(.7)
+    ggtree::ggtree(g$data, layout = "rectangular") + geom_tree() +
+    geom_tiplab(aes(label=str_replace_all(species,pattern = "_",replacement = " ")),as_ylab = FALSE,offset = 5, size=3,geom = "text", fontface="italic")+ hexpand(.7)
+    #g +geom_tiplab(size=3)
     } else {
     g
   }
@@ -2167,6 +2168,15 @@ meta_exp_cafe_genes <- function(species, orthogroup){
 
 pheno_alluvial<-function(col, freq_req){
   library(ggalluvial)
+  # Create a stable color vector
+  gene_levels <- pheno_orth_mods %>% filter(mod==col) %>%
+    distinct(`Gene Symbol`) %>%
+    arrange(`Gene Symbol`) %>% pull(`Gene Symbol`)
+  
+  my_colors <- randomcoloR::distinctColorPalette(length(gene_levels))
+  names(my_colors) <- gene_levels
+  
+  
   pheno_orth_mods %>% filter(mod==col) %>% 
     dplyr::select(`Gene Symbol`,
                   `Affected Structure or Process 1 superterm Name`,
@@ -2195,7 +2205,7 @@ pheno_alluvial<-function(col, freq_req){
               size = 3,
               color = "black")+
     scale_x_discrete(limits = c("Gene", "Superterm", "Phenotype"),expand = c(0.08, 0.08))+
-    scale_fill_d3()+
+    scale_fill_manual(values = my_colors, drop = FALSE)+
     labs(y = "Count", x = NULL, fill = "Gene") +
     theme_minimal() +
     theme(axis.text.x = element_text(size = 10, face = "bold"),
@@ -2516,6 +2526,8 @@ goby_orth_net %>% saveRDS("./02.Gene_expression_and_network/goby_orth_net.rds")
 manini_orth_net %>% saveRDS("./02.Gene_expression_and_network/manini_orth_net.rds")
 danio_orth_net %>% saveRDS("./02.Gene_expression_and_network/danio_orth_net.rds")
 ```
+
+### Load the networks
 
 ```{r}
 clown_orth_net<-readRDS("./02.Gene_expression_and_network/clown_orth_net.rds")
@@ -5124,6 +5136,82 @@ rbind(
   theme(strip.background = element_rect(fill="grey96"))
 ```
 
+```{r}
+ggarrange(
+connect_dat %>% filter(sp=="clownfish") %>% 
+  ggplot(aes(y=log2(degree),x=type))+
+  geom_violin(alpha=0.6, color="grey35", fill="#e77515",linewidth=0.2)+
+  geom_boxplot(alpha=0.5, fill="grey80", outliers = FALSE, width=0.3)+
+  scale_y_continuous(limits = c(4,7.5))+
+  annotate("segment", x = 1, xend = 2, y = 7.3, yend = 7.3, linewidth=0.3) +
+  annotate("segment", x = 1, xend = 1, y = 7.1, yend = 7.3, linewidth=0.3) +
+  annotate("segment", x = 2, xend = 2, y = 7.1, yend = 7.3, linewidth=0.3) +
+  annotate("text", x = 1.5, y = 7.3, label = "***", size=5)+
+  labs(x=NULL,
+       y="Connectivity")+
+  theme_bw()+
+  theme(axis.text.x = element_text(size = 10)),
+
+
+connect_dat %>% filter(sp=="manini") %>% 
+  ggplot(aes(y=log2(degree),x=type))+
+  geom_violin(alpha=0.6, color="grey35", fill="#9acd32",linewidth=0.2)+
+  geom_boxplot(alpha=0.5, fill="grey80", outliers = FALSE, width=0.3)+
+  scale_y_continuous(limits = c(4,7.5))+
+  annotate("segment", x = 1, xend = 2, y = 7.3, yend = 7.3, linewidth=0.3) +
+  annotate("segment", x = 1, xend = 1, y = 7.1, yend = 7.3, linewidth=0.3) +
+  annotate("segment", x = 2, xend = 2, y = 7.1, yend = 7.3, linewidth=0.3) +
+  annotate("text", x = 1.5, y = 7.3, label = "***", size=5)+
+  labs(x=NULL,
+       y=NULL)+
+  theme_bw()+
+  theme(axis.text.x = element_text(size = 10)),
+
+connect_dat %>% filter(sp=="goby") %>% 
+  ggplot(aes(y=log2(degree),x=type))+
+  geom_violin(alpha=0.6, color="grey35", fill="#BA4566",linewidth=0.2)+
+  geom_boxplot(alpha=0.5, fill="grey80", outliers = FALSE, width=0.3)+
+  scale_y_continuous(limits = c(4,7.5))+
+  annotate("segment", x = 1, xend = 2, y = 7.3, yend = 7.3, linewidth=0.3) +
+  annotate("segment", x = 1, xend = 1, y = 7.1, yend = 7.3, linewidth=0.3) +
+  annotate("segment", x = 2, xend = 2, y = 7.1, yend = 7.3, linewidth=0.3) +
+  annotate("text", x = 1.5, y = 7.3, label = "**", size=5)+
+  labs(x=NULL,
+       y=NULL)+
+  theme_bw()+
+  theme(axis.text.x = element_text(size = 10)),
+
+connect_dat %>% filter(sp=="grouper") %>% 
+  ggplot(aes(y=log2(degree),x=type))+
+  geom_violin(alpha=0.6, color="grey35", fill="#D9C343",linewidth=0.2)+
+  geom_boxplot(alpha=0.5, fill="grey80", outliers = FALSE, width=0.3)+
+  scale_y_continuous(limits = c(4,7.5))+
+  annotate("segment", x = 1, xend = 2, y = 7.3, yend = 7.3, linewidth=0.3) +
+  annotate("segment", x = 1, xend = 1, y = 7.1, yend = 7.3, linewidth=0.3) +
+  annotate("segment", x = 2, xend = 2, y = 7.1, yend = 7.3, linewidth=0.3) +
+  annotate("text", x = 1.5, y = 7.3, label = "***", size=5)+
+  labs(x=NULL,
+       y="Connectivity")+
+  theme_bw()+
+  theme(axis.text.x = element_text(size = 10)),
+
+connect_dat %>% filter(sp=="grouper") %>% 
+  ggplot(aes(y=log2(degree),x=type))+
+  geom_violin(alpha=0.4, color="grey35", fill="#343BC2",linewidth=0.2)+
+  geom_boxplot(alpha=0.5, fill="grey80", outliers = FALSE, width=0.3)+
+  scale_y_continuous(limits = c(4,7.5))+
+  annotate("segment", x = 1, xend = 2, y = 7.3, yend = 7.3, linewidth=0.3) +
+  annotate("segment", x = 1, xend = 1, y = 7.1, yend = 7.3, linewidth=0.3) +
+  annotate("segment", x = 2, xend = 2, y = 7.1, yend = 7.3, linewidth=0.3) +
+  annotate("text", x = 1.5, y = 7.3, label = "*", size=5)+
+  labs(x=NULL,
+       y=NULL)+
+  theme_bw()+
+  theme(axis.text.y = element_blank(),
+        axis.text.x = element_text(size = 10)),
+ncol = 3, nrow = 2)
+```
+
 ```{r, eval=FALSE}
 
 wil_test_boot<-function(dat,species){
@@ -5288,6 +5376,7 @@ purrr::map(homologous_mods_CC_proc,
   kableExtra::kbl() %>% kableExtra::kable_styling() 
 ```
 
+#### Module annotation
 ```{r}
 homologous_genes %>% distinct(mod) %>% mutate(annot=
                                                 c("RNA processing 1",
@@ -5802,12 +5891,14 @@ purrr::map(.x="orange",
 
 I use the birth-and-death model implemented in CAFE5 to further validate the difference in gene copy number observed between acanthomorpha and non-acanthomorpha fishes. I run a base model with a uniform lambda for the entire tree and compare the model fit with a multilamda model where gene familes in acanthomorpha and non-acanthomorpha evolve at different rates.
 
-```{r, eval=FALSE}
+```{r}
 non_homologous_genes<-readRDS("./RDS/non_homologous_genes.rds")
 homologous_genes<-readRDS("./RDS/homologous_genes.rds")
 seq_stats<-read_tsv("./10.HyPhy/seq_dat_clean.tsv") %>% mutate(type=case_when(Orthogroup %in% homologous_genes$genes ~ "Homologous", 
                             .default = "Non homologous"))
+```
 
+```{r, eval=FALSE}
 #random_non_homologus_genes<-clown_orth_net$connectivity %>% 
 #  filter(!gene %in% homologous_genes$genes) %>% 
 #    slice_sample(n = 1196) %>% dplyr::rename("genes"="gene","mod"="module")#Random gene set to test specificity of CAFE
@@ -6022,7 +6113,7 @@ all_fish_wil_test_cafe_res %>%
 The plot below shows the negative log-likelihoods for two models implemented in CAFE. The Base model, with a single rate acorss the entire tree, and a multi-lambda model where the acanthomorpha and non-acanthomorpha fish have different rates. For all of the homologous modules, except royalblue, the multi-lambda model is a better fit to the data.
 
 ```{r}
-cafe_model_outs %>% filter(mod_type=="Homologous")->cafe_homo_plot_dat
+cafe_model_outs %>% filter(mod_type=="Homologous") ->cafe_homo_plot_dat
   cafe_homo_plot_dat %>% 
     mutate(model_type=cafe_homo_plot_dat$model_type %>% str_remove_all("_[1-3]")) %>% 
   filter(mod !="white") %>% 
@@ -6297,14 +6388,26 @@ cafe_genefamily_outs %>% dplyr::count(mod_type, is_sig)  %>%
 
 By module
 ```{r}
+homologous_genes %>% dplyr::count(mod,name = "mod_size") %>% left_join(module_annot)->annot_count
+
+
 all_tree_dat %>% filter(isSig=="yes" & isTip==FALSE) %>% left_join(taxa, by=c("species"="sp")) %>% mutate(genes=str_remove_all(genes, "OG")) %>% 
     left_join(cafe_genefamily_outs, by = "genes") %>% 
     mutate(species=str_replace_all(species,pattern = "_",replacement = " ")) %>% 
-    dplyr::count(type_of_change, annot) %>% 
-    mutate(annot=reorder(annot, n)) %>% 
-    ggplot(aes(y=annot, x=n, fill = type_of_change))+ 
-    geom_col(alpha=0.8, position = position_dodge(width=0.9), linewidth=0.05, color="black")+    scale_fill_manual(values = c("#5430D9","#D90467"))+
-    labs(x="Number of expansion/contraction", y="Modules")+
+    dplyr::count(type_of_change, annot, genes, name = "event_count")->turnover_event_annot #event rate per gene
+
+
+turnover_event_annot %>% dplyr::count(type_of_change,annot,name = "num_gene_per_change")->num_gene_per_change
+
+left_join(num_gene_per_change,annot_count, by="annot") %>% 
+  mutate(enrich_factor=(num_gene_per_change/mod_size)) %>% 
+  mutate(annot=tidytext::reorder_within(annot, enrich_factor, type_of_change)) %>% 
+    ggplot(aes(y=annot, x=enrich_factor, fill = type_of_change))+ 
+    facet_wrap(~type_of_change, scales="free", nrow=2)+
+    geom_col(alpha=0.8, position = position_dodge(width=0.9), linewidth=0.05, color="black")+
+    tidytext::scale_y_reordered()+
+    scale_fill_manual(values = c("#5430D9","#D90467"))+
+    labs(x="Relative expansion/contraction", y="Modules")+
     theme_bw()+
     theme(axis.text.y = element_text(angle = 0,hjust = 1, vjust = 0.3, 
                                      size = 9),
@@ -7665,6 +7768,7 @@ plot(model_temp$blue$model_brms_temp, nvariables = 8, ask = FALSE)
 Body shape categories
 ```{r}
  brms_model_bodyshape<-function(col){
+   
     library(brms)
     
     cafe_genefamily_outs<-cafe_genefamily_outs %>% filter(is_sig=="y" & mod_type=="Homologous")
@@ -7733,12 +7837,19 @@ Body shape categories
     #Phylogenetic covariance matrix
     A<-MCMCglmm::inverseA(pglmm_tree_fishbase,scale = TRUE,nodes = "TIPS")
     A<-A$Ainv
-    #Priors
-    priors<-get_prior(bodyshape ~  
-                        PC1.cpy + PC2.cpy + (1 |gr(sp, cov = A)),  
-                      data = model_dat,
-                      data2   = list(A = A),
-                      family = categorical())
+    #Priors; use the following prior set
+    #Most of the are default values, except the prior for the phylogenetic effect
+    #this tight prior ensures better model convergence 
+    
+   priors <- c(brms::prior("normal(0, 1.5)", class = "b", dpar = "muelongated"),
+               brms::prior("normal(0, 1.5)", class = "b", dpar = "mushortandordeep"),
+               brms::prior("student_t(3, 0, 1.5)", class = "Intercept", dpar = "muelongated"),
+               brms::prior("student_t(3, 0, 1.5)", class = "Intercept", dpar = "mushortandordeep"),
+               brms::prior("student_t(3, 0, 0.5)", class = "sd", group = "sp", dpar = "muelongated"),brms::prior("student_t(3, 0, 0.5)", class = "sd", group = "sp", dpar = "mushortandordeep")
+)
+
+
+  
     #Model
     model_brms_bodyshape <- brm(bodyshape ~ PC1.cpy + PC2.cpy + (1 |gr(sp, cov = A)),
       data = model_dat,
@@ -7747,10 +7858,10 @@ Body shape categories
       family = categorical(),
       chains = 4, 
       cores = 4,
-      iter = 10000, 
-      warmup = 3000,
+      iter = 4000, 
+      warmup = 1000,
       backend = "cmdstanr",
-      control = list(adapt_delta=0.999, max_treedepth = 12)
+      control = list(adapt_delta=0.99, max_treedepth = 12)
     )
     
     
@@ -7786,12 +7897,7 @@ brms_significance_plot(model_list = model_bodyshape,
 ###### Diagnostics
 The posteriors probability checks looks fine with ample overlap between sample predictor distribution and sampled posterior space. The ECDF overlays shows good coverage.
 ```{r,message=FALSE}
-ggarrange(
-  pp_check(model_bodyshape$salmon$model_brms_bodyshape,ndraws = 200, resp = "PC1cpy"),
-  pp_check(model_bodyshape$salmon$model_brms_bodyshape,ndraws = 200, resp = "PC2cpy"),
-  pp_check(model_bodyshape$salmon$model_brms_bodyshape, type = "ecdf_overlay", ndraws = 200, resp = "PC1cpy"),
-  pp_check(model_bodyshape$salmon$model_brms_bodyshape, type = "ecdf_overlay", ndraws = 200, resp = "PC2cpy")
-)
+pp_check(model_bodyshape$salmon$model_brms_bodyshape, type = "bars",ndraws = 200)
 
 plot(model_bodyshape$salmon$model_brms_bodyshape, nvariables = 8, ask = FALSE)
 
@@ -7812,11 +7918,7 @@ plot(model_bodyshape$salmon$model_brms_bodyshape, nvariables = 8, ask = FALSE)
 ```
 ###### Diagnostics
 ```{r,message=FALSE}
-ggarrange(
-  pp_check(model_bodyshape$magenta$model_brms_bodyshape,ndraws = 200, resp = "PC1cpy"),
-  pp_check(model_bodyshape$magenta$model_brms_bodyshape,ndraws = 200, resp = "PC2cpy"),
-  pp_check(model_bodyshape$magenta$model_brms_bodyshape, type = "ecdf_overlay", ndraws = 200, resp = "PC1cpy"),
-  pp_check(model_bodyshape$magenta$model_brms_bodyshape, type = "ecdf_overlay", ndraws = 200, resp = "PC2cpy"))
+pp_check(model_bodyshape$magenta$model_brms_bodyshape, type = "bars",ndraws = 200)
 
 plot(model_bodyshape$magenta$model_brms_bodyshape, nvariables = 8, ask = FALSE)
 
@@ -7837,11 +7939,7 @@ plot(model_bodyshape$magenta$model_brms_bodyshape, nvariables = 8, ask = FALSE)
 ```
 ###### Diagnostics
 ```{r,message=FALSE}
-ggarrange(
-  pp_check(model_bodyshape$green$model_brms_bodyshape,ndraws = 200, resp = "PC1cpy"),
-  pp_check(model_bodyshape$green$model_brms_bodyshape,ndraws = 200, resp = "PC2cpy"),
-  pp_check(model_bodyshape$green$model_brms_bodyshape, type = "ecdf_overlay", ndraws = 200, resp = "PC1cpy"),
-  pp_check(model_bodyshape$green$model_brms_bodyshape, type = "ecdf_overlay", ndraws = 200, resp = "PC2cpy"))
+pp_check(model_bodyshape$green$model_brms_bodyshape, type = "bars",ndraws = 200)
 
 plot(model_bodyshape$green$model_brms_bodyshape, nvariables = 8, ask = FALSE)
 
@@ -7862,13 +7960,9 @@ plot(model_bodyshape$green$model_brms_bodyshape, nvariables = 8, ask = FALSE)
 ```
 ###### Diagnostics
 ```{r,message=FALSE}
-ggarrange(
-  pp_check(model_bodyshape$brown$model_brms_bodyshape,ndraws = 200, resp = "PC1cpy"),
-  pp_check(model_bodyshape$brown$model_brms_bodyshape,ndraws = 200, resp = "PC2cpy"),
-  pp_check(model_bodyshape$brown$model_brms_bodyshape, type = "ecdf_overlay", ndraws = 200, resp = "PC1cpy"),
-  pp_check(model_bodyshape$brown$model_brms_bodyshape, type = "ecdf_overlay", ndraws = 200, resp = "PC2cpy"))
+pp_check(model_bodyshape$midnightblue$model_brms_bodyshape, type = "bars",ndraws = 200)
 
-plot(model_bodyshape$black$model_brms_bodyshape, nvariables = 8, ask = FALSE)
+plot(model_bodyshape$midnightblue$model_brms_bodyshape, nvariables = 8, ask = FALSE)
 
 #Additional diagnostic plots.
 #Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
@@ -7887,13 +7981,9 @@ plot(model_bodyshape$black$model_brms_bodyshape, nvariables = 8, ask = FALSE)
 ```
 ###### Diagnostics
 ```{r,message=FALSE}
-ggarrange(
-  pp_check(model_bodyshape$brown$model_brms_bodyshape,ndraws = 200, resp = "PC1cpy"),
-  pp_check(model_bodyshape$brown$model_brms_bodyshape,ndraws = 200, resp = "PC2cpy"),
-  pp_check(model_bodyshape$brown$model_brms_bodyshape, type = "ecdf_overlay", ndraws = 200, resp = "PC1cpy"),
-  pp_check(model_bodyshape$brown$model_brms_bodyshape, type = "ecdf_overlay", ndraws = 200, resp = "PC2cpy"))
+pp_check(model_bodyshape$brown$model_brms_bodyshape, type = "bars",ndraws = 200)
 
-plot(model_bodyshape$black$model_brms_bodyshape, nvariables = 8, ask = FALSE)
+plot(model_bodyshape$brown$model_brms_bodyshape, nvariables = 8, ask = FALSE)
 
 #Additional diagnostic plots.
 #Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
@@ -7912,12 +8002,7 @@ plot(model_bodyshape$black$model_brms_bodyshape, nvariables = 8, ask = FALSE)
 ```
 ###### Diagnostics
 ```{r,message=FALSE}
-ggarrange(
-  pp_check(model_bodyshape$red$model_brms_bodyshape,ndraws = 200, resp = "PC1cpy"),
-  pp_check(model_bodyshape$red$model_brms_bodyshape,ndraws = 200, resp = "PC2cpy"),
-  pp_check(model_bodyshape$red$model_brms_bodyshape, type = "ecdf_overlay", ndraws = 200, resp = "PC1cpy"),
-  pp_check(model_bodyshape$red$model_brms_bodyshape, type = "ecdf_overlay", ndraws = 200, resp = "PC2cpy"))
-
+pp_check(model_bodyshape$red$model_brms_bodyshape, type = "bars",ndraws = 200)
 plot(model_bodyshape$red$model_brms_bodyshape, nvariables = 8, ask = FALSE)
 
 #Additional diagnostic plots.
@@ -7937,11 +8022,7 @@ plot(model_bodyshape$red$model_brms_bodyshape, nvariables = 8, ask = FALSE)
 ```
 ###### Diagnostics
 ```{r,message=FALSE}
-ggarrange(
-  pp_check(model_bodyshape$lightgreen$model_brms_bodyshape,ndraws = 200, resp = "PC1cpy"),
-  pp_check(model_bodyshape$lightgreen$model_brms_bodyshape,ndraws = 200, resp = "PC2cpy"),
-  pp_check(model_bodyshape$lightgreen$model_brms_bodyshape, type = "ecdf_overlay", ndraws = 200, resp = "PC1cpy"),
-  pp_check(model_bodyshape$lightgreen$model_brms_bodyshape, type = "ecdf_overlay", ndraws = 200, resp = "PC2cpy"))
+pp_check(model_bodyshape$lightgreen$model_brms_bodyshape, type = "bars",ndraws = 200)
 
 plot(model_bodyshape$lightgreen$model_brms_bodyshape, nvariables = 8, ask = FALSE)
 
@@ -7962,11 +8043,7 @@ plot(model_bodyshape$lightgreen$model_brms_bodyshape, nvariables = 8, ask = FALS
 ```
 ###### Diagnostics
 ```{r,message=FALSE}
-ggarrange(
-  pp_check(model_bodyshape$black$model_brms_bodyshape,ndraws = 200, resp = "PC1cpy"),
-  pp_check(model_bodyshape$black$model_brms_bodyshape,ndraws = 200, resp = "PC2cpy"),
-  pp_check(model_bodyshape$black$model_brms_bodyshape, type = "ecdf_overlay", ndraws = 200, resp = "PC1cpy"),
-  pp_check(model_bodyshape$black$model_brms_bodyshape, type = "ecdf_overlay", ndraws = 200, resp = "PC2cpy"))
+pp_check(model_bodyshape$black$model_brms_bodyshape, type = "bars",ndraws = 200)
 
 plot(model_bodyshape$black$model_brms_bodyshape, nvariables = 8, ask = FALSE)
 
@@ -7987,11 +8064,7 @@ plot(model_bodyshape$black$model_brms_bodyshape, nvariables = 8, ask = FALSE)
 ```
 ###### Diagnostics
 ```{r,message=FALSE}
-ggarrange(
-  pp_check(model_bodyshape$pink$model_brms_bodyshape,ndraws = 200, resp = "PC1cpy"),
-  pp_check(model_bodyshape$pink$model_brms_bodyshape,ndraws = 200, resp = "PC2cpy"),
-  pp_check(model_bodyshape$pink$model_brms_bodyshape, type = "ecdf_overlay", ndraws = 200, resp = "PC1cpy"),
-  pp_check(model_bodyshape$pink$model_brms_bodyshape, type = "ecdf_overlay", ndraws = 200, resp = "PC2cpy"))
+pp_check(model_bodyshape$pink$model_brms_bodyshape, type = "bars",ndraws = 200)
 
 plot(model_bodyshape$pink$model_brms_bodyshape, nvariables = 8, ask = FALSE)
 
@@ -8791,8 +8864,6 @@ purrr::map2(.x="10dpf", .y=ann_list,
 
 
 ```
-
-
 
 
 #### Expression in other fish
