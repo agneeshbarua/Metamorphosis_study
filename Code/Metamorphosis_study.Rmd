@@ -2166,52 +2166,120 @@ meta_exp_cafe_genes <- function(species, orthogroup){
   } 
 }
 
-pheno_alluvial<-function(col, freq_req){
-  library(ggalluvial)
-  # Create a stable color vector
-  gene_levels <- pheno_orth_mods %>% filter(mod==col) %>%
-    distinct(`Gene Symbol`) %>%
-    arrange(`Gene Symbol`) %>% pull(`Gene Symbol`)
+pheno_terms_plot<-function(col){
   
-  my_colors <- randomcoloR::distinctColorPalette(length(gene_levels))
-  names(my_colors) <- gene_levels
+  library(dplyr)
+  library(tidyr)
+  library(ggplot2)
+  library(stringr)
   
+  pheno_orth_mods<-pheno_orth_mods %>%
+    distinct(`Gene Symbol`, `Publication ID`, `Phenotype Keyword ID`,
+             `Affected Structure or Process 1 superterm ID`, .keep_all = TRUE) %>% 
+    dplyr::select(`Gene Symbol`,`Affected Structure or Process 1 superterm Name`,`Phenotype Keyword Name`,mod)
   
-  pheno_orth_mods %>% filter(mod==col) %>% 
-    dplyr::select(`Gene Symbol`,
-                  `Affected Structure or Process 1 superterm Name`,
-                  `Phenotype Keyword Name`) %>% 
-    dplyr::count(`Gene Symbol`,
-                 `Affected Structure or Process 1 superterm Name`,
-                 `Phenotype Keyword Name`,
-                 name = "freq") %>% filter(freq >= freq_req) %>% 
-    mutate(`Gene Symbol`=reorder(`Gene Symbol`,-freq)) %>% 
-    ggplot(aes(axis1 = `Gene Symbol`,
-               axis2 = `Affected Structure or Process 1 superterm Name`,
-               axis3 = `Phenotype Keyword Name`,
-               y = freq))+
-    geom_alluvium(aes(fill = `Gene Symbol`), width = 0.2, alpha = 0.7)+
-    geom_stratum(width = 0.2, 
-                 fill = "grey95", 
-                 color = "black",
-                 linewidth = 0.3)+
-    geom_text(stat = "stratum",
-              aes(label = after_stat(ifelse(x == 1, as.character(stringr::str_wrap(after_stat(stratum), width = 10)), NA_character_))),
-              size = 3.5,
-              color = "black",
-              fontface = "italic")+
-    geom_text(stat = "stratum",
-              aes(label = after_stat(ifelse(x != 1, as.character(stringr::str_wrap(after_stat(stratum), width = 10)), NA_character_))),
-              size = 3,
-              color = "black")+
-    scale_x_discrete(limits = c("Gene", "Superterm", "Phenotype"),expand = c(0.08, 0.08))+
-    scale_fill_manual(values = my_colors, drop = FALSE)+
-    labs(y = "Count", x = NULL, fill = "Gene") +
-    theme_minimal() +
-    theme(axis.text.x = element_text(size = 10, face = "bold"),
-          axis.text.y = element_blank(),
-          legend.position = "none")
+  plot_dat <- pheno_orth_mods %>%
+    filter(mod == col) %>%
+    dplyr::count(
+      `Gene Symbol`,
+      `Affected Structure or Process 1 superterm Name`,
+      `Phenotype Keyword Name`,
+      name = "n_links"
+    )
+  
+  # keep top genes
+  top_genes <- plot_dat %>%
+    group_by(`Gene Symbol`) %>%
+    summarise(total = sum(n_links), .groups = "drop") %>%
+    arrange(desc(total)) %>%
+    slice_head(n = 15) %>%
+    pull(`Gene Symbol`)
+  
+  # keep top superterms
+  top_superterms <- plot_dat %>%
+    group_by(`Affected Structure or Process 1 superterm Name`) %>%
+    summarise(total = sum(n_links), .groups = "drop") %>%
+    arrange(desc(total)) %>%
+    slice_head(n = 20) %>%
+    pull(`Affected Structure or Process 1 superterm Name`)
+  
+  # keep top phenotypes
+  top_pheno <- plot_dat %>%
+    group_by(`Phenotype Keyword Name`) %>%
+    summarise(total = sum(n_links), .groups = "drop") %>%
+    arrange(desc(total)) %>%
+    slice_head(n = 12) %>%
+    pull(`Phenotype Keyword Name`)
+  
+  plot_dat2 <- plot_dat %>%
+    filter(
+      `Gene Symbol` %in% top_genes,
+      `Affected Structure or Process 1 superterm Name` %in% top_superterms,
+      `Phenotype Keyword Name` %in% top_pheno
+    ) %>%
+    complete(
+      `Gene Symbol` = top_genes,
+      `Affected Structure or Process 1 superterm Name` = top_superterms,
+      `Phenotype Keyword Name` = top_pheno,
+      fill = list(n_links = 0)
+    )
+  
+  gene_order <- plot_dat2 %>%
+    group_by(`Gene Symbol`) %>%
+    summarise(total = sum(n_links), .groups = "drop") %>%
+    arrange(desc(total)) %>%
+    pull(`Gene Symbol`)
+  
+  superterm_order <- plot_dat2 %>%
+    group_by(`Affected Structure or Process 1 superterm Name`) %>%
+    summarise(total = sum(n_links), .groups = "drop") %>%
+    arrange(desc(total)) %>%
+    pull(`Affected Structure or Process 1 superterm Name`)
+  
+  pheno_order <- plot_dat2 %>%
+    group_by(`Phenotype Keyword Name`) %>%
+    summarise(total = sum(n_links), .groups = "drop") %>%
+    arrange(desc(total)) %>%
+    pull(`Phenotype Keyword Name`)
+  
+  plot_dat2 <- plot_dat2 %>%
+    mutate(
+      `Gene Symbol` = factor(`Gene Symbol`, levels = gene_order),
+      Superterm = factor(
+        str_wrap(`Affected Structure or Process 1 superterm Name`, width = 24),
+        levels = rev(str_wrap(superterm_order, width = 24))
+      ),
+      Phenotype = factor(
+        str_wrap(`Phenotype Keyword Name`, width = 20),
+        levels = str_wrap(pheno_order, width = 20)
+      ),
+      n_links_plot = ifelse(n_links == 0, NA, n_links)
+    )
+  
+  ggplot(plot_dat2, aes(x = `Gene Symbol`, y = Superterm, fill = n_links_plot)) +
+    geom_tile(color = "white", linewidth = 0.25) +
+    scale_fill_viridis_c(
+      option = "C",
+      trans = "sqrt",
+      na.value = "grey85"
+    ) +
+    facet_wrap(~ Phenotype, ncol = 4) +
+    labs(
+      x = "Gene",
+      y = "Affected structure/process superterm",
+      fill = "Count"
+    ) +
+    theme_minimal(base_size = 11) +
+    theme(
+      panel.grid = element_blank(),
+      axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, face = "italic"),
+      axis.text.y = element_text(size = 9),
+      axis.title = element_text(face = "bold"),
+      strip.text = element_text(face = "bold")
+    )
 }
+
+
 ```
 
 ### Getting the data {.tabset}
@@ -8912,7 +8980,7 @@ patchwork::wrap_plots(grouper_meta_cafe_exp)+plot_annotation(subtitle = "Express
 ###### ZFIN data
 There is not much genetic perturbation data for genes in the translation module. For the genes with available data I see that genetic perturbation has multiple phenotypic effects. They range from arresting development of immune cells, decreasing blood cell count, to decrease in whole body morphology. 
 ```{r}
-pheno_alluvial(col = "pink",freq_req = 1)
+pheno_terms_plot(col = "pink")
 ```
 
 
@@ -8952,7 +9020,7 @@ patchwork::wrap_plots(grouper_meta_cafe_exp)+plot_annotation(subtitle = "Express
 ###### ZFIN data
 There is only one gene from this module with perturbation data. 
 ```{r}
-pheno_alluvial(col = "blue",freq_req = 1)
+pheno_terms_plot(col = "blue")
 ```
 
 
@@ -8990,7 +9058,7 @@ patchwork::wrap_plots(grouper_meta_cafe_exp)
 ###### ZFIN data
 There are no genes from this module with perturbation data. 
 ```{r}
-pheno_alluvial(col = "salmon",freq_req = 1)
+pheno_terms_plot(col = "salmon")
 ```
 
 ##### Peroxisome process
@@ -9031,7 +9099,7 @@ patchwork::wrap_plots(grouper_meta_cafe_exp)+plot_annotation(subtitle = "Express
 ###### ZFIN data
 There is not much genetic perturbation data for genes in the translation module. For the genes with available data I see that genetic perturbation tends to disrupt the embryo, decrease eye formation, affects trunk morphology, and influences swimming quality. There is also evidence of inducing a delay in hatching. 
 ```{r}
-pheno_alluvial(col = "black",freq_req = 1)
+pheno_terms_plot(col = "black")
 ```
 
 ##### Immune system process 
@@ -9070,7 +9138,7 @@ patchwork::wrap_plots(grouper_meta_cafe_exp)+plot_annotation(subtitle = "Express
 ###### ZFIN data
 There are no genes from this module with perturbation data. 
 ```{r}
-pheno_alluvial(col = "brown",freq_req = 1)
+pheno_terms_plot(col = "brown")
 ```
 
 ##### Muscle system 
@@ -9109,7 +9177,7 @@ patchwork::wrap_plots(grouper_meta_cafe_exp)+plot_annotation(subtitle = "Express
 ###### ZFIN data
 There are only two genes from this module with perturbation data. The both lead whole organism being curved, decreased occurrence of muscle attachment, decrease in the quality of sensory epithelium generation and skeletal muscle development. 
 ```{r}
-pheno_alluvial(col = "red",freq_req = 1)
+pheno_terms_plot(col = "red")
 ```
 
 ##### Cell cycle process 
@@ -9147,7 +9215,7 @@ patchwork::wrap_plots(grouper_meta_cafe_exp)+plot_annotation(subtitle = "Express
 ###### ZFIN data
 There are four genes from this module with perturbation data. These genes affect multiple biological tissues and systems like the brain, retina, neural tube, blood vessel development, and gut. The reported phenotypes primarily affect morphology of the tissues. 
 ```{r}
-pheno_alluvial(col = "magenta",freq_req = 1)
+pheno_terms_plot(col = "magenta")
 ```
 
 
@@ -9186,7 +9254,7 @@ patchwork::wrap_plots(grouper_meta_cafe_exp)+plot_annotation(subtitle = "Express
 ###### ZFIN data
 There are no genes from this module with perturbation data.
 ```{r}
-pheno_alluvial(col = "royalblue",freq_req = 1)
+pheno_terms_plot(col = "royalblue")
 ```
 
 ##### DNA replication  
@@ -9224,7 +9292,7 @@ patchwork::wrap_plots(grouper_meta_cafe_exp)+plot_annotation(subtitle = "Express
 ###### ZFIN data
 There are eight genes from this module with perturbation data. These genes also have multiple reported phenotypes across diverse tissue systems. The phenotypes are generally related to morphology where structures are either decreased, disrupted, or in some case increased in number and occurence. 
 ```{r}
-pheno_alluvial(col = "green",freq_req = 1)
+pheno_terms_plot(col = "green")
 ```
 
 
