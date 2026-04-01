@@ -1857,117 +1857,97 @@ build_data_frame_from_bgee<-function(dat, species){
     mutate(sp=species) %>% return()
   }
 
-bgee_cafe_genes_plots <- function(orths_in, system, slice_size, ncol, nrow) {
-  #Cleaned this up with LLM
-  library(dplyr)
-  library(ggplot2)
-  library(stringr)
-  library(tidytext)
-  library(ggh4x)
-  library(randomcoloR)
-  
-  # Predefined anatomical-entity colors
-  anatomical_cols <- c(
-    "ovary" = "#355C7D",
-    "muscle tissue" = "#E07A5F",
-    "mesonephros" = "#D9A441",
-    "heart" = "#C06C84",
-    "intestine" = "#6C5B7B",
-    "blastula" = "#7FB069",
-    "camera-type eye" = "#4E9F8A",
-    "tail" = "#F2CC8F",
-    "testis" = "#8D99AE",
-    "head kidney" = "#A44A3F",
-    "nose" = "#5B8E7D",
-    "bone element" = "#E6B8A2",
-    "caudal fin" = "#8C6F9C",
-    "zone of skin" = "#7A9E9F",
-    "liver" = "#B86F52",
-    "brain" = "#A7C957",
-    "animal zygote" = "#B8A1D9",
-    "adult organism" = "#C9ADA7",
-    "pharyngeal gill" = "#6D597A",
-    "spleen" = "#90BE6D",
-    "actinopterygian pyloric caecum" = "#4D908E"
-  )
-  
-  genes_to_use <- bgee_orth_res_to_use %>%
-    filter(Orthogroup %in% orths_in) %>%
-    pull(geneId)
-  
-  # Make plot data
-  plot_dat <- bgee_combined_long %>%
-    filter(genes %in% genes_to_use) %>%
-    filter(!Anatomical.entity.name %in% tissues_to_remove) %>%
-    filter(cpm > 1) %>%
-    group_by(sp, Anatomical.entity.name) %>%
-    summarise(m_cpm = mean(cpm, na.rm = TRUE), .groups = "drop") %>%
-    mutate(m_log10_cpm = log10(m_cpm)) %>%
-    group_by(sp) %>%
-    slice_max(order_by = m_log10_cpm, n = slice_size, with_ties = FALSE) %>%
-    ungroup() %>%
-    mutate(sp = str_replace(sp, "_", " "))
-  
-  # All tissues present in this plot
-  tissue_levels <- plot_dat %>%
-    distinct(Anatomical.entity.name) %>%
-    arrange(Anatomical.entity.name) %>%
-    pull(Anatomical.entity.name) %>%
-    as.character()
-  
-  # Keep predefined colors for matching tissues
-  matched_cols <- anatomical_cols[names(anatomical_cols) %in% tissue_levels]
-  
-  # Assign random colors to tissues not in the predefined palette
-  missing_tissues <- setdiff(tissue_levels, names(anatomical_cols))
-  
-  if (length(missing_tissues) > 0) {
-    set.seed(123)
-    random_cols <- randomcoloR::distinctColorPalette(length(missing_tissues))
-    names(random_cols) <- missing_tissues
-  } else {
-    random_cols <- character(0)
-  }
-  
-  # Final named color vector
-  my_colors <- c(matched_cols, random_cols)
-  
-  # Reorder tissues within each species facet, keeping original names for fill
-  plot_dat <- plot_dat %>%
-    mutate(
-      tissue_ord = tidytext::reorder_within(
-        Anatomical.entity.name,
-        m_log10_cpm,
-        sp
-      ),
-      Anatomical.entity.name = factor(Anatomical.entity.name, levels = tissue_levels)
-    )
-  
-  plot_dat %>%
-    filter(sp != "Poecilia reticulata") %>%
-    ggplot(aes(y = tissue_ord, x = m_log10_cpm, fill = Anatomical.entity.name)) +
-    ggh4x::facet_wrap2(
-      ~ sp,
-      scales = "free",
-      strip.position = "right",
-      ncol = ncol,
-      nrow = nrow
-    ) +
-    geom_col(color = "black", linewidth = 0.2, alpha = 0.9) +
-    tidytext::scale_y_reordered() +
-    scale_fill_manual(values = my_colors, drop = FALSE) +
-    labs(
-      subtitle = system,
-      y = NULL,
-      x = "Mean expression (log10cpm)"
-    ) +
-    theme_bw() +
-    theme(
-      legend.position = "none",
-      strip.background = element_rect(fill = "grey96"),
-      strip.text = element_text(size = 7)
-    )
-}
+ phylo_bgee_plot<-function(col){
+ bgee_combined_long %>% filter%>% distinct(sp) %>% pull(sp)->sp.to.get
+ tibble(tips=tree$tip.label) %>% 
+   filter(tips %in% sp.to.get) ->include.tips.bgee
+ pruned_tree_bgee<-drop.tip(tree,tree$tip.label[-match(include.tips.bgee$tips, tree$tip.label)])
+ #plot(pruned_tree_bgee)
+
+ orths_in<-cafe_sig %>% filter(mod==col)
+ 
+ genes_to_use <- bgee_orth_res_to_use %>%
+   filter(Orthogroup %in% orths_in$genes) %>% pull(geneId)
+
+ 
+ # Make plot data
+ plot_dat <- bgee_combined_long %>%
+   filter(Gene.ID %in% genes_to_use) %>%
+   group_by(sp, Anatomical.entity.name) %>%
+   summarise(m_TPM = mean(TPM, na.rm = TRUE), .groups = "drop") %>%
+   mutate(log10_m_TPM = log10(m_TPM)) %>%
+   group_by(sp) %>%
+   ungroup()
+ 
+
+ # Species order from tree
+ #sp_order <- pruned_tree_bgee$tip.label %>%
+   #str_replace_all("_", " ")
+ 
+ plot_dat2 <- plot_dat %>%
+   filter(Anatomical.entity.name %in% tissues.to.keep$Anatomical.entity.name) %>%
+   dplyr::select(sp, Anatomical.entity.name, log10_m_TPM) %>%
+   complete(
+     sp = sp,
+     Anatomical.entity.name = tissues.to.keep$Anatomical.entity.name
+   ) %>%
+   group_by(Anatomical.entity.name) %>%
+   mutate(tissue_mean_expr = mean(log10_m_TPM, na.rm = TRUE)) %>%
+   ungroup() %>%
+   mutate(
+     missing_cell = is.na(log10_m_TPM),
+     sp = factor(sp, levels = species_order),
+     Anatomical.entity.name =
+       fct_reorder(Anatomical.entity.name, tissue_mean_expr, .desc = TRUE))
+ 
+ 
+ lims <- quantile(plot_dat2$log10_m_TPM, c(0.05, 0.95), na.rm = TRUE)
+ 
+ 
+ species_order <- c(
+   "Nothobranchius_furzeri","Oryzias_latipes","Astatotilapia_calliptera",
+   "Neolamprologus_brichardi","Scophthalmus_maximus","Gasterosteus_aculeatus",
+   "Gadus_morhua","Salmo_salar","Esox_lucius","Danio_rerio",
+   "Astyanax_mexicanus","Anguilla_anguilla","Lepisosteus_oculatus"
+ )
+ 
+ plot_dat2 <- plot_dat2 %>% left_join(
+     orth %>% filter(sp %in% bgee_combined_long$sp & Orthogroup %in% orths_in$genes) %>% 
+       dplyr::count(Orthogroup,sp) %>% summarise(genes_per_sp=sum(n), .by = sp),
+     by = "sp") %>%
+   mutate(
+     sp = factor(sp, levels = rev(species_order))
+   )
+ 
+ ggplot(plot_dat2, aes(x = Anatomical.entity.name, y = sp)) +
+   # black circles for missing combinations
+   geom_point(
+     data = ~ dplyr::filter(.x, missing_cell),
+     shape = 21,
+     size = 2,
+     colour = "grey20",
+     stroke = 0.2
+   ) +
+   # filled circles for observed combinations
+   geom_point(
+     data = ~ dplyr::filter(.x, !missing_cell),
+     aes(fill = log10_m_TPM, size = genes_per_sp),
+     shape = 21,
+     colour = "black",
+     stroke = 0.1
+   ) +
+   scale_size_area(max_size = 10)+
+   scale_fill_gradientn(colours = c("#EEE4E4", "#7A5F80", "#8E3B73", "#D96F5E", "#F4C95D"),
+     name = expression(log[10] * " mean TPM"),
+     limits = lims,
+     oob = scales::squish,
+     breaks = pretty(lims, n = 5)
+   ) + theme_minimal() +
+   theme(
+     axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
+     axis.title = element_blank(),
+     panel.grid = element_blank())
+ }
  
 comp_dev_danio_heatmap<-function(system_proc){
   #read_csv("./08.ZFIN/Danio_biomart.csv")->Danio_biomart #Obtained from bioMart package
@@ -2166,119 +2146,63 @@ meta_exp_cafe_genes <- function(species, orthogroup){
   } 
 }
 
-pheno_terms_plot<-function(col){
-  
-  library(dplyr)
-  library(tidyr)
-  library(ggplot2)
-  library(stringr)
-  
-  pheno_orth_mods<-pheno_orth_mods %>%
-    distinct(`Gene Symbol`, `Publication ID`, `Phenotype Keyword ID`,
-             `Affected Structure or Process 1 superterm ID`, .keep_all = TRUE) %>% 
-    dplyr::select(`Gene Symbol`,`Affected Structure or Process 1 superterm Name`,`Phenotype Keyword Name`,mod)
-  
-  plot_dat <- pheno_orth_mods %>%
-    filter(mod == col) %>%
-    dplyr::count(
-      `Gene Symbol`,
-      `Affected Structure or Process 1 superterm Name`,
-      `Phenotype Keyword Name`,
-      name = "n_links"
-    )
-  
-  # keep top genes
-  top_genes <- plot_dat %>%
-    group_by(`Gene Symbol`) %>%
-    summarise(total = sum(n_links), .groups = "drop") %>%
-    arrange(desc(total)) %>%
-    slice_head(n = 15) %>%
-    pull(`Gene Symbol`)
-  
-  # keep top superterms
-  top_superterms <- plot_dat %>%
-    group_by(`Affected Structure or Process 1 superterm Name`) %>%
-    summarise(total = sum(n_links), .groups = "drop") %>%
-    arrange(desc(total)) %>%
-    slice_head(n = 20) %>%
-    pull(`Affected Structure or Process 1 superterm Name`)
-  
-  # keep top phenotypes
-  top_pheno <- plot_dat %>%
-    group_by(`Phenotype Keyword Name`) %>%
-    summarise(total = sum(n_links), .groups = "drop") %>%
-    arrange(desc(total)) %>%
-    slice_head(n = 12) %>%
-    pull(`Phenotype Keyword Name`)
-  
-  plot_dat2 <- plot_dat %>%
-    filter(
-      `Gene Symbol` %in% top_genes,
-      `Affected Structure or Process 1 superterm Name` %in% top_superterms,
-      `Phenotype Keyword Name` %in% top_pheno
-    ) %>%
-    complete(
-      `Gene Symbol` = top_genes,
-      `Affected Structure or Process 1 superterm Name` = top_superterms,
-      `Phenotype Keyword Name` = top_pheno,
-      fill = list(n_links = 0)
-    )
-  
-  gene_order <- plot_dat2 %>%
-    group_by(`Gene Symbol`) %>%
-    summarise(total = sum(n_links), .groups = "drop") %>%
-    arrange(desc(total)) %>%
-    pull(`Gene Symbol`)
-  
-  superterm_order <- plot_dat2 %>%
-    group_by(`Affected Structure or Process 1 superterm Name`) %>%
-    summarise(total = sum(n_links), .groups = "drop") %>%
-    arrange(desc(total)) %>%
-    pull(`Affected Structure or Process 1 superterm Name`)
-  
-  pheno_order <- plot_dat2 %>%
-    group_by(`Phenotype Keyword Name`) %>%
-    summarise(total = sum(n_links), .groups = "drop") %>%
-    arrange(desc(total)) %>%
-    pull(`Phenotype Keyword Name`)
-  
-  plot_dat2 <- plot_dat2 %>%
-    mutate(
-      `Gene Symbol` = factor(`Gene Symbol`, levels = gene_order),
-      Superterm = factor(
-        str_wrap(`Affected Structure or Process 1 superterm Name`, width = 24),
-        levels = rev(str_wrap(superterm_order, width = 24))
-      ),
-      Phenotype = factor(
-        str_wrap(`Phenotype Keyword Name`, width = 20),
-        levels = str_wrap(pheno_order, width = 20)
-      ),
-      n_links_plot = ifelse(n_links == 0, NA, n_links)
-    )
-  
-  ggplot(plot_dat2, aes(x = `Gene Symbol`, y = Superterm, fill = n_links_plot)) +
-    geom_tile(color = "white", linewidth = 0.25) +
-    scale_fill_viridis_c(
-      option = "C",
-      trans = "sqrt",
-      na.value = "grey85"
-    ) +
-    facet_wrap(~ Phenotype, ncol = 4) +
-    labs(
-      x = "Gene",
-      y = "Affected structure/process superterm",
-      fill = "Count"
-    ) +
-    theme_minimal(base_size = 11) +
-    theme(
-      panel.grid = element_blank(),
-      axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, face = "italic"),
-      axis.text.y = element_text(size = 9),
-      axis.title = element_text(face = "bold"),
-      strip.text = element_text(face = "bold")
-    )
-}
+ pheno_terms_plot<-function(col){
+   
+#col="salmon"
+   
+   pheno_orth_mods<-pheno_orth_mods %>% 
+     distinct(`Gene Symbol`,`Phenotype Keyword ID`, .keep_all = TRUE)
+   
+   gs_dat <- pheno_orth_mods %>%
+     filter(mod == col) %>%
+     dplyr::count(`Gene Symbol`, 
+                  `Affected Structure or Process 1 superterm Name`, 
+                  name = "n")
+   
+   top_genes <- gs_dat %>%
+     dplyr::count(`Gene Symbol`, wt = n, name = "total") %>%
+     arrange(desc(total)) %>%
+     slice_head(n = 100) %>%
+     pull(`Gene Symbol`)
+   
+   top_structures <- gs_dat %>%
+     dplyr::count(`Affected Structure or Process 1 superterm Name`, wt = n, name = "total") %>%
+     arrange(desc(total)) %>%
+     slice_head(n = 20) %>%
+     pull(`Affected Structure or Process 1 superterm Name`)
+   
+   gs_plot <- gs_dat %>%
+     filter(
+       `Gene Symbol` %in% top_genes,
+       `Affected Structure or Process 1 superterm Name` %in% top_structures
+     ) %>%
+     complete(
+       `Gene Symbol` = top_genes,
+       `Affected Structure or Process 1 superterm Name` = top_structures,
+       fill = list(n = 0)
+     ) %>%
+     mutate(
+       structure = factor(
+         str_wrap(`Affected Structure or Process 1 superterm Name`, width = 20),
+         levels = rev(str_wrap(top_structures, width = 20))
+       ),
+       gene = factor(`Gene Symbol`, levels = top_genes),
+       n_plot = ifelse(n == 0, NA, n)
+     )
+   
+   p1 <- ggplot(gs_plot, aes(x = gene, y = structure, fill = n_plot)) +
+     geom_tile(color = "white", linewidth = 0.25) +
+     scale_fill_viridis_c(na.value = "#eeeeee") +
+     labs(x = "Gene", y = "Affected structure", fill = "Count") +
+     theme_minimal() +
+     theme(
+       panel.grid = element_blank(),
+       axis.text.x = element_text(angle = 45, hjust = 1, face = "italic"))
+   p1 
+   
+ }
 
+ 
 
 ```
 
