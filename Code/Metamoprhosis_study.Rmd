@@ -371,6 +371,40 @@ module_pres_lineplots<-function(dat,mp_net,orth_exp,plot_mods){
   return(line_plots %>% patchwork::wrap_plots(ncol = 5))
 }
 
+#Used in the validation section
+three_system_col_plots<-function(orth_net, col){
+  
+  orth_net$connectivity %>% dplyr::select(gene,module) %>% 
+    filter(gene %in% full_vision_orths$Orthogroup) %>% 
+    mutate(sys="vision system") %>% dplyr::count(sys, module) %>% 
+    mutate(per_of_gene_set=(n/sum(n))*100) %>% 
+    rbind(
+      orth_net$connectivity %>% dplyr::select(gene,module) %>% 
+        filter(gene %in% full_thyroid_orths$Orthogroup) %>% 
+        mutate(sys="thyroid hormone regulation") %>% dplyr::count(sys, module) %>% 
+        mutate(per_of_gene_set=(n/sum(n))*100)
+    ) %>% 
+    rbind(
+      orth_net$connectivity %>% dplyr::select(gene,module) %>% 
+        filter(gene %in% full_lipid_orths$Orthogroup) %>% 
+        mutate(sys="lipid metabolism") %>% dplyr::count(sys, module) %>% 
+        mutate(per_of_gene_set=(n/sum(n))*100)
+    ) %>% 
+    mutate(coexp=case_when(n >= 2 ~"yes", .default = "no")) %>% 
+    mutate(module=reorder(module, -per_of_gene_set)) %>% 
+    ggplot(aes(y=per_of_gene_set, x=module, fill=coexp))+
+    facet_wrap(~sys, scales="free", nrow=3)+
+    geom_col(color="black", linewidth=0.2, alpha=0.9)+
+    geom_text(aes(y=per_of_gene_set-1, label = paste0(round(per_of_gene_set,1),"%")), 
+              size=2, color="grey95")+
+    scale_fill_manual(values = c("#25151b",col), name="contains multiple\n system genes")+
+    labs(y="Percentage of gene set")+
+    theme_bw()+
+    theme(axis.text.x = element_text(angle=90,size=8,hjust = 1, vjust = 0.5),
+          axis.text.y = element_text(size=8),
+          strip.background = element_rect(fill = "grey95"))
+}
+
 
 #Module preservation heatmaps
 module_heatmaps_pres_analysis<-function(dat,net,cols){
