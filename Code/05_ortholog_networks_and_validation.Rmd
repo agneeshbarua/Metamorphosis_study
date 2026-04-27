@@ -1,0 +1,653 @@
+## Orthologus networks {.tabset}
+We use Weighted Gene Co-expression Network Analysis (WGCNA) to construct the co-expression network of the developmental time-series data for each species.  We construct the network for each species separately. 
+
+### Soft threshold
+This step estimates the power to achieve the scale free topology of the data. Choosing a soft threshold power for the developmental time-series data is not straight forward due to the dynamic nature of the gene expression. Therefore, I chose a power that balances the scale free nature of the data and it's mean connectivity to ensure that I don't get too sparse networks. I pick the power that has a scale-free R2 of at least 0.8. 
+
+```{r 05_ortholog_networks_and_validation-chunk-001, eval=FALSE}
+soft_threshold(clown_orth_net_in$wgcna_in)->sft_clown_orth_net#pick 13 
+soft_threshold(grouper_orth_net_in$wgcna_in)->sft_grouper_orth_net #pick 13
+soft_threshold(goby_orth_net_in$wgcna_in)->sft_goby_orth_net #pick 12
+soft_threshold(manini_orth_net_in$wgcna_in)->sft_manini_orth_net #pick 13
+soft_threshold(danio_orth_net_in$wgcna_in)->sft_danio_orth_net #pick 13
+
+rbind(sft_clown_orth_net$fitIndices %>% mutate(sp="clown"),
+      sft_grouper_orth_net$fitIndices %>% mutate(sp="grouper"),
+      sft_goby_orth_net$fitIndices %>% mutate(sp="goby"),
+      sft_manini_orth_net$fitIndices %>% mutate(sp="manini"),
+      sft_danio_orth_net$fitIndices %>% mutate(sp="danio")) %>% dplyr::select(sp,Power,SFT.R.sq,mean.k.,median.k.,max.k.,Density) %>% filter(SFT.R.sq>0.8 & median.k.>10) %>% saveRDS("./RDS/softThres_orth_net.rds")
+```
+
+```{r 05_ortholog_networks_and_validation-chunk-001.5}
+soft<-readRDS("./RDS/softThres_orth_net.rds") 
+soft %>% 
+  kableExtra::kbl() %>% 
+  kableExtra::kable_styling(bootstrap_options = c("striped", "hover"), 
+                            full_width = F, 
+                            position = "left") %>%
+  kableExtra::scroll_box(width = "500px", height = "400px")
+
+```
+
+### Making the networks
+This step constructs the network.
+```{r 05_ortholog_networks_and_validation-chunk-002, eval=FALSE}
+#Clown
+wgcna_adjacency(datExpr = clown_orth_net_in$wgcna_in, power = 13)->clown_orth_net
+
+#Grouper
+wgcna_adjacency(datExpr = grouper_orth_net_in$wgcna_in, power = 13)->grouper_orth_net
+
+#Goby
+wgcna_adjacency(datExpr = goby_orth_net_in$wgcna_in, power = 12)->goby_orth_net
+
+#Manini
+wgcna_adjacency(datExpr = manini_orth_net_in$wgcna_in, power = 13)->manini_orth_net
+
+#Danio
+wgcna_adjacency(datExpr = danio_orth_net_in$wgcna_in, power = 13)->danio_orth_net
+
+clown_orth_net %>% saveRDS("./02.Gene_expression_and_network/clown_orth_net.rds")
+grouper_orth_net %>% saveRDS("./02.Gene_expression_and_network/grouper_orth_net.rds")
+goby_orth_net %>% saveRDS("./02.Gene_expression_and_network/goby_orth_net.rds")
+manini_orth_net %>% saveRDS("./02.Gene_expression_and_network/manini_orth_net.rds")
+danio_orth_net %>% saveRDS("./02.Gene_expression_and_network/danio_orth_net.rds")
+```
+
+### Load the networks
+I load the computed co-expression networks. 
+```{r 05_ortholog_networks_and_validation-chunk-003, cache=TRUE, cache.path="cache/05_ortholog_networks_and_validation/"}
+clown_orth_net<-readRDS("./02.Gene_expression_and_network/clown_orth_net.rds")
+grouper_orth_net<-readRDS("./02.Gene_expression_and_network/grouper_orth_net.rds")
+goby_orth_net<-readRDS("./02.Gene_expression_and_network/goby_orth_net.rds")
+manini_orth_net<-readRDS("./02.Gene_expression_and_network/manini_orth_net.rds")
+danio_orth_net<-readRDS("./02.Gene_expression_and_network/danio_orth_net.rds")
+```
+
+### Network stats
+We see that the networks have almost the same number of modules. This is expected since the gene expression matrix has same number of orthogroups and the soft thresholds were similar. There is slight variation in the average module size and mean connectivity with zebrafish having the lowest average module size, while clownfish modules have the lowest average connectivity.
+```{r 05_ortholog_networks_and_validation-chunk-004, cache=TRUE, cache.path="cache/05_ortholog_networks_and_validation/"}
+tibble(Species=c("Clonwfish","Grouper","Goby","Manini","Zebrafish"),
+       Number_of_modules=c(length(clown_orth_net$connectivity %>% distinct(module) %>% pull(module)),
+                           length(grouper_orth_net$connectivity %>% distinct(module) %>% pull(module)),
+                           length(goby_orth_net$connectivity %>% distinct(module) %>% pull(module)),
+                           length(manini_orth_net$connectivity %>% distinct(module) %>% pull(module)),
+                           length(danio_orth_net$connectivity %>% distinct(module) %>% pull(module))),
+       
+       Median_module_size=c(clown_orth_net$connectivity %>% summarise(m=n(),.by = "module") %>% pull(m) %>% median(),
+                             grouper_orth_net$connectivity %>% summarise(m=n(),.by = "module") %>% pull(m) %>% median(),
+                             goby_orth_net$connectivity %>% summarise(m=n(),.by = "module") %>% pull(m) %>% median(),
+                             manini_orth_net$connectivity %>% summarise(m=n(),.by = "module") %>% pull(m) %>% median(),
+                             danio_orth_net$connectivity %>% summarise(m=n(),.by = "module") %>% pull(m) %>% median()),
+       
+       Mean_mod_size=c(clown_orth_net$connectivity %>% summarise(m=n(),.by = "module") %>% pull(m) %>% mean() %>% round(),
+                             grouper_orth_net$connectivity %>% summarise(m=n(),.by = "module") %>% pull(m) %>% mean() %>% round(),
+                             goby_orth_net$connectivity %>% summarise(m=n(),.by = "module") %>% pull(m) %>% mean() %>% round(),
+                             manini_orth_net$connectivity %>% summarise(m=n(),.by = "module") %>% pull(m) %>% mean() %>% round(),
+                             danio_orth_net$connectivity %>% summarise(m=n(),.by = "module") %>% pull(m) %>% mean()) %>% round(),
+       
+       Mean_connectivity=c(mean(clown_orth_net$connectivity$degree) %>% round(3),
+                           mean(grouper_orth_net$connectivity$degree) %>% round(3),
+                           mean(goby_orth_net$connectivity$degree) %>% round(3),
+                           mean(manini_orth_net$connectivity$degree) %>% round(3),
+                           mean(danio_orth_net$connectivity$degree) %>% round(3))) %>% 
+  kableExtra::kbl() %>% 
+  kableExtra::kable_styling(bootstrap_options = c("striped", "hover"), 
+                            full_width = F, 
+                            position = "left")
+
+```
+
+### Ortholog module heatmaps {.tabset}
+Here I make heatmaps to check the expression of the co-expression modules across development. I segregate the modules into three groups with higher expression in the early, mid, and late stages of development.
+
+```{r 05_ortholog_networks_and_validation-chunk-005, cache=TRUE, cache.path="cache/05_ortholog_networks_and_validation/"}
+module_heatmaps(dat=clown_orth_net_in$dge_keep,
+                net=clown_orth_net,
+                cols=cols.clown)->clown_orth_heatmap
+
+module_heatmaps(dat=grouper_orth_net_in$dge_keep,
+                net=grouper_orth_net,
+                cols=cols.grouper)->grouper_orth_heatmap
+
+module_heatmaps(dat=manini_orth_net_in$dge_keep,
+               net=manini_orth_net,
+               cols=cols.manini)->manini_orth_heatmap
+
+module_heatmaps(dat=goby_orth_net_in$dge_keep,
+                net=goby_orth_net,
+                cols=cols.goby)->goby_orth_heatmap
+
+module_heatmaps(dat=danio_orth_net_in$dge_keep,
+                net=danio_orth_net,
+                cols=cols.danio)->danio_orth_heatmap
+```
+
+#### Clownfish
+```{r 05_ortholog_networks_and_validation-chunk-006, cache=TRUE, cache.path="cache/05_ortholog_networks_and_validation/", fig.width=3, fig.height=6, out.width="65%"}
+clown_orth_heatmap$heat
+```
+
+#### Manini
+```{r 05_ortholog_networks_and_validation-chunk-007, cache=TRUE, cache.path="cache/05_ortholog_networks_and_validation/", fig.width=3, fig.height=6, out.width="65%"}
+manini_orth_heatmap$heat
+```
+
+#### Goby
+```{r 05_ortholog_networks_and_validation-chunk-008, cache=TRUE, cache.path="cache/05_ortholog_networks_and_validation/", fig.width=3, fig.height=6, out.width="65%"}
+goby_orth_heatmap$heat
+```
+
+#### Grouper
+```{r 05_ortholog_networks_and_validation-chunk-009, cache=TRUE, cache.path="cache/05_ortholog_networks_and_validation/",  fig.width=3, fig.height=6, out.width="65%"}
+grouper_orth_heatmap$heat
+```
+
+#### Zebrafish
+```{r 05_ortholog_networks_and_validation-chunk-010, cache=TRUE, cache.path="cache/05_ortholog_networks_and_validation/",  fig.width=3, fig.height=6, out.width="65%"}
+danio_orth_heatmap$heat
+```
+
+### Annotate orth modules
+In this step I annotate the modules. I get annotation for the genes using DeepGOplus.  
+I then perform GO term enrichment using hypergeometric test in GSEABase.  
+The following chunk performs GO term enrichment. 
+```{r 05_ortholog_networks_and_validation-chunk-011, eval=FALSE}
+library(GOstats)
+library(GO.db)
+library(GSEABase)
+library(AnnotationDbi)
+library(RSQLite)
+
+#This annot is processed from DeepGOplus
+annot<-readRDS("./annot.rds")
+
+get_GOterms_orth_net<-function(mod){
+  net$connectivity %>% filter(module == mod) %>% pull(gene)->orth_mod
+  genes<-metamorph_orthlist %>% filter(Orthogroup %in% orth_mod) %>% pull(orths)
+    
+  
+    params_up<-GSEAGOHyperGParams(name = "GO enrich", 
+                             geneSetCollection = gsc,
+                             geneIds = genes,
+                             universeGeneIds = universe,
+                             ontology = "BP",
+                             pvalueCutoff = 0.05,
+                             conditional = F,
+                             testDirection = "over")
+    
+  Over_up<- hyperGTest(params_up)
+  Over_up.pv<-pvalues(Over_up)
+  pv.fdr<-p.adjust(Over_up.pv,"fdr")
+  summary(Over_up) %>% as_tibble() %>% mutate(FDR = pv.fdr[1:nrow(summary(Over_up) %>% as_tibble())]) %>%
+    dplyr::select(GOBPID,FDR,Term,Count,Size) %>% filter(FDR < 0.05) -> GOenrich_up #Set the cut-off high just to see what possible processes the genes within modules are involved in
+  
+  return(GOenrich_up)
+}
+
+get_GOterms_homomods<-function(cat,module,gene_set){
+  universe<-annot %>% filter(genes %in% metamorph_orthlist$orths)
+  gene_list<-gene_set %>% filter(mod==module) %>% pull(genes)
+  genes<-metamorph_orthlist %>% filter(Orthogroup %in% gene_list) %>% pull(orths)
+  
+  
+  params_up<-GSEAGOHyperGParams(name = "GO enrich", 
+                             geneSetCollection = gsc,
+                             geneIds = genes,
+                             universeGeneIds = universe,
+                             ontology = cat,
+                             pvalueCutoff = 0.05,
+                             conditional = F,
+                             testDirection = "over")
+  
+  Over_up<- hyperGTest(params_up)
+  Over_up.pv<-pvalues(Over_up)
+  pv.fdr<-p.adjust(Over_up.pv,"fdr")
+  summary(Over_up) %>% as_tibble() %>% mutate(FDR = pv.fdr[1:nrow(summary(Over_up) %>% as_tibble())]) %>%
+    dplyr::select(paste0("GO",cat,"ID"),FDR,Term,Count,Size) %>% filter(FDR<0.05) -> GOenrich_up #Set the cut-off high just to see what possible processes the genes within modules are involved in
+  GOenrich_up %>% mutate(mod=module)->GOenrich_up
+  
+  return(GOenrich_up)
+}
+
+```
+
+```{r 05_ortholog_networks_and_validation-chunk-012, eval=FALSE}
+#clown
+net<-clown_orth_net
+sp<-"ENSAOC"
+species<-"Ocellaris"
+universe<-left_join(annot, orth, by=c("genes"="orths"), relationship = "many-to-many") %>% 
+  filter(Orthogroup %in% net$connectivity$gene) %>% 
+  dplyr::select(GO_id, evidence, genes) 
+colors<-net$moduleColors %>% distinct(moduleColors) %>% pull(moduleColors)
+purrr::map(colors,safely(get_GOterms_orth_net),.progress = T)->clown_mods_proc
+names(clown_mods_proc)<-colors
+clown_mods_proc %>% saveRDS("./03.Annotations/clown_orth_net_GO_orth_univ.rds")
+
+#grouper
+net<-grouper_orth_net
+species<-"Grouper"
+universe<-left_join(annot, orth, by=c("genes"="orths"), relationship = "many-to-many") %>% 
+  filter(Orthogroup %in% net$connectivity$gene) %>% 
+  dplyr::select(GO_id, evidence, genes)
+colors<-net$moduleColors %>% distinct(moduleColors) %>% pull(moduleColors)
+purrr::map(colors,safely(get_GOterms_orth_net))->grouper_mods_proc
+names(grouper_mods_proc)<-colors
+grouper_mods_proc %>% saveRDS("./03.Annotations/grouper_orth_net_GO_orth_univ.rds")
+
+#manini
+net<-manini_orth_net
+species<-"Manini"
+universe<-left_join(annot, orth, by=c("genes"="orths"), relationship = "many-to-many") %>% 
+  filter(Orthogroup %in% net$connectivity$gene) %>% 
+  dplyr::select(GO_id, evidence, genes)
+colors<-net$moduleColors %>% distinct(moduleColors) %>% pull(moduleColors)
+purrr::map(colors,safely(get_GOterms_orth_net),.progress = T)->manini_mods_proc
+names(manini_mods_proc)<-colors
+manini_mods_proc %>% saveRDS("./03.Annotations/manini_orth_net_GO_orth_univ.rds")
+
+#goby
+net<-goby_orth_net
+species<-"Goby"
+universe<-left_join(annot, orth, by=c("genes"="orths"), relationship = "many-to-many") %>% 
+  filter(Orthogroup %in% net$connectivity$gene) %>% 
+  dplyr::select(GO_id, evidence, genes)
+colors<-net$moduleColors %>% distinct(moduleColors) %>% pull(moduleColors)
+purrr::map(colors,safely(get_GOterms_orth_net),.progress = T)->goby_mods_proc
+names(goby_mods_proc)<-colors
+goby_mods_proc %>% saveRDS("./03.Annotations/goby_orth_net_GO_orth_univ.rds")
+
+#danio
+net<-danio_orth_net
+sp<-"ENSDAR"
+species<-"Danio"
+universe<-left_join(annot, orth, by=c("genes"="orths"), relationship = "many-to-many") %>% 
+  filter(Orthogroup %in% net$connectivity$gene) %>% 
+  dplyr::select(GO_id, evidence, genes)
+colors<-net$moduleColors %>% distinct(moduleColors) %>% pull(moduleColors)
+purrr::map(colors,safely(get_GOterms_orth_net),.progress = T)->danio_homo_mods_proc
+#purrr::map(colors[27],safely(get_GOterms_orth_net),.progress = T)->test_GO
+names(danio_homo_mods_proc)<-colors
+danio_homo_mods_proc %>% saveRDS("./03.Annotations/danio_orth_net_GO_orth_univ.rds")
+
+
+
+```
+
+### GO term enrichment
+Here are the GO term enrichment for biological process for the orthologous co-expression network across species. I dont do anything with these networks at this point so I dont focus on these enrichment results.  
+The annotations of the networks will be relevant when I compute the conserved expression network.
+```{r 05_ortholog_networks_and_validation-chunk-013, cache=TRUE, cache.path="cache/05_ortholog_networks_and_validation/"}
+danio_orth_mods_proc <-readRDS("./03.Annotations/danio_orth_net_GO_orth_univ.rds")
+goby_orth_mods_proc <-readRDS("./03.Annotations/goby_orth_net_GO_orth_univ.rds")
+manini_orth_mods_proc <-readRDS("./03.Annotations/manini_orth_net_GO_orth_univ.rds")
+grouper_orth_mods_proc <-readRDS("./03.Annotations/grouper_orth_net_GO_orth_univ.rds")
+clown_orth_mods_proc <-readRDS("./03.Annotations/clown_orth_net_GO_orth_univ.rds")
+```
+
+
+## Validating the modules
+I imagine that this kind of co-expression network analyses might be a bit new to users. Therefore, I perform some validation to show that the networks capture known interactions between genes and proteins that have been both experimentally determined and obtained through data mining. 
+Genes with functional links are expected to be co-regulated. Therefore, they should be placed together in the same co-expression module. I compared the results of the co-expression network module assignment with a previously published study that established functional links between thyroid hormone regulation, visual systems development, and lipid metabolism, based on experiments using exogenous thyroid hormone treatment in clownfish *Amphiprion ocellaris*.  While this represents a different physiological state (leading to a different regulatory context) than my dataset, I expect to recapture at least some of the functional links in the network, i.e. find genes co-expressed together in the same module. I compared the co-expression patterns of a list of genes from the study to determine what proportion of those genes were co-expressed together in the same module. The list of genes can be found in table S1. 
+```{r 05_ortholog_networks_and_validation-chunk-014, cache=TRUE, cache.path="cache/05_ortholog_networks_and_validation/"}
+clown_ensembl<-readRDS("./01.Kallisto/clown_res/clown_biomart.rds")
+th_genes<-read_csv("./07.Systems_genes/T.hormones_genes.csv")
+vision_genes<-read_csv("./07.Systems_genes/vision_genes.csv")
+lipids_genes<-read_csv("./07.Systems_genes/metabolism.lipids_genes.csv")
+
+#Thyroid
+th_signalling_genes<-clown_ensembl %>% filter(ensembl_gene_id %in% th_genes$id) %>% distinct(ensembl_gene_id_version,.keep_all = TRUE)
+full_orths %>% filter(Orthogroup %in% (orth %>% filter(orths %in% th_signalling_genes$ensembl_gene_id_version) %>% pull(Orthogroup)))->full_thyroid_orths
+
+full_thyroid_orths %>% left_join((orth %>% filter(orths %in% th_signalling_genes$ensembl_gene_id_version)) %>% left_join(th_signalling_genes %>% dplyr::select(ensembl_gene_id_version,external_gene_name), by = c("orths"="ensembl_gene_id_version")))->full_thyroid_orths
+
+#Vision
+vis_system<-clown_ensembl %>% filter(ensembl_gene_id %in% vision_genes$id) %>% distinct(ensembl_gene_id_version,.keep_all = TRUE)
+full_orths %>% filter(Orthogroup %in% (orth %>% filter(orths %in% vis_system$ensembl_gene_id_version) %>% pull(Orthogroup)))->full_vision_orths
+
+full_vision_orths %>% left_join((orth %>% filter(orths %in% vis_system$ensembl_gene_id_version)) %>% left_join(vis_system %>% dplyr::select(ensembl_gene_id_version,external_gene_name), by = c("orths"="ensembl_gene_id_version")))->full_vision_orths
+
+#Lipid 
+lipid_synth<-clown_ensembl %>% filter(ensembl_gene_id %in% lipids_genes$id) %>% distinct(ensembl_gene_id_version,.keep_all = TRUE)
+full_orths %>% filter(Orthogroup %in% (orth %>% filter(orths %in% lipid_synth$ensembl_gene_id_version) %>% pull(Orthogroup)))->full_lipid_orths
+
+full_lipid_orths%>% left_join((orth %>% filter(orths %in% 
+                                                 lipid_synth$ensembl_gene_id_version)) %>% left_join(lipid_synth %>% dplyr::select(ensembl_gene_id_version,external_gene_name), by = c("orths"="ensembl_gene_id_version")))->full_lipid_orths
+```
+
+```{r 05_ortholog_networks_and_validation-chunk-015, eval=FALSE}
+co_occurence_sig_test<-function(orth_net,sys1,sys2){
+  
+  #co-occurence dataset for system genes that are expressed in the same module
+  co_occur_df<-orth_net$connectivity %>% dplyr::select(gene,module) %>% 
+    mutate(co_mod=case_when(gene %in% sys1$Orthogroup | 
+      gene %in% sys2$Orthogroup ~ "co-occur", 
+      .default = "co-occur_not"))
+  
+  #make an additional random gene set for sanity check
+  co_occur_df_random<-orth_net$connectivity %>% dplyr::select(gene,module) %>% 
+    mutate(co_mod=case_when(
+      gene %in% sample(orth_net$connectivity$gene,length(sys1$Orthogroup)) | 
+        gene %in% sample(orth_net$connectivity$gene,length(sys2$Orthogroup)) ~ "co-occur", 
+      .default = "co-occur_not"))
+  
+  #test the target gene sets
+  tibble(target_set_pval=
+           (fisher.test(table(co_occur_df$module, co_occur_df$co_mod), 
+                        simulate.p.value = TRUE, B = 5000, alternative = "greater"))$p.value,
+         random_set_pval= 
+           (fisher.test(table(co_occur_df_random$module, co_occur_df_random$co_mod), 
+                        simulate.p.value = TRUE, B = 5000, alternative = "greater"))$p.value
+) %>% return()
+
+}
+
+rbind(
+  co_occurence_sig_test(sys1 = full_thyroid_orths,
+                      sys2 = full_vision_orths,
+                      orth_net = clown_orth_net) %>% 
+    mutate(sp="clownfish", sys="thyroid~vision"),
+  co_occurence_sig_test(sys1 = full_thyroid_orths,
+                      sys2 = full_vision_orths,
+                      orth_net = manini_orth_net) %>% 
+    mutate(sp="manini", sys="thyroid~vision"),
+  co_occurence_sig_test(sys1 = full_thyroid_orths,
+                      sys2 = full_vision_orths,
+                      orth_net = goby_orth_net) %>% 
+    mutate(sp="goby", sys="thyroid~vision"),
+  co_occurence_sig_test(sys1 = full_thyroid_orths,
+                      sys2 = full_vision_orths,
+                      orth_net = grouper_orth_net) %>% 
+    mutate(sp="grouper", sys="thyroid~vision"),
+  co_occurence_sig_test(sys1 = full_thyroid_orths,
+                      sys2 = full_vision_orths,
+                      orth_net = danio_orth_net) %>% 
+    mutate(sp="zebrafish", sys="thyroid~vision")
+  ) %>% 
+  rbind(
+  co_occurence_sig_test(sys1 = full_thyroid_orths,
+                      sys2 = full_lipid_orths,
+                      orth_net = clown_orth_net) %>% 
+    mutate(sp="clownfish", sys="thyroid~lipid"),
+  co_occurence_sig_test(sys1 = full_thyroid_orths,
+                      sys2 = full_lipid_orths,
+                      orth_net = manini_orth_net) %>% 
+    mutate(sp="manini", sys="thyroid~lipid"),
+  co_occurence_sig_test(sys1 = full_thyroid_orths,
+                      sys2 = full_lipid_orths,
+                      orth_net = goby_orth_net) %>% 
+    mutate(sp="goby", sys="thyroid~lipid"),
+  co_occurence_sig_test(sys1 = full_thyroid_orths,
+                      sys2 = full_lipid_orths,
+                      orth_net = grouper_orth_net) %>% 
+    mutate(sp="grouper", sys="thyroid~lipid"),
+  co_occurence_sig_test(sys1 = full_thyroid_orths,
+                      sys2 = full_lipid_orths,
+                      orth_net = danio_orth_net) %>% 
+    mutate(sp="zebrafish", sys="thyroid~lipid")
+  )->co_occurence_tests
+
+co_occurence_tests %>% saveRDS("./RDS/co_occurence_tests.rds")
+
+```
+
+```{r 05_ortholog_networks_and_validation-chunk-016, cache=TRUE, cache.path="cache/05_ortholog_networks_and_validation/"}
+co_occurence_tests<-readRDS("./RDS/co_occurence_tests.rds")
+
+co_occurence_tests %>% dplyr::rename("Target gene set p-value"=target_set_pval,
+                                     "Random gene set p-value"=random_set_pval) %>% 
+  pivot_longer(c(`Target gene set p-value`,`Random gene set p-value`)) %>% 
+  ggplot(aes(x=sp,y=sys,fill=value))+
+  facet_wrap(~name,ncol=1)+
+  geom_tile(color="black", linewidth = 0.2, alpha=0.8)+
+  geom_text(aes(label = round(value, 4)), size = 2.5, colour="black")+
+  scale_fill_gradient(high = "#C97A5A",low ="#2AA198", limits = c(0, 0.7))+
+  labs(x="species", y="system")+
+  coord_fixed()+
+  theme_bw()+
+  theme(axis.text.x = element_text(angle=90,size=8,hjust = 1, vjust = 0.5),
+        axis.text.y = element_text(size=8),
+        strip.background = element_rect(fill = "grey95"),
+        aspect.ratio = 1)->co_ocurence_plot
+
+
+```
+
+```{r, out.width="50%"}
+knitr::include_graphics("./Figures_for_report/co_occurence_plot.png")
+```
+
+Genes associated with thyroid hormone regulation were distributed across multiple modules, with roughly one-third (~33%) expressed equally across two modules. Genes related to lipid metabolism and vision also spanned multiple modules, with the majority (~80%) co-expressed in modules containing multiple genes from each system. Comparable patterns were observed in other species as well.
+```{r 05_ortholog_networks_and_validation-chunk-017, cache=TRUE, cache.path="cache/05_ortholog_networks_and_validation/", fig.width=10, fig.height=7, out.width="100%"}
+#ggarrange(  
+#  three_system_col_plots(orth_net = clown_orth_net, col = "#e77515"),
+#  three_system_col_plots(orth_net = grouper_orth_net, col = "#A99522"),
+#  three_system_col_plots(orth_net = goby_orth_net, col = "#BA4566"),
+#  three_system_col_plots(orth_net = manini_orth_net, col = "#7aa328"),
+#  three_system_col_plots(orth_net = danio_orth_net, col = "#343BC2"),
+#  ncol = 3,nrow = 2)
+knitr::include_graphics("./Figures_for_report/systems_gene_all.png")
+
+
+```
+
+#### Thyroid hormone signalling
+
+```{r 05_ortholog_networks_and_validation-chunk-018, cache=TRUE, cache.path="cache/05_ortholog_networks_and_validation/"}
+validation_lines(dat1 = clown_orth_net_in, 
+                 dat2 = full_thyroid_orths, 
+                 fill1 = "#e77515",
+                 fill2 = "#a9552b",
+                 types = "Thyroid signalling")->clown_valid_thyroid
+
+
+validation_lines(dat1 = grouper_orth_net_in, 
+                 dat2 = full_thyroid_orths, 
+                 fill1 = "#D9C343",
+                 fill2 = "#D9AD22",
+                 types = "Thyroid signalling")->grouper_valid_thyroid
+
+validation_lines(dat1 = goby_orth_net_in, 
+                 dat2 = full_thyroid_orths, 
+                 fill1 = "#BA4566",
+                 fill2 = "#BA45A1",
+                 types = "Thyroid signalling")->goby_valid_thyroid
+
+validation_lines(dat1 = manini_orth_net_in, 
+                 dat2 = full_thyroid_orths, 
+                 fill1 = "#9acd32",
+                 fill2 = "#4CCD32",
+                 types = "Thyroid signalling")->manini_valid_thyroid
+validation_lines(dat1 = danio_orth_net_in, 
+                 dat2 = full_thyroid_orths, 
+                 fill1 = "#2968D6",
+                 fill2 = "#82D1E6",
+                 types = "Thyroid signalling")->danio_valid_thyroid
+
+ggpubr::ggarrange(clown_valid_thyroid,manini_valid_thyroid,goby_valid_thyroid,grouper_valid_thyroid,danio_valid_thyroid,
+                  ncol = 5)->all_sp_valid_thy
+```
+
+```{r 05_ortholog_networks_and_validation-chunk-018.5, cache=TRUE, cache.path="cache/05_ortholog_networks_and_validation/",out.width="100%", out.height="400px"}
+knitr::include_graphics("./Figures_for_report/all_sp_valid_thy.pdf")
+```
+
+#### Fatty acid synthesis
+
+```{r 05_ortholog_networks_and_validation-chunk-019, cache=TRUE, cache.path="cache/05_ortholog_networks_and_validation/"}
+validation_lines(dat1 = clown_orth_net_in, 
+                 dat2 = full_lipid_orths, 
+                 fill1 = "#e77515",
+                 fill2 = "#a9552b",
+                 types = "Fatty acid synthesis")->clown_valid
+
+validation_lines(dat1 = grouper_orth_net_in, 
+                 dat2 = full_lipid_orths, 
+                 fill1 = "#D9C343",
+                 fill2 = "#D9AD22",
+                 types = "Fatty acid synthesis")->grouper_valid
+
+validation_lines(dat1 = goby_orth_net_in, 
+                 dat2 = full_lipid_orths, 
+                 fill1 = "#BA4566",
+                 fill2 = "#BA45A1",
+                 types = "Fatty acid synthesis")->goby_valid
+
+validation_lines(dat1 = manini_orth_net_in, 
+                 dat2 = full_lipid_orths, 
+                 fill1 = "#9acd32",
+                 fill2 = "#4CCD32",
+                 types = "Fatty acid synthesis")->manini_valid
+
+validation_lines(dat1 = danio_orth_net_in, 
+                 dat2 = full_lipid_orths, 
+                 fill1 = "#2968D6",
+                 fill2 = "#82D1E6",
+                 types = "Fatty acid synthesis")->danio_valid
+
+ggpubr::ggarrange(clown_valid,grouper_valid,goby_valid,manini_valid,danio_valid,
+                  ncol = 5)->all_sp_valid_fatty
+```
+
+```{r 05_ortholog_networks_and_validation-chunk-019.5, cache=TRUE, cache.path="cache/05_ortholog_networks_and_validation/", out.width="100%", out.height="400px"}
+knitr::include_graphics("./Figures_for_report/all_sp_valid_fatty.pdf")
+```
+
+#### STRING comparison
+Next, I validated modules by comparing the gene interactions estimated in the zebrafish network, with those reported in the STRING database. The STRING database integrates information on known and predicted protein-protein interactions (PPIs) based on both physical interaction and functional associations. For each gene in the network I identified the interactions that were also reported in the STRING database. I then calculated the number of intra-module interactions per module (when two genes are co-expressed in the same module and also have a reported PPI) and divided it by the total number of reported interactions in the STRING database. This ‘STRING-overlap-score’(range: 0.01-0.127) quantifies the degree of overlap between the number of interactions I observe in the network versus the number of all interactions reported for each gene/protein in the database. 
+
+```{r 05_ortholog_networks_and_validation-chunk-020, eval=FALSE}
+#Load the data
+danio_orth_net<-readRDS("./02.Gene_expression_and_network/danio_orth_net.rds")
+orth_danio<-orth %>% filter(sp=="Danio_rerio") %>% mutate(orths=str_remove(orths,"\\.[0-9]"))
+orth_danio<-orth_danio %>% mutate(Orthogroup=as.character(orth_danio$Orthogroup))
+danio_biomart<-read_csv("./Danio_biomart.csv") %>% 
+  dplyr::select(`Gene stable ID`,`Protein stable ID`,`Gene name`, `Gene description`)
+#STRING data
+string<-read_csv("./7955.protein.links.v12.0.csv")
+string<-string %>% mutate(protein1=str_remove(protein1,"7955."), 
+                          protein2=str_remove(protein2,"7955."))
+
+# can try using a score threshold
+# the outcome is the same with or without a threshold
+#string<-string %>% filter(combined_score >= quantile(string$combined_score, 0.5)) 
+danio_orth_mods<-left_join(danio_orth_net$connectivity, orth_danio, by=c("gene"="Orthogroup")) %>% 
+  left_join(danio_biomart, by=c("orths"="Gene stable ID")) %>% na.omit()
+
+#Make df with STRING data
+ppi_mods<-left_join(string,danio_orth_mods, by = c("protein1" = "Protein stable ID"), relationship = "many-to-many") %>%
+  dplyr::rename(module.X = module) %>% left_join(danio_orth_mods, by = c("protein2" = "Protein stable ID"),relationship = "many-to-many") %>% 
+  na.omit() %>% dplyr::rename(module.Y = module)
+
+#Identify intra-module interactions
+intra_module_ppis <- ppi_mods %>%
+  filter(module.X == module.Y) 
+#Count the number of instances of genes co-occuring in the same module
+intra_module_ppis_counts<-intra_module_ppis %>%
+  dplyr::count(module.X, name = "Num_Interactions") 
+
+total_interactions_per_module <- ppi_mods %>%
+  dplyr::count(module.X, name = "Total_Interactions") 
+
+intra_module_ppis_counts %>%
+  left_join(total_interactions_per_module, by = "module.X") %>%
+  mutate(Enrichment_Score = Num_Interactions / Total_Interactions)->intra_module_ppis_summary
+
+danio_orth_net$connectivity  %>% group_by(module) %>% mutate(mean_connectivity=mean(degree)) %>% ungroup() %>% distinct(module, .keep_all = TRUE)->mean_connect
+
+left_join(intra_module_ppis_summary, mean_connect, by=c("module.X"="module"))->ppi_summ_connectivity
+ppi_summ_connectivity %>% saveRDS("./RDS/ppi_summ_connectivity")
+```
+
+Correlation test between enrichment score ~ connectivity
+ I observe a significant correlation between mean module connectivity, and enrichment score (Spearman correlation test P = 4.4e-0.5, rho=0.66), suggesting that interactions between genes with a large number of connections in our network were more frequently reported in the STRING database (Fig S3C).
+```{r 05_ortholog_networks_and_validation-chunk-021, cache=TRUE, cache.path="cache/05_ortholog_networks_and_validation/"}
+ppi_summ_connectivity<-readRDS("./RDS/ppi_summ_connectivity")
+cor.test(ppi_summ_connectivity$Enrichment_Score,ppi_summ_connectivity$mean_connectivity, method = "spearman")
+
+```
+
+A permutation test with 1000 random gene-module reassignments confirmed that a number of observed intra-module interactions in our network were significantly higher than expected by chance. Specifically,  42% (14 of the 33 modules) of the modules capture known interactions between genes. It is important to note that despite the STRING database comprising multiple data modalities (e.g. interaction experiments, computation interaction prediction from co-expression, annotation of complexes/pathways etc.) and different experimental designs, almost half the modules in our network comprise known PPIs. These results demonstrate the power of co-expression modules to not only capture transcriptional similarity but reproduce known PPIs.  
+```{r 05_ortholog_networks_and_validation-chunk-022, eval=FALSE}
+#permuted_counts <- replicate(n_permu, {
+#make random module assignments  
+  permute_string_module_counts <- function(danio_orth_mods,
+                                           string,
+                                           intra_module_ppis_counts,
+                                           n_perm = 1000,
+                                           seed = seed) {
+
+    # Keep only the columns that I  need
+    module_df <- danio_orth_mods %>%transmute(Protein_ID = `Protein stable ID`,
+        module = module)
+    
+    # Observed modules and counts
+    observed_counts <- intra_module_ppis_counts %>%
+      dplyr::select(module.X, Num_Interactions) %>% distinct() %>%
+      dplyr::rename(observed_interactions = Num_Interactions)
+    
+    all_modules <- module_df %>% distinct(module) %>% dplyr::rename(module.X = module) %>%
+      left_join(observed_counts, by = "module.X") %>%
+      mutate(observed_interactions = replace_na(observed_interactions, 0))
+    
+    # single permutation
+    one_permutation <- function() {
+      #make a dataset with genes and random module assignments; random version of danio orth mods
+      shuffled_df <- module_df %>% mutate(shuffled_module = sample(module))
+      #make the ppi_mods df using the random module assignments
+      ppi_shuffled <- string %>% left_join(
+        shuffled_df %>% dplyr::select(Protein_ID, shuffled_module),
+        by = c("protein1" = "Protein_ID"),  relationship = "many-to-many") %>%
+        dplyr::rename(module.X = shuffled_module) %>%
+        left_join(shuffled_df %>% dplyr::select(Protein_ID, shuffled_module),
+          by = c("protein2" = "Protein_ID"),relationship = "many-to-many") %>%
+        dplyr::rename(module.Y = shuffled_module) %>%
+        drop_na(module.X, module.Y)
+      
+      shuffled_counts <- ppi_shuffled %>% filter(module.X == module.Y) %>%
+        dplyr::count(module.X, name = "shuffled_interactions")
+      
+      #Calculate the perm_ge_obs per module and them summarise them after running the function. 
+      all_modules %>% left_join(shuffled_counts, by = "module.X") %>% mutate(
+          shuffled_interactions = replace_na(shuffled_interactions, 0),
+          perm_ge_obs = as.integer(shuffled_interactions >= observed_interactions)) %>%
+        dplyr::select(module.X, perm_ge_obs)
+    }
+    
+    # Run permutations and compute empirical P per module
+    map_dfr(seq_len(n_perm), ~ one_permutation(), .id = "perm_id") %>%
+      group_by(module.X) %>%
+      summarise(
+        empirical_P = mean(perm_ge_obs),
+        .groups = "drop") %>%
+      mutate(empirical_P_BH = p.adjust(empirical_P, method = "BH")) %>%
+      arrange(empirical_P)
+    }
+  
+STRING_perm_test_res <- permute_string_module_counts(
+    danio_orth_mods = danio_orth_mods,
+    string = string,
+    intra_module_ppis_counts = intra_module_ppis_counts,
+    n_perm = 1000,
+    seed = 123)
+
+STRING_perm_test_res %>% dplyr::count(empirical_P_BH < 0.05)
+
+STRING_perm_test_res %>% saveRDS("./RDS/STRING_perm_test_res.rds")
+```
+
+```{r 05_ortholog_networks_and_validation-chunk-023, cache=TRUE, cache.path="cache/05_ortholog_networks_and_validation/", out.width="100%", out.height="400px"}
+#STRING_perm_test_res<-readRDS("./RDS/STRING_perm_test_res.rds")
+#STRING_perm_test_res %>% mutate(sig=case_when(empirical_P_BH <= 0.05 ~ "Yes",
+#                                              .default = "No")) %>% mutate(module.X=reorder(module.X, empirical_P)) %>% 
+    #ggplot(aes(x=1, y=module.X, fill=sig))+
+    #geom_tile(alpha=0.8)+geom_text(aes(label=round(empirical_P_BH,3), x=1),color="white",size=3)+
+    #scale_fill_manual(values = c("#C97A5A","#2AA198"))+
+    #labs(x="empirical BH p-value", y="module", subtitle = "STRING comparison test")+
+    #theme_bw()+
+    #theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+#Above code plots this figure
+knitr::include_graphics("./Figures_for_report/String_test_out.pdf")
+```
+

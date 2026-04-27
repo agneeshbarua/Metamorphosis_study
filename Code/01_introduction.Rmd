@@ -1,0 +1,12 @@
+## Introduction {.tabset}
+Comparative embryology has revealed a high degree of homology and conservation in early animal development. Beyond the embryo, however, animals exhibit striking variation in post-embryonic developmental strategies. How genes underlying these strategies evolve and give rise to phenotypic variation remains unknown. In this study we characterised post-embryonic development across five teleost fish families to uncover the links between developmental processes and phenotypic evolution. Comparative gene regulatory networks revealed a conserved set of genes underlying post-embryonic development in teleosts. These genes were organised into discrete co-expression modules associated with aerobic respiration, hormone signalling, and the formation of major tissue systems, including the eye, musculature, and nervous system. Evolutionary analyses revealed that these genes exhibit extensive copy-number turnover across teleosts, with major expansions following the teleost-specific whole-genome duplication and additional lineage-specific gains and losses. Phylogenetic modelling identified significant associations between copy-number variation in these rapidly evolving genes and phenotypic diversity in traits such as brain size, swimming performance, and trophic level, across teleost lineages. Single-cell transcriptomic data from zebrafish confirmed expression of these genes in cell types relevant to the associated phenotypes, and functional perturbation experiments supported their roles in corresponding tissues. Together, these findings indicate that core post-embryonic developmental programs originated early in teleost evolution and were subsequently refined through gene copy-number dynamics, contributing to the origin of phenotypic diversity across clades. More broadly, this study establishes a comparative framework for analysing multi-species developmental time-series data that can uncover conserved genetic modules and capture biological trends which are also observed in high-resolution datasets such as single-cell sequencing.
+
+For each section open the tabs to view the raw code and its outputs.  
+Sometimes the direct output for the plots chunks produce truncated plots with horrible proportions. Therefore, I make some plots beforehand and load them as included graphics.
+
+### Functions
+The custom functions used by the downstream analyses have been moved into a standalone script for maintainability while keeping the function code unchanged.
+
+```{r functions, echo=TRUE}
+source("00_metamorphosis_functions.R")
+```

@@ -1,0 +1,40 @@
+### Getting the data {.tabset}
+Load the data gene expression data from Kallisto output and make a list object with various components. These data were obtained from multiple published sources. The goby and zebrafish data were generated for this study.  
+I plot the PCA of the developmental time-series to show the variation across stages.
+```{r 02_getting_data-chunk-001, cache=TRUE, cache.path="cache/02_getting_data/"}
+#Grouper
+expression_matrix_and_pca(sp = "Grouper",colramp = colorRampPalette(c("#4d3f2c","#aa9576","#D9AD22","#D9C343")))->grouper
+#Manini
+expression_matrix_and_pca(sp = "Manini",colramp = colorRampPalette(c("grey40","grey","#f7f2a9","#9acd32")))->manini
+#Goby
+expression_matrix_and_pca(sp = "Goby",colramp = colorRampPalette(c("#45BA99","#5E45BA","#BA4566","#A1BA45")))->goby
+#Clown
+expression_matrix_and_pca_clown()->clown
+#Danio
+expression_matrix_and_pca_danio()->danio
+```
+
+#### Clownfish
+```{r 02_getting_data-chunk-002, cache=TRUE, cache.path="cache/02_getting_data/", out.width  = "70%"}
+clown$plot
+```
+
+#### Manini
+```{r 02_getting_data-chunk-003, cache=TRUE, cache.path="cache/02_getting_data/", out.width  = "70%"}
+manini$plot
+```
+
+#### Goby
+```{r 02_getting_data-chunk-004, cache=TRUE, cache.path="cache/02_getting_data/", out.width  = "70%"}
+goby$plot
+```
+
+#### Grouper
+```{r 02_getting_data-chunk-005, cache=TRUE, cache.path="cache/02_getting_data/", out.width  = "70%"}
+grouper$plot
+```
+
+#### Zebrafish
+```{r 02_getting_data-chunk-006, cache=TRUE, cache.path="cache/02_getting_data/", out.width  = "70%"}
+danio$plot
+```

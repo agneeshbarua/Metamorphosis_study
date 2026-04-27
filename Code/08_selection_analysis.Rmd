@@ -1,0 +1,339 @@
+## Selection analysis {.tabset}
+To understand how the conserved network evolved in teleosts I ran several molecular evolution models to infer selection patterns in coding sequence alignments across 133 teleost fish species and the spotted gar, *Lepiosteous oculatus*, as the outgroup.  
+I compared the selection estimates of genes in the conserved network to an equal sized random set of genes not in the network which served as our null set, similar to CAFE. I ran several evolutionary models implemented in the *HyPhy* suite of models.  
+The analyses on coding sequence evolution indicates that most protein residues in both the sets (from the conserved network and null set) are under strong evolutionary constraint, with occasional bouts of episodic diversifying selection taking place in a few branches. However this general trend differs slightly between the two sets. Genes belonging to the conserved network show a slightly higher proportion of sites under purifying selection, as well as a greater number of branches with evidence of diversifying selection. Although these differences are statistically significant, they are associated with relatively small effect sizes.
+
+### Prepare the datasts for analysis
+```{r 08_selection_analysis-chunk-001}
+#Prepare data of background 
+#orth %>% filter(sp %in% no_WGD_tree$tip.label & Orthogroup %in% danio_orth_net_in$dge_keep$genes$genes) %>% distinct(Orthogroup) %>% filter(!Orthogroup %in% homologous_genes$genes) %>% slice_sample(n = 2000)->bg_genes
+
+#bg_genes %>% saveRDS("./RDS/bg_genes_for_selection.rds")
+
+genomes<-read_tsv("./00.Sequences/NCBI_genomes.tsv")
+#This is simply a list of the genes in the analysis
+genes_needed<-read_tsv("./00.Sequences/genes_needed.tsv")
+
+```
+
+The plot below shows that the distributions in number of copies between gene families making up the conserved network versus the null network are the same.  
+```{r 08_selection_analysis-chunk-002, out.width="50%"}
+rbind(
+    orth %>% filter(Orthogroup %in% homologous_genes$genes) %>% dplyr::count(Orthogroup) %>% mutate(type="homo"),
+    orth %>% filter(Orthogroup %in% full_orths$Orthogroup & !Orthogroup %in% homologous_genes$genes) %>% dplyr::count(Orthogroup)  %>% slice_sample(n = 1196) %>% mutate(type="non-homo")) %>% dplyr::select(Orthogroup)->genes_to_get
+
+rbind(
+  orth %>% filter(Orthogroup %in% homologous_genes$genes) %>% dplyr::count(Orthogroup) %>% mutate(type="homo"),
+  orth %>% filter(Orthogroup %in% full_orths$Orthogroup & !Orthogroup %in% homologous_genes$genes) %>% dplyr::count(Orthogroup) %>% slice_sample(n = 1196) %>% mutate(type="non-homo")) %>% 
+  ggplot(aes(x=log2(n), fill = type))+
+  geom_density(alpha=0.5)+
+  scale_fill_aaas()+
+  theme_bw()
+
+```
+
+Prior to running analyses I checked for any group level differences in gene length or orthology copy number between the conserved and null class. I found no evidence of differences in average gene length or copy number between these two classes (bootstrapped two-sided Wilcoxon rank-sum test, Benjamini-Hochberg corrected *P* > 0.2). Therefore, the difference in gene length or copy number did not confound our estimates of selection between the two groups.  
+The seq_data can be obtained using the SeqKit command line tool (https://bioinf.shenwei.me/seqkit/).
+```{r 08_selection_analysis-chunk-004, cache=TRUE, cache.path="cache/08_selection_analysis/"}
+seq_stats<-read_tsv("./10.HyPhy/seq_dat_clean.tsv") %>% mutate(type=case_when(Orthogroup %in% homologous_genes$genes ~ "Homologous", 
+                            .default = "Non homologous"))
+
+seq_stats  %>%
+    ggplot(aes(x=type, y=log10(number_of_seqs), fill=type))+
+    ggbeeswarm::geom_quasirandom(shape=21, color="grey40",alpha=0.5)+
+    geom_boxplot(alpha=0.5, outliers = FALSE, fill="grey")+
+    labs(subtitle = "Difference in number",
+         x=NULL,
+         y="log10(number of sequences)")+
+    ggsci::scale_fill_bmj()+
+    theme_bw()+
+    theme(axis.text.x = element_blank(),
+          axis.title.y = element_text(size=10))->seq_num
+
+wil_test_seq_stats<-function(metric){
+  
+    wilcox.test(x=seq_stats %>% filter(type=="Homologous") %>% slice_sample(n=200) %>% pull(metric),
+                y=seq_stats %>% filter(type=="Non homologous") %>% slice_sample(n=200) %>% pull(metric)
+  )->res
+    
+    tibble(test=metric,
+           pval=res$p.value) %>% return()
+  }
+  
+  purrr::map(1:100, ~wil_test_seq_stats(metric = "number_of_seqs")) %>% 
+    list_rbind() %>% mutate(padj=p.adjust(pval,"BH"))->wil_test_number_of_genes
+```
+
+I also checked for difference in gene length and found that there is no difference in gene lengths between the genes from the homologous network and genes the random null set. 
+```{r 08_selection_analysis-chunk-005, cache=TRUE, cache.path="cache/08_selection_analysis/"}
+seq_stats<-read_tsv("./10.HyPhy/seq_dat_clean.tsv") %>% mutate(type=case_when(Orthogroup %in% homologous_genes$genes ~ "Homologous", 
+                            .default = "Non homologous")) 
+
+
+seq_stats  %>%
+    ggplot(aes(x=type, y=log10(avg_len), fill=type))+
+    ggbeeswarm::geom_quasirandom(shape=21, color="grey40",alpha=0.5)+
+    geom_boxplot(alpha=0.5, outliers = FALSE, fill="grey")+
+    labs(subtitle = "Difference in average length",
+         x=NULL,
+         y="log10(average length)")+
+    ggsci::scale_fill_bmj()+
+    theme_bw()+
+    theme(axis.text.x = element_blank(),
+          axis.title.y = element_text(size=10))->seq_length
+
+  
+  purrr::map(1:100, ~wil_test_seq_stats(metric = "avg_len")) %>% 
+    list_rbind() %>% mutate(padj=p.adjust(pval,"BH"))->wil_test_seq_len
+
+```
+
+```{r 08_selection_analysis-chunk-006, cache=TRUE, cache.path="cache/08_selection_analysis/",out.width="100%"}
+  rbind(wil_test_number_of_genes, wil_test_seq_len) %>% 
+    ggplot(aes(x=padj))+facet_wrap(~test, scales="free")+
+    geom_density(fill="grey70", alpha=0.5)+
+    theme_bw()->pvaldist
+
+knitr::include_graphics("./Figures_for_report/len_num_diff_selection.png")
+```
+
+```{r, out.width="50%"}
+pvaldist
+```
+ 
+
+### Global dN/dS using MG94 model {.tabset}
+First I used a standard MG94 selection model to get a global estimate of dN/dS estimated from the entire tree. Using this global estimate I found no evidence for difference in dN/dS between genes in the conserved network versus the null, non-conserved gene set. The global MG94 is a highly conservative estimate that rarely captures selective regimes at the branch and site level. 
+```{r 08_selection_analysis-chunk-007, cache=TRUE, cache.path="cache/08_selection_analysis/", eval=FALSE}
+#Parse the JSON file from HyPhy
+fitmg94_json_parse<-function(orth) {
+  library(jsonlite)
+  f<-read_json(paste0("./10.HyPhy/MG94/",orth,"_fitmg94.local.json"))
+  
+  tibble(
+    Orthogroup=orth,
+    omega=f$fits$`Standard MG94`$`Rate Distributions`$`non-synonymous/synonymous rate ratio`,
+    omega_ci_lb=f$fits$`Standard MG94`$`Confidence Intervals`$`non-synonymous/synonymous rate ratio`$LB,
+    omega_ci_ub=f$fits$`Standard MG94`$`Confidence Intervals`$`non-synonymous/synonymous rate ratio`$UB,
+    p_val=f$`test results`$`non-synonymous/synonymous rate ratio`$`p-value`,
+    lrt=f$`test results`$`non-synonymous/synonymous rate ratio`$LRT)
+}
+
+rbind(
+  homologous_genes$genes %>%
+  purrr::map(safely(fitmg94_json_parse)) %>%
+  purrr::map("result") %>%       
+  compact() %>% 
+  list_rbind() %>% mutate(type="Homologous"),
+  
+  (genes_needed %>% distinct(Orthogroup) %>% 
+    filter(!Orthogroup %in% homologous_genes$genes))$Orthogroup %>%
+  purrr::map(safely(fitmg94_json_parse)) %>%
+  purrr::map("result") %>%       
+  compact() %>% 
+  list_rbind() %>% mutate(type="Non Homologous")) %>%
+      mutate(pval_adj=p.adjust(p_val,method = "BH"))->fitmg94_res
+```
+
+```{r}
+fitmg94_res<-readRDS("./RDS/fitmg94_res.rds")
+```
+
+#### Difference in dN/dS
+```{r 08_selection_analysis-chunk-008, cache=TRUE, cache.path="cache/08_selection_analysis/",out.width="50%"}
+rbind(fitmg94_res %>% filter(pval_adj < 0.05)) %>% 
+  ggplot(aes(x=type,y=log2(omega), fill=type))+
+  geom_quasirandom(shape=21, alpha=0.7, color="grey20",size=2)+
+  geom_boxplot(alpha=0.8, outliers = FALSE, fill="grey90", width=0.4)+
+  labs(subtitle = "Global MG94 estimate",
+       x=NULL,
+       fill="type of gene")+
+  ggsci::scale_fill_bmj()+
+  theme_bw()+
+  theme(axis.text.x = element_blank())
+
+test_wil<-function(){
+  
+  rbind(fitmg94_res %>% filter(pval_adj < 0.05) %>% slice_sample(n=200))->test_dat
+  
+  wilcox.test(x=test_dat %>% filter(type=="Homologous") %>% pull(omega) %>% log2(),
+              y=test_dat %>% filter(type=="Non Homologous") %>% pull(omega) %>% log2(),
+              alternative = "two.sided")->wil.res
+  
+  tibble(pval=wil.res$p.value,
+         test=wil.res$alternative) %>% return()
+  }
+
+purrr::map(1:1000, ~test_wil()) %>% list_rbind() %>% mutate(padj=p.adjust(pval,"BH"))->global_sel_diff
+```
+
+```{r}
+global_sel_diff %>% summarise(mean_padj=mean(padj))
+global_sel_diff %>% summarise(median_padj=median(padj))
+```
+
+### FUBAR {.tabset}
+I estimated dN/dS on a per-site basis using the FUBAR (Fast Unconstrained Bayesian Approximation) approach. FUBAR provides site-wise estimates for purifying and diversifying selection regimes, or uncertain sites with low evidence for either regime. The analyses revealed that a majority of the sites in genes from the conserved network evolve under a purifying selection with very few sites evolving under diversifying selection (Fig 2B). The same was observed for the sites in genes from the non-conserved null set. This suggests that these orthologs are generally under high evolutionary constraint at the site level. However, the distribution of evolutionary regimes differs significantly between the two groups (χ² = 651.4, P < 2.2×10⁻¹⁶) with the genes in the conserved network having slightly higher proportion of sites under purifying selection and lower proportion of genes under diversifying selection, as compared to the null set. Although the difference between the groups is significant, the effect size is small (Cramer’s V = 0.019).
+
+```{r 08_selection_analysis-chunk-010, eval=FALSE}
+#Parse HyPhy output
+list.files("./10.HyPhy/FUBAR/") %>% 
+  str_remove_all("_cds_treeinput.fa.FUBAR.json")->og
+
+fubar_json_parse<- function(orth) {
+  f<-read_json(paste0("./10.HyPhy/FUBAR/",orth,"_cds_treeinput.fa.FUBAR.json"),
+               simplifyVector = )
+  headers <- map_chr(f$MLE$headers,1)
+  rows <- f$MLE$content$`0`
+  rows <- purrr::modify(rows, ~ modify(.x, ~ if (is.null(.x)) 0 else .x))
+  sites <- f$`data partitions`$`0`$coverage
+  
+  purrr::map(.x = rows, 
+      ~as_tibble(setNames(as.list(.x), c(headers,"q1","q2")))) %>% list_rbind() %>% 
+    mutate(sites=seq(1:length(sites[[1]])),
+           Orthogroup=orth) %>% 
+    dplyr::select(Orthogroup,sites, everything()) %>% 
+    return()
+}
+
+rbind(
+  homologous_genes$genes %>%
+    purrr::map(safely(fubar_json_parse)) %>%
+    purrr::map("result") %>%       
+    compact() %>% 
+    list_rbind() %>% mutate(type="Homologous"),
+  
+  (genes_needed %>% distinct(Orthogroup) %>% 
+     filter(!Orthogroup %in% homologous_genes$genes))$Orthogroup  %>%
+    purrr::map(safely(fubar_json_parse)) %>%
+    purrr::map("result") %>%       
+    compact() %>% 
+    list_rbind() %>% mutate(type="Non homologous")
+)->fubar_res
+
+fubar_res %>% saveRDS("./RDS/FUBAR_res.rds")
+
+```
+
+
+```{r 08_selection_analysis-chunk-011, cache=TRUE, cache.path="cache/08_selection_analysis/"}
+fubar_res<-readRDS("./RDS/FUBAR_res.rds")
+
+fubar_res %>%  
+    mutate(selection=case_when(`Prob[alpha>beta]` > 0.9 ~ "Purifying", 
+    `Prob[alpha<beta]` > 0.9 ~"Diversifying",
+    .default = "Low evidence")) %>% 
+    dplyr::count(type,selection) %>% mutate(n.per=((n/sum(n))*100) %>% round(2)) %>% 
+    dplyr::select(-n.per) %>% 
+    pivot_wider(names_from = selection, values_from = n) %>% 
+    dplyr::select(-type) %>%
+    as.matrix()->fubar_mat
+
+    fubar_mat%>% chisq.test()->chisq #Homologous (conserved) is column 1
+                                        #Non-homologous (null) is column 3
+chisq
+
+#Effect size calculation
+x2<-unname(chisq$statistic)
+n<-sum(fubar_mat)
+r<-nrow(fubar_mat)
+c<-ncol(fubar_mat)
+
+cramers_v<-sqrt(x2/(n * min(r - 1, c - 1)))
+```
+
+Cramer's V
+```{r}
+cramers_v
+```
+
+```{r, out.width="100%", fig.height=5}
+
+fubar_res %>% 
+  mutate(selection=case_when(`Prob[alpha>beta]` > 0.9 ~ "Purifying", 
+                             `Prob[alpha<beta]` > 0.9 ~"Diversifying",
+                             .default = "Low evidence")) %>% 
+  dplyr::count(type,selection) %>% 
+  mutate(n.per=((n/sum(n)))) %>% 
+  mutate(type=case_when(type=="Homologous" ~ "Conserved",
+                        type=="Non homologous" ~ "Non-conserved")) %>% 
+  ggplot(aes(x=type,y=n.per, fill=selection))+
+  facet_wrap(~selection, scales = "free_y")+
+  geom_col(width = 0.65,position = position_dodge(width = 0.7),
+           alpha=1, linewidth = 0.2, color="black")+
+  #geom_text(aes(label = round(n.per*100,3), x=type, y=n.per+0.001),
+  #          position = position_dodge(width = 0.7))+
+  scale_y_continuous(labels = scales::percent)+
+  scale_fill_manual(values = c("#355C7D","#E07A5F","#D9A441"))+
+  labs(title = "FUBAR analysis",
+       x = "Gene class", 
+       y = "Proportion of sites",
+       fill = "Selection type")+
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+### BUSTED
+Next I ran the BUSTED (Branch-Site Unrestricted Statistical Test for Episodic Diversification) model to test for selection at the gene level. BUSTED fits a codon model with multiple rates classes and tests for evidence of diversifying selection occurring at at least one site in at least one branch in the tree (an episode of diversification). The analysis revealed branches with evidence for episodic diversifying selection in genes from both the conserved network and null set. However, the conserved network genes had a higher proportion of branches with evidence of episodic diversifying selection than the null set (two-sided Fisher’s exact test P = 0.011, odds ratio = 1.22). 
+
+```{r 08_selection_analysis-chunk-012, cache=TRUE, cache.path="cache/08_selection_analysis/", eval=FALSE}
+busted_json_parse<- function(orth) {
+  library(jsonlite)
+  f<-read_json(paste0("./10.HyPhy/BUSTED/",orth, "_cds_treeinput.fa.BUSTED.json"),
+               simplifyVector = TRUE)
+  
+  tibble(Orthogroup=orth,
+         p_value=as.numeric(f$`test results`$`p-value`),
+         lrt=as.numeric(f$`test results`$LRT),
+         no_of_branches=length(f$tested$`0`)) %>% 
+    return()
+}
+
+
+rbind(
+  homologous_genes$genes %>%
+    purrr::map(safely(busted_json_parse)) %>%
+    purrr::map("result") %>%       
+    compact() %>% 
+    list_rbind() %>% 
+    mutate(type="Homologous"),
+  
+  (genes_needed %>% distinct(Orthogroup) %>% 
+     filter(!Orthogroup %in% homologous_genes$genes))$Orthogroup %>% 
+    purrr::map(safely(busted_json_parse)) %>%
+    purrr::map("result") %>%       
+    compact() %>% 
+    list_rbind() %>% 
+    mutate(type="Non homologous")
+) %>% mutate(p_adj=p.adjust(p_value, "BH"))->busted_res
+
+busted_res %>% saveRDS("./RDS/BUSTED_res.rds")
+```
+
+```{r 08_selection_analysis-chunk-013, cache=TRUE, cache.path="cache/08_selection_analysis/"}
+
+busted_res<-readRDS("./RDS/BUSTED_res.rds")
+
+busted_res %>% mutate(is_sig=case_when(p_adj<0.05 ~ "yes",.default = "no")) %>%
+  dplyr::count(type, is_sig) %>% pivot_wider(names_from = is_sig,
+                                             values_from = n,
+                                             values_fill = 0) %>% 
+  dplyr::select(yes,no) %>% as.matrix() %>% fisher.test() #First row is Conserved
+
+
+busted_res %>% mutate(is_sig=case_when(p_adj<0.05 ~ "yes",.default = "no")) %>%
+  dplyr::count(type, is_sig)  %>%
+  mutate(prop=(n/sum(n))) %>% ungroup() %>% 
+  ggplot(aes(x=type, y=prop, fill=is_sig)) +
+  geom_col(width = 0.6, position = "dodge") +
+geom_text(aes(label = round(prop*100,1), 
+              x=type, 
+              y=prop+0.01),
+position = position_dodge(width = 0.7))+
+  scale_y_continuous(labels = scales::percent) +
+  labs(y = "Proportion", x = NULL) +
+  scale_fill_manual(values = c("#B39E88","#4EB5AA"))+
+  labs(subtitle = "BUSTED analysis",x="Gene class", fill="Is significant") +
+  theme_bw()
+  
+```

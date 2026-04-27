@@ -1,0 +1,2367 @@
+## Finding homologous modules 
+
+### Module preservation {.tabset}
+To quantify similarities between the post-embryonic co-expression networks I estimated module preservation statistics, which measure how well network properties are conserved between a reference and a test network. I performed pairwise comparisons of the network properties among all species. Since the networks were constructed using a one-to-one orthologous gene expression matrix, the estimate of module preservation tells us whether gene interactions during post-embryonic development in one species resemble another species.  
+The Zsummary score is used to denote the degree of preservation with scores above 10 typically used as evidence of high preservation and scores below 2 as evidence of no preservation. To get more reliable estimates I use more stringent thresholds to categorise preservation, with  Zsummary > 12 as evidence of high preservation, Zsummary  < 12 as evidence for low to medium preservation, and Zsummary  < 6 as no evidence for preservation. 
+```{r 06_homologous_modules_and_gene_lists-chunk-001, eval=FALSE}
+## Module preservation analysis
+#In this step I check whether the co-expression modules identified in one species are preserved in another species. 
+
+#For clownfish and grouper
+setLabels = c("clown", "grouper");
+multiExpr = list(clown = list(data = clown_orth_net_in$wgcna_in), 
+                 grouper = list(data = grouper_orth_net_in$wgcna_in));
+multiColor = list(clown = clown_orth_net$moduleColors$moduleColors, 
+                  groper = grouper_orth_net$moduleColors$moduleColors);
+nSets = 2
+
+mp = modulePreservation(multiExpr, multiColor,
+referenceNetworks = c(1:2),
+nPermutations = 200,
+randomSeed = 1,
+verbose = 3)
+mp %>% saveRDS("./02.Gene_expression_and_network/orth_module_pres_clownfish_grouper.rds")
+
+#For clownfish and manini
+setLabels = c("clown", "manini");
+multiExpr = list(clown = list(data = clown_orth_net_in$wgcna_in), 
+                 manini = list(data = manini_orth_net_in$wgcna_in));
+multiColor = list(clown = clown_orth_net$moduleColors$moduleColors, 
+                  manini = manini_orth_net$moduleColors$moduleColors);
+nSets = 2
+
+mp = modulePreservation(multiExpr, multiColor,
+referenceNetworks = c(1:2),
+nPermutations = 200,
+randomSeed = 1,
+verbose = 3)
+mp %>% saveRDS("./02.Gene_expression_and_network/orth_module_pres_clownfish_manini.rds")
+
+#For clownfish and goby
+setLabels = c("clown", "goby");
+multiExpr = list(clown = list(data = clown_orth_net_in$wgcna_in), 
+                 goby = list(data = goby_orth_net_in$wgcna_in));
+multiColor = list(clown = clown_orth_net$moduleColors$moduleColors, 
+                  goby = goby_orth_net$moduleColors$moduleColors);
+nSets = 2
+
+mp = modulePreservation(multiExpr, multiColor,
+referenceNetworks = c(1:2),
+nPermutations = 200,
+randomSeed = 1,
+verbose = 3)
+mp %>% saveRDS("./02.Gene_expression_and_network/orth_module_pres_clownfish_goby.rds")
+
+#For clownfish and danio
+setLabels = c("clown", "danio");
+multiExpr = list(clown = list(data = clown_orth_net_in$wgcna_in), 
+                 danio = list(data = danio_orth_net_in$wgcna_in));
+multiColor = list(clown = clown_orth_net$moduleColors$moduleColors, 
+                  danio = danio_orth_net$moduleColors$moduleColors);
+nSets = 2
+
+mp = modulePreservation(multiExpr, multiColor,
+referenceNetworks = c(1:2),
+nPermutations = 200,
+randomSeed = 1,
+verbose = 3)
+mp %>% saveRDS("./02.Gene_expression_and_network/orth_module_pres_clownfish_danio.rds")
+
+#For manini and grouper
+setLabels = c("manini", "grouper");
+multiExpr = list(manini = list(data = manini_orth_net_in$wgcna_in), 
+                 grouper = list(data = grouper_orth_net_in$wgcna_in));
+multiColor = list(manini = manini_orth_net$moduleColors$moduleColors, 
+                  grouper = grouper_orth_net$moduleColors$moduleColors);
+nSets = 2
+
+mp = modulePreservation(multiExpr, multiColor,
+referenceNetworks = c(1:2),
+nPermutations = 200,
+randomSeed = 1,
+verbose = 3)
+mp %>% saveRDS("./02.Gene_expression_and_network/orth_module_pres_manini_grouper.rds")
+
+#For manini and goby
+setLabels = c("manini", "goby");
+multiExpr = list(manini = list(data = manini_orth_net_in$wgcna_in), 
+                 goby = list(data = goby_orth_net_in$wgcna_in));
+multiColor = list(manini = manini_orth_net$moduleColors$moduleColors, 
+                  goby = goby_orth_net$moduleColors$moduleColors);
+nSets = 2
+
+mp = modulePreservation(multiExpr, multiColor,
+referenceNetworks = c(1:2),
+nPermutations = 200,
+randomSeed = 1,
+verbose = 3)
+mp %>% saveRDS("./02.Gene_expression_and_network/orth_module_pres_manini_goby.rds")
+
+#For manini and danio
+setLabels = c("manini", "danio");
+multiExpr = list(manini = list(data = manini_orth_net_in$wgcna_in), 
+                 danio = list(data = danio_orth_net_in$wgcna_in));
+multiColor = list(manini = manini_orth_net$moduleColors$moduleColors, 
+                  danio = danio_orth_net$moduleColors$moduleColors);
+nSets = 2
+
+mp = modulePreservation(multiExpr, multiColor,
+referenceNetworks = c(1:2),
+nPermutations = 200,
+randomSeed = 1,
+verbose = 3)
+mp %>% saveRDS("./02.Gene_expression_and_network/orth_module_pres_manini_danio.rds")
+
+
+#For goby and grouper
+setLabels = c("goby", "grouper");
+multiExpr = list(goby = list(data = goby_orth_net_in$wgcna_in), 
+                 grouper = list(data = grouper_orth_net_in$wgcna_in));
+multiColor = list(goby = goby_orth_net$moduleColors$moduleColors, 
+                  groper = grouper_orth_net$moduleColors$moduleColors);
+nSets = 2
+
+mp = modulePreservation(multiExpr, multiColor,
+referenceNetworks = c(1:2),
+nPermutations = 200,
+randomSeed = 1,
+verbose = 3)
+mp %>% saveRDS("./02.Gene_expression_and_network/orth_module_pres_goby_grouper.rds")
+
+#For goby and danio
+setLabels = c("goby", "danio");
+multiExpr = list(goby = list(data = goby_orth_net_in$wgcna_in), 
+                 danio = list(data = danio_orth_net_in$wgcna_in));
+multiColor = list(goby = goby_orth_net$moduleColors$moduleColors, 
+                  groper = danio_orth_net$moduleColors$moduleColors);
+nSets = 2
+
+mp = modulePreservation(multiExpr, multiColor,
+referenceNetworks = c(1:2),
+nPermutations = 200,
+randomSeed = 1,
+verbose = 3)
+mp %>% saveRDS("./02.Gene_expression_and_network/orth_module_pres_goby_danio.rds")
+
+#For grouper and danio
+setLabels = c("grouper", "danio");
+multiExpr = list(grouper = list(data = grouper_orth_net_in$wgcna_in), 
+                 danio = list(data = danio_orth_net_in$wgcna_in));
+multiColor = list(grouper = grouper_orth_net$moduleColors$moduleColors, 
+                  danio = danio_orth_net$moduleColors$moduleColors);
+nSets = 2
+
+mp = modulePreservation(multiExpr, multiColor,
+referenceNetworks = c(1:2),
+nPermutations = 200,
+randomSeed = 1,
+verbose = 3)
+mp %>% saveRDS("./02.Gene_expression_and_network/orth_module_pres_grouper_danio.rds")
+
+```
+
+#### Loading the module pres plots {.tabset}
+These are individual module preservation plots between pair-wise speices comparisons. 
+```{r 06_homologous_modules_and_gene_lists-chunk-002, cache=TRUE, cache.path="cache/06_homologous_modules_and_gene_lists/", message=FALSE, results='hide'}
+#clownfish
+module_pres_plots(mp=readRDS("./02.Gene_expression_and_network/orth_module_pres_clownfish_grouper.rds"),
+                  heatdat=clown_orth_heatmap$dat, 
+                  c1=1, c2=2, 
+                  cols=cols.clown)->mp_plot_clown_ref_grouper
+module_pres_plots(mp=readRDS("./02.Gene_expression_and_network/orth_module_pres_clownfish_manini.rds"),
+                  heatdat=clown_orth_heatmap$dat, 
+                  c1=1, c2=2, 
+                  cols=cols.clown)->mp_plot_clown_ref_manini
+module_pres_plots(mp=readRDS("./02.Gene_expression_and_network/orth_module_pres_clownfish_goby.rds"),
+                  heatdat=clown_orth_heatmap$dat, 
+                  c1=1, c2=2, 
+                  cols=cols.clown)->mp_plot_clown_ref_goby
+module_pres_plots(mp=readRDS("./02.Gene_expression_and_network/orth_module_pres_clownfish_danio.rds"),
+                  heatdat=clown_orth_heatmap$dat, 
+                  c1=1, c2=2, 
+                  cols=cols.clown)->mp_plot_clown_ref_danio
+#manini
+module_pres_plots(mp=readRDS("./02.Gene_expression_and_network/orth_module_pres_clownfish_manini.rds"),
+                  heatdat=manini_orth_heatmap$dat, 
+                  c1=2, c2=1, 
+                  cols=cols.manini)->mp_plot_manini_ref_clown
+
+module_pres_plots(mp=readRDS("./02.Gene_expression_and_network/orth_module_pres_manini_grouper.rds"),
+                  heatdat=manini_orth_heatmap$dat, 
+                  c1=1, c2=2, 
+                  cols=cols.manini)->mp_plot_manini_ref_grouper
+
+module_pres_plots(mp=readRDS("./02.Gene_expression_and_network/orth_module_pres_manini_goby.rds"),
+                  heatdat=manini_orth_heatmap$dat, 
+                  c1=1, c2=2, 
+                  cols=cols.manini)->mp_plot_manini_ref_goby
+
+module_pres_plots(mp=readRDS("./02.Gene_expression_and_network/orth_module_pres_manini_danio.rds"),
+                  heatdat=manini_orth_heatmap$dat, 
+                  c1=1, c2=2, 
+                  cols=cols.manini)->mp_plot_manini_ref_danio
+
+#Grouper
+module_pres_plots(mp=readRDS("./02.Gene_expression_and_network/orth_module_pres_clownfish_grouper.rds"),
+                  heatdat=grouper_orth_heatmap$dat, 
+                  c1=2, c2=1, 
+                  cols=cols.grouper)->mp_plot_grouper_ref_clown
+
+module_pres_plots(mp=readRDS("./02.Gene_expression_and_network/orth_module_pres_manini_grouper.rds"),
+                  heatdat=grouper_orth_heatmap$dat, 
+                  c1=2, c2=1, 
+                  cols=cols.grouper)->mp_plot_grouper_ref_manini
+
+module_pres_plots(mp=readRDS("./02.Gene_expression_and_network/orth_module_pres_goby_grouper.rds"),
+                  heatdat=grouper_orth_heatmap$dat, 
+                  c1=2, c2=1, 
+                  cols=cols.grouper)->mp_plot_grouper_ref_goby
+
+module_pres_plots(mp=readRDS("./02.Gene_expression_and_network/orth_module_pres_grouper_danio.rds"),
+                  heatdat=grouper_orth_heatmap$dat, 
+                  c1=1, c2=2, 
+                  cols=cols.grouper)->mp_plot_grouper_ref_danio
+
+#Goby
+module_pres_plots(mp=readRDS("./02.Gene_expression_and_network/orth_module_pres_clownfish_goby.rds"),
+                  heatdat=goby_orth_heatmap$dat, 
+                  c1=2, c2=1, 
+                  cols=cols.goby)->mp_plot_goby_ref_clown
+
+module_pres_plots(mp=readRDS("./02.Gene_expression_and_network/orth_module_pres_manini_goby.rds"),
+                  heatdat=goby_orth_heatmap$dat, 
+                  c1=2, c2=1, 
+                  cols=cols.goby)->mp_plot_goby_ref_manini
+
+module_pres_plots(mp=readRDS("./02.Gene_expression_and_network/orth_module_pres_goby_grouper.rds"),
+                  heatdat=goby_orth_heatmap$dat, 
+                  c1=1, c2=2, 
+                  cols=cols.goby)->mp_plot_goby_ref_grouper
+
+module_pres_plots(mp=readRDS("./02.Gene_expression_and_network/orth_module_pres_goby_danio.rds"),
+                  heatdat=goby_orth_heatmap$dat, 
+                  c1=1, c2=2, 
+                  cols=cols.goby)->mp_plot_goby_ref_danio
+
+#Danio
+module_pres_plots(mp=readRDS("./02.Gene_expression_and_network/orth_module_pres_clownfish_danio.rds"),
+                  heatdat=danio_orth_heatmap$dat, 
+                  c1=2, c2=1, 
+                  cols=cols.danio)->mp_plot_danio_ref_clown
+
+module_pres_plots(mp=readRDS("./02.Gene_expression_and_network/orth_module_pres_manini_danio.rds"),
+                  heatdat=danio_orth_heatmap$dat, 
+                  c1=2, c2=1, 
+                  cols=cols.danio)->mp_plot_danio_ref_manini
+
+module_pres_plots(mp=readRDS("./02.Gene_expression_and_network/orth_module_pres_grouper_danio.rds"),
+                  heatdat=danio_orth_heatmap$dat, 
+                  c1=2, c2=1, 
+                  cols=cols.danio)->mp_plot_danio_ref_grouper
+
+module_pres_plots(mp=readRDS("./02.Gene_expression_and_network/orth_module_pres_goby_danio.rds"),
+                  heatdat=danio_orth_heatmap$dat, 
+                  c1=2, c2=1, 
+                  cols=cols.danio)->mp_plot_danio_ref_goby
+
+
+rbind(clown_orth_net$connectivity %>% mutate(species="clown"),manini_orth_net$connectivity %>% mutate(species="manini"),grouper_orth_net$connectivity %>% mutate(species="grouper"),goby_orth_net$connectivity %>% mutate(species="goby"),danio_orth_net$connectivity %>% mutate(species="danio"))->orth_assignments
+```
+
+##### Clownfish~Grouper
+```{r, message=FALSE, fig.width=10, fig.height=3}
+mp_plot_clown_ref_grouper
+```
+
+##### Clownfish~Manini
+```{r, message=FALSE, fig.width=10, fig.height=3}
+mp_plot_clown_ref_manini
+```
+
+##### Clownfish~Goby
+```{r, message=FALSE, fig.width=10, fig.height=3}
+mp_plot_clown_ref_goby
+```
+
+##### Clownfish~Danio
+```{r, message=FALSE, fig.width=10, fig.height=3}
+mp_plot_clown_ref_danio
+```
+
+##### Manini~Clownfish
+```{r, message=FALSE, fig.width=10, fig.height=3}
+mp_plot_manini_ref_clown
+```
+
+##### Manini~Grouper
+```{r, message=FALSE, fig.width=10, fig.height=3}
+mp_plot_manini_ref_grouper
+```
+
+##### Manini~Goby
+```{r, message=FALSE, fig.width=10, fig.height=3}
+mp_plot_manini_ref_goby
+```
+
+##### Manini~Danio
+```{r, message=FALSE, fig.width=10, fig.height=3}
+mp_plot_manini_ref_danio
+```
+
+##### Grouper~Clownfish
+```{r, message=FALSE, fig.width=10, fig.height=3}
+mp_plot_grouper_ref_clown
+```
+
+##### Grouper~Manini
+```{r, message=FALSE, fig.width=10, fig.height=3}
+mp_plot_grouper_ref_manini
+```
+
+##### Grouper~Goby
+```{r, message=FALSE, fig.width=10, fig.height=3}
+mp_plot_grouper_ref_goby
+```
+
+##### Grouper~Danio
+```{r, message=FALSE, fig.width=10, fig.height=3}
+mp_plot_grouper_ref_danio
+```
+
+##### Goby~Clownfish
+```{r, message=FALSE, fig.width=10, fig.height=3}
+mp_plot_goby_ref_clown
+```
+
+##### Goby~Manini
+```{r, message=FALSE, fig.width=10, fig.height=3}
+mp_plot_goby_ref_manini
+```
+
+##### Goby~Grouper
+```{r, message=FALSE, fig.width=10, fig.height=3}
+mp_plot_goby_ref_grouper
+```
+
+##### Goby~Danio
+```{r, message=FALSE, fig.width=10, fig.height=3}
+mp_plot_goby_ref_danio
+```
+
+##### Danio~Clownfish
+```{r, message=FALSE, fig.width=10, fig.height=3}
+mp_plot_danio_ref_clown
+```
+
+##### Danio~Manini
+```{r, message=FALSE, fig.width=10, fig.height=3}
+mp_plot_danio_ref_manini
+```
+
+##### Danio~Grouper
+```{r, message=FALSE, fig.width=10, fig.height=3}
+mp_plot_danio_ref_grouper
+```
+
+##### Danio~Goby
+```{r, message=FALSE, fig.width=10, fig.height=3}
+mp_plot_danio_ref_goby
+```
+
+### Degree of preservation {.tabset}
+```{r 06_homologous_modules_and_gene_lists-chunk-003, cache=TRUE, cache.path="cache/06_homologous_modules_and_gene_lists/", fig.height=6, fig.width=10}
+rbind(
+mp_plot_clown_ref_grouper$dat %>% distinct(mods, .keep_all = T) %>%  mutate(comp="Clowfish~Grouper"),
+mp_plot_clown_ref_goby$dat %>% distinct(mods, .keep_all = T) %>% mutate(comp="Clowfish~Goby"),
+mp_plot_clown_ref_manini$dat %>% distinct(mods, .keep_all = T) %>% mutate(comp="Clowfish~Manini"),
+mp_plot_clown_ref_danio$dat %>% distinct(mods, .keep_all = T) %>% mutate(comp="Clowfish~Danio"),
+mp_plot_grouper_ref_clown$dat %>% distinct(mods, .keep_all = T) %>% mutate(comp="Grouper~Clownfish"),
+mp_plot_grouper_ref_goby$dat %>% distinct(mods, .keep_all = T) %>% mutate(comp="Grouper~Goby"),
+mp_plot_grouper_ref_manini$dat %>% distinct(mods, .keep_all = T) %>% mutate(comp="Grouper~Manini"),
+mp_plot_grouper_ref_danio$dat %>% distinct(mods, .keep_all = T) %>% mutate(comp="Grouper~Danio"),
+mp_plot_goby_ref_clown$dat %>% distinct(mods, .keep_all = T) %>% mutate(comp="Goby~Clownfish"),
+mp_plot_goby_ref_grouper$dat %>% distinct(mods, .keep_all = T) %>% mutate(comp="Goby~Grouper"),
+mp_plot_goby_ref_manini$dat %>% distinct(mods, .keep_all = T) %>% mutate(comp="Goby~Manini"),
+mp_plot_goby_ref_danio$dat %>% distinct(mods, .keep_all = T) %>% mutate(comp="Goby~Danio"),
+mp_plot_manini_ref_clown$dat %>% distinct(mods, .keep_all = T) %>% mutate(comp="Manini~Clownfish"),
+mp_plot_manini_ref_grouper$dat %>% distinct(mods, .keep_all = T) %>% mutate(comp="Manini~Grouper"),
+mp_plot_manini_ref_goby$dat %>% distinct(mods, .keep_all = T) %>% mutate(comp="Manini~Goby"),
+mp_plot_manini_ref_danio$dat %>% distinct(mods, .keep_all = T) %>% mutate(comp="Manini~Danio"),
+mp_plot_danio_ref_clown$dat %>% distinct(mods, .keep_all = T) %>% mutate(comp="Danio~Clownfish"),
+mp_plot_danio_ref_grouper$dat %>% distinct(mods, .keep_all = T) %>% mutate(comp="Danio~Grouper"),
+mp_plot_danio_ref_goby$dat %>% distinct(mods, .keep_all = T) %>% mutate(comp="Danio~Goby"),
+mp_plot_danio_ref_manini$dat %>% distinct(mods, .keep_all = T) %>% mutate(comp="Danio~Manini")
+) %>% 
+  dplyr::count(pres, comp) %>% 
+  mutate(comp=reorder(comp, -n)) %>%  
+  ggplot(aes(y=comp, x=n))+
+    facet_wrap(~pres)+
+  geom_col(aes(fill=pres), color="grey20", linewidth=0.2, position = "stack")+
+    geom_text(aes(label=n, x=n-1.2), color="white", size=3)+
+  scale_fill_manual(values = c("#497BB6", "#B6497B", "#7BB649"))+
+  labs(x="Comparisons", y="Number of modules")+
+  theme_bw()+
+  theme(axis.text.y = element_text(angle=0,size=8,hjust = 1, vjust = 0.5),
+        axis.text.x = element_text(size=8),
+        strip.background = element_rect(fill = "grey95"))
+```
+
+The following plots show the Jaccard indices for all the module comparisons with the significant higher than expected overlaps marked in red. I pick the module pairs with the highest Jaccard similarity and classify them as the conserved ones. Those are highlighted with black outline. The preservation classification is on the x and y axis. You can see that most homologous modules are usually highly preserved. 
+
+#### Clownfish and goby
+
+```{r 06_homologous_modules_and_gene_lists-chunk-004, cache=TRUE, cache.path="cache/06_homologous_modules_and_gene_lists/"}
+#clown:317
+#Grouper:310
+#Goby:363
+#Manini:385
+#Zebrafish:385
+
+expand_grid(c1=(clown_orth_net$connectivity %>% distinct(module) %>% pull(module)), 
+            c2=(goby_orth_net$connectivity %>% distinct(module) %>% pull(module)))->jac_input
+
+# Run the function with the ability to specify net1 and net2
+purrr::map2(.x = jac_input$c1, 
+            .y = jac_input$c2,  
+            ~ get_jaccard_estimate(.x, .y, 
+                                   net1 = clown_orth_net$moduleColors, 
+                                   net2 = goby_orth_net$moduleColors)) %>% list_rbind() %>% 
+  arrange(desc(jaccard_index))->membership_stats
+
+#Reorder colums and adjust the pvalues
+membership_stats %>% mutate(col.goby=reorder(c2,-jaccard_index)) %>% 
+  mutate(col.clown=reorder(c1,-jaccard_index)) %>% 
+  mutate(padj=p.adjust(membership_stats$f.test.pval,"BH"))->membership_stats
+
+#Join with the heatmap data
+full_join(mp_plot_clown_ref_goby$dat %>% dplyr::rename(col.clown=mods),
+          membership_stats, by = "col.clown",relationship = "many-to-many") %>% 
+  dplyr::rename(clown.pres=pres, stages.clown=stages, mod.z.clown=mod.z)->membership_stats
+#Join with the heatmap data
+full_join(mp_plot_goby_ref_clown$dat %>% dplyr::rename(col.goby=mods),
+          membership_stats, by = "col.goby",relationship = "many-to-many") %>% 
+  dplyr::rename(goby.pres=pres, stages.goby=stages, mod.z.goby=mod.z) ->membership_stats
+
+membership_stats %>% dplyr::select(c(col.clown, col.goby, jaccard_index, padj, clown.pres, goby.pres)) %>% 
+  mutate(sig_ovelap=case_when(
+  padj < 0.05 ~ "yes", padj > 0.05 ~ "no")) %>% mutate(col.clown=reorder(col.clown,-jaccard_index))->membership_stats2
+
+full_join(membership_stats %>% dplyr::select(c(col.clown, col.goby, jaccard_index, padj, clown.pres, goby.pres)) %>%
+             mutate(sig_ovelap=case_when(
+               padj < 0.05 ~ "yes", padj > 0.05 ~ "no")) %>% mutate(col.clown=reorder(col.clown,-jaccard_index)),
+           membership_stats2 %>% filter(sig_ovelap == "yes") %>% 
+             mutate(homo=case_when(
+               jaccard_index >= quantile(membership_stats$jaccard_index,0.75) & sig_ovelap == "yes" ~ "homologous",
+               .default = "non-homologous")) %>% 
+     distinct(col.clown,col.goby, .keep_all = T) %>% 
+   slice_max(order_by = jaccard_index,by = col.clown,n = 2,) %>% dplyr::select(col.clown,col.goby,homo),by = c("col.clown","col.goby")) %>%
+   replace_na(list(homo="non-homologous"))->membership_stats2
+  
+membership_stats2 %>%  
+  ggplot(aes(x=col.goby, y=col.clown))+
+  geom_tile(aes(fill=jaccard_index, color=homo, width=0.8, height=0.8), size=0.3)+
+  scale_y_discrete(position = "right") +
+  facet_grid(clown.pres~goby.pres,space = "free",scales = "free")+
+  labs(x=NULL, y=NULL)+
+  scale_fill_gradientn(colours = RColorBrewer::brewer.pal(9,"Oranges"),limits=c(0,0.5))+
+  scale_color_manual(values = c("black","white"))+
+  ggnewscale::new_scale_color()+
+  geom_point(aes(color = sig_ovelap),alpha=0.3,size=0.3,shape=8)+
+  scale_color_manual(values = c("white","red3"))+
+  theme_void()+
+  theme(strip.text = element_blank(),
+        strip.background = element_blank(),
+        panel.grid = element_blank(),
+        legend.position = "left",
+        axis.text = element_blank())->p1
+
+  
+  membership_stats %>% dplyr::select(c(col.clown, col.goby, jaccard_index, padj, clown.pres, goby.pres,phase.x)) %>% mutate(col.clown=reorder(col.clown,-jaccard_index)) %>% 
+    ggplot(aes(x=col.goby,y=1))+
+    geom_tile(aes(fill=goby.pres))+
+    facet_grid(cols = vars(goby.pres),space = "free",scales = "free")+
+    scale_fill_manual(values = c("#497BB6", "#B6497B", "#7BB649"))+
+    ggnewscale::new_scale_fill()+
+    geom_tile(aes(fill=phase.x, y=2))+
+    scale_fill_manual(values = c("#497", "#B64", "#7BB"))+
+    labs(x="Goby modules", y=NULL)+
+    theme_minimal()+
+    theme(axis.text.x = element_text(angle = -90,hjust = -0.005,vjust = 0.2),
+          strip.text = element_blank(),
+          strip.background = element_blank(),
+          panel.grid = element_blank(),
+          axis.text.y = element_blank(),
+          legend.position = "none")->p2
+  
+  membership_stats %>% dplyr::select(c(col.clown, col.goby, jaccard_index, padj, clown.pres, goby.pres,phase.y)) %>% mutate(col.clown=reorder(col.clown,-jaccard_index)) %>% 
+    ggplot(aes(y=col.clown,x=1))+
+    facet_grid(rows = vars(clown.pres),space = "free",scales = "free")+
+    geom_tile(aes(fill=clown.pres))+
+    scale_y_discrete(position = "right") +
+    scale_fill_manual(values = c("#497BB6", "#B6497B", "#7BB649"))+
+    ggnewscale::new_scale_fill()+
+    geom_tile(aes(fill=phase.y, x=0))+
+    scale_fill_manual(values = c("#497", "#B64", "#7BB"))+
+    labs(x=NULL, y="Clownfish modules")+
+    theme_minimal()+
+    theme(strip.text = element_blank(),
+          strip.background = element_blank(),
+          panel.grid = element_blank(),
+          axis.text.x =  element_blank(),
+          legend.position = "none")->p3
+  
+  qnt<-max(membership_stats$mod.z.clown)
+  membership_stats %>% 
+  ggplot(aes(x = stages.clown,y = col.clown))+
+  facet_grid(rows = vars(clown.pres),space = "free",scales = "free")+
+  geom_tile(aes(fill = mod.z.clown), color = "grey80",) +
+  scale_fill_gradientn(colors = rev(cols.clown(11)), limits = c(-qnt, qnt),
+                       breaks = c(-qnt, 0, qnt), labels = c(paste0("<", round(-qnt)), "0", paste0(">", round(qnt))))+
+  labs(y=NULL, x="Clownfish stages")+
+  theme_minimal()+
+  theme(axis.text.x = element_text(angle = 90,hjust = -0.005,vjust = 0.2),
+                        strip.text = element_blank(),
+                        strip.background = element_blank(),
+                        panel.grid = element_blank(),
+                        axis.text.y = element_blank(),
+                        legend.position = "top")->p4
+  
+  qnt<-max(membership_stats$mod.z.goby)
+  membership_stats %>% 
+  ggplot(aes(y = stages.goby,x = col.goby))+
+  facet_grid(cols = vars(goby.pres),space = "free",scales = "free")+
+  geom_tile(aes(fill = mod.z.goby), color = "grey80",) +
+  scale_fill_gradientn(colors = rev(cols.goby(11)), limits = c(-qnt, qnt),
+                       breaks = c(-qnt, 0, qnt), labels = c(paste0("<", round(-qnt)), "0", paste0(">", round(qnt))))+
+  labs(x=NULL, y="Goby stages")+
+  theme_minimal()+
+  theme(strip.text = element_blank(),
+                        strip.background = element_blank(),
+                        panel.grid = element_blank(),
+                        axis.text.x = element_blank(),
+                        legend.position = "bottom")->p5
+  
+  
+  
+wrap_plots(p1,p3,p2,nrow = 2,ncol = 2, heights = c(1,0.05), widths = c(1, 0.05))->wrapped_plot_clown_goby
+wrapped_plot_clown_goby
+```
+
+#### Clownfish and grouper
+
+```{r 06_homologous_modules_and_gene_lists-chunk-005, cache=TRUE, cache.path="cache/06_homologous_modules_and_gene_lists/"}
+#clown:317
+#Grouper:310
+#Goby:363
+#Manini:385
+#Zebrafish:385
+
+expand_grid(c1=(clown_orth_net$connectivity %>% distinct(module) %>% pull(module)), 
+            c2=(grouper_orth_net$connectivity %>% distinct(module) %>% pull(module)))->jac_input
+
+# Run the function with the ability to specify net1 and net2
+purrr::map2(.x = jac_input$c1, 
+            .y = jac_input$c2,  
+            ~ get_jaccard_estimate(.x, .y, 
+                                   net1 = clown_orth_net$moduleColors, 
+                                   net2 = grouper_orth_net$moduleColors)) %>% list_rbind() %>% 
+  arrange(desc(jaccard_index))->membership_stats
+
+#Reorder colums and adjust the pvalues
+membership_stats %>% mutate(col.grouper=reorder(c2,-jaccard_index)) %>% 
+  mutate(col.clown=reorder(c1,-jaccard_index)) %>% 
+  mutate(padj=p.adjust(membership_stats$f.test.pval,"BH"))->membership_stats
+
+#Join with the heatmap data
+full_join(mp_plot_clown_ref_grouper$dat %>% dplyr::rename(col.clown=mods),
+          membership_stats, by = "col.clown",relationship = "many-to-many") %>% 
+  dplyr::rename(clown.pres=pres, stages.clown=stages, mod.z.clown=mod.z)->membership_stats
+#Join with the heatmap data
+full_join(mp_plot_grouper_ref_clown$dat %>% dplyr::rename(col.grouper=mods),
+          membership_stats, by = "col.grouper",relationship = "many-to-many") %>% 
+  dplyr::rename(grouper.pres=pres, stages.grouper=stages, mod.z.grouper=mod.z) ->membership_stats
+
+
+membership_stats %>% dplyr::select(c(col.clown, col.grouper, jaccard_index, padj, clown.pres, grouper.pres)) %>% 
+  mutate(sig_ovelap=case_when(
+  padj < 0.05 ~ "yes", padj > 0.05 ~ "no")) %>% mutate(col.clown=reorder(col.clown,-jaccard_index))->membership_stats2
+
+full_join(membership_stats %>% dplyr::select(c(col.clown, col.grouper, jaccard_index, padj, clown.pres, grouper.pres)) %>%
+             mutate(sig_ovelap=case_when(
+               padj < 0.05 ~ "yes", padj > 0.05 ~ "no")) %>% mutate(col.clown=reorder(col.clown,-jaccard_index)),
+           membership_stats2 %>% filter(sig_ovelap == "yes") %>% 
+             mutate(homo=case_when(
+               jaccard_index >= quantile(membership_stats$jaccard_index,0.75) & sig_ovelap == "yes" ~ "homologous",
+               .default = "non-homologous")) %>% 
+     distinct(col.clown,col.grouper, .keep_all = T) %>% 
+   slice_max(order_by = jaccard_index,by = col.grouper, n=2) %>% dplyr::select(col.clown,col.grouper,homo),by = c("col.clown","col.grouper")) %>%
+   replace_na(list(homo="non-homologous"))->membership_stats2
+  
+membership_stats2 %>%  
+  ggplot(aes(x=col.grouper, y=col.clown))+
+  geom_tile(aes(fill=jaccard_index, color=homo, width=0.8, height=0.8), size=0.3)+
+  scale_y_discrete(position = "right") +
+  facet_grid(clown.pres~grouper.pres,space = "free",scales = "free")+
+  labs(x=NULL, y=NULL)+
+  scale_fill_gradientn(colours = RColorBrewer::brewer.pal(9,"Oranges"),limits=c(0,0.5))+
+  scale_color_manual(values = c("black","white"))+
+  ggnewscale::new_scale_color()+
+  geom_point(aes(color = sig_ovelap),alpha=0.3,size=0.3,shape=8)+
+  scale_color_manual(values = c("white","red3"))+
+  theme_void()+
+  theme(strip.text = element_blank(),
+        strip.background = element_blank(),
+        panel.grid = element_blank(),
+        legend.position = "left",
+        axis.text = element_blank())->p1
+
+  
+  membership_stats %>% dplyr::select(c(col.clown, col.grouper, jaccard_index, padj, clown.pres, grouper.pres,phase.x)) %>% mutate(col.clown=reorder(col.clown,-jaccard_index)) %>% 
+    ggplot(aes(x=col.grouper,y=1))+
+    geom_tile(aes(fill=grouper.pres))+
+    facet_grid(cols = vars(grouper.pres),space = "free",scales = "free")+
+    scale_fill_manual(values = c("#497BB6", "#B6497B", "#7BB649"))+
+    ggnewscale::new_scale_fill()+
+    geom_tile(aes(fill=phase.x, y=2))+
+    scale_fill_manual(values = c("#497", "#B64", "#7BB"))+
+    labs(x="Grouper modules", y=NULL)+
+    theme_minimal()+
+    theme(axis.text.x = element_text(angle = -90,hjust = -0.005,vjust = 0.2),
+          strip.text = element_blank(),
+          strip.background = element_blank(),
+          panel.grid = element_blank(),
+          axis.text.y = element_blank(),
+          legend.position = "none")->p2
+  
+  membership_stats %>% dplyr::select(c(col.clown, col.grouper, jaccard_index, padj, clown.pres, grouper.pres,phase.y)) %>% mutate(col.clown=reorder(col.clown,-jaccard_index)) %>% 
+    ggplot(aes(y=col.clown,x=1))+
+    facet_grid(rows = vars(clown.pres),space = "free",scales = "free")+
+    geom_tile(aes(fill=clown.pres))+
+    scale_y_discrete(position = "right") +
+    scale_fill_manual(values = c("#497BB6", "#B6497B", "#7BB649"))+
+    ggnewscale::new_scale_fill()+
+    geom_tile(aes(fill=phase.y, x=0))+
+    scale_fill_manual(values = c("#497", "#B64", "#7BB"))+
+    labs(x=NULL, y="Clownfish modules")+
+    theme_minimal()+
+    theme(strip.text = element_blank(),
+          strip.background = element_blank(),
+          panel.grid = element_blank(),
+          axis.text.x =  element_blank(),
+          legend.position = "none")->p3
+  
+  qnt<-max(membership_stats$mod.z.clown)
+  membership_stats %>% 
+  ggplot(aes(x = stages.clown,y = col.clown))+
+  facet_grid(rows = vars(clown.pres),space = "free",scales = "free")+
+  geom_tile(aes(fill = mod.z.clown), color = "grey80",) +
+  scale_fill_gradientn(colors = rev(cols.clown(11)), limits = c(-qnt, qnt),
+                       breaks = c(-qnt, 0, qnt), labels = c(paste0("<", round(-qnt)), "0", paste0(">", round(qnt))))+
+  labs(y=NULL, x="Clownfish stages")+
+  theme_minimal()+
+  theme(axis.text.x = element_text(angle = 90,hjust = -0.005,vjust = 0.2),
+                        strip.text = element_blank(),
+                        strip.background = element_blank(),
+                        panel.grid = element_blank(),
+                        axis.text.y = element_blank(),
+                        legend.position = "top")->p4
+  
+  qnt<-max(membership_stats$mod.z.grouper)
+  membership_stats %>% 
+  ggplot(aes(y = stages.grouper,x = col.grouper))+
+  facet_grid(cols = vars(grouper.pres),space = "free",scales = "free")+
+  geom_tile(aes(fill = mod.z.grouper), color = "grey80",) +
+  scale_fill_gradientn(colors = rev(cols.grouper(11)), limits = c(-qnt, qnt),
+                       breaks = c(-qnt, 0, qnt), labels = c(paste0("<", round(-qnt)), "0", paste0(">", round(qnt))))+
+  labs(x=NULL, y="Grouper stages")+
+  theme_minimal()+
+  theme(strip.text = element_blank(),
+                        strip.background = element_blank(),
+                        panel.grid = element_blank(),
+                        axis.text.x = element_blank(),
+                        legend.position = "bottom")->p5
+  
+  
+  
+wrap_plots(p1,p3,p2,nrow = 2,ncol = 2, heights = c(1,0.05), widths = c(1, 0.05))->wrapped_plot_clown_grouper
+wrapped_plot_clown_grouper
+```
+
+#### Clownfish and manini
+
+```{r 06_homologous_modules_and_gene_lists-chunk-006, cache=TRUE, cache.path="cache/06_homologous_modules_and_gene_lists/"}
+#clown:317
+#Grouper:310
+#Goby:363
+#Manini:385
+#Zebrafish:385
+
+expand_grid(c1=(clown_orth_net$connectivity %>% distinct(module) %>% pull(module)), 
+            c2=(manini_orth_net$connectivity %>% distinct(module) %>% pull(module)))->jac_input
+
+# Run the function with the ability to specify net1 and net2
+purrr::map2(.x = jac_input$c1, 
+            .y = jac_input$c2,  
+            ~ get_jaccard_estimate(.x, .y, 
+                                   net1 = clown_orth_net$moduleColors, 
+                                   net2 = manini_orth_net$moduleColors)) %>% list_rbind() %>% 
+  arrange(desc(jaccard_index))->membership_stats
+
+#Reorder colums and adjust the pvalues
+membership_stats %>% mutate(col.manini=reorder(c2,-jaccard_index)) %>% 
+  mutate(col.clown=reorder(c1,-jaccard_index)) %>% 
+  mutate(padj=p.adjust(membership_stats$f.test.pval,"BH"))->membership_stats
+
+#Join with the heatmap data
+full_join(mp_plot_clown_ref_manini$dat %>% dplyr::rename(col.clown=mods),
+          membership_stats, by = "col.clown",relationship = "many-to-many") %>% 
+  dplyr::rename(clown.pres=pres, stages.clown=stages, mod.z.clown=mod.z)->membership_stats
+#Join with the heatmap data
+full_join(mp_plot_manini_ref_clown$dat %>% dplyr::rename(col.manini=mods),
+          membership_stats, by = "col.manini",relationship = "many-to-many") %>% 
+  dplyr::rename(manini.pres=pres, stages.manini=stages, mod.z.manini=mod.z) ->membership_stats
+
+
+membership_stats %>% dplyr::select(c(col.clown, col.manini, jaccard_index, padj, clown.pres, manini.pres)) %>% 
+  mutate(sig_ovelap=case_when(
+  padj < 0.05 ~ "yes", padj > 0.05 ~ "no")) %>% mutate(col.clown=reorder(col.clown,-jaccard_index))->membership_stats2
+
+ full_join(membership_stats %>% dplyr::select(c(col.clown, col.manini, jaccard_index, padj, clown.pres, manini.pres)) %>%
+             mutate(sig_ovelap=case_when(
+               padj < 0.05 ~ "yes", padj > 0.05 ~ "no")) %>% mutate(col.clown=reorder(col.clown,-jaccard_index)),
+           membership_stats2 %>% filter(sig_ovelap == "yes") %>% 
+             mutate(homo=case_when(
+               jaccard_index >= quantile(membership_stats$jaccard_index,0.75) & sig_ovelap == "yes" ~ "homologous",
+               .default = "non-homologous")) %>% 
+     distinct(col.clown,col.manini, .keep_all = T) %>% 
+   slice_max(order_by = jaccard_index,by = col.clown, n=2) %>% dplyr::select(col.clown,col.manini,homo),by = c("col.clown","col.manini")) %>%
+   replace_na(list(homo="non-homologous"))->membership_stats2
+  
+membership_stats2 %>%  
+  ggplot(aes(x=col.manini, y=col.clown))+
+  geom_tile(aes(fill=jaccard_index, color=homo, width=0.8, height=0.8), size=0.3)+
+  scale_y_discrete(position = "right") +
+  facet_grid(clown.pres~manini.pres,space = "free",scales = "free")+
+  labs(x=NULL, y=NULL)+
+  scale_fill_gradientn(colours = RColorBrewer::brewer.pal(9,"Oranges"),limits=c(0,0.5))+
+  scale_color_manual(values = c("black","white"))+
+  ggnewscale::new_scale_color()+
+  geom_point(aes(color = sig_ovelap),alpha=0.3,size=0.3,shape=8)+
+  scale_color_manual(values = c("white","red3"))+
+  theme_void()+
+  theme(strip.text = element_blank(),
+        strip.background = element_blank(),
+        panel.grid = element_blank(),
+        legend.position = "left",
+        axis.text = element_blank())->p1
+
+  
+  membership_stats %>% dplyr::select(c(col.clown, col.manini, jaccard_index, padj, clown.pres, manini.pres,phase.x)) %>% mutate(col.clown=reorder(col.clown,-jaccard_index)) %>% 
+    ggplot(aes(x=col.manini,y=1))+
+    geom_tile(aes(fill=manini.pres))+
+    facet_grid(cols = vars(manini.pres),space = "free",scales = "free")+
+    scale_fill_manual(values = c("#497BB6", "#B6497B", "#7BB649"))+
+    ggnewscale::new_scale_fill()+
+    geom_tile(aes(fill=phase.x, y=2))+
+    scale_fill_manual(values = c("#497", "#B64", "#7BB"))+
+    labs(x="manini modules", y=NULL)+
+    theme_minimal()+
+    theme(axis.text.x = element_text(angle = -90,hjust = -0.005,vjust = 0.2),
+          strip.text = element_blank(),
+          strip.background = element_blank(),
+          panel.grid = element_blank(),
+          axis.text.y = element_blank(),
+          legend.position = "none")->p2
+  
+  membership_stats %>% dplyr::select(c(col.clown, col.manini, jaccard_index, padj, clown.pres, manini.pres,phase.y)) %>% mutate(col.clown=reorder(col.clown,-jaccard_index)) %>% 
+    ggplot(aes(y=col.clown,x=1))+
+    facet_grid(rows = vars(clown.pres),space = "free",scales = "free")+
+    geom_tile(aes(fill=clown.pres))+
+    scale_y_discrete(position = "right") +
+    scale_fill_manual(values = c("#497BB6", "#B6497B", "#7BB649"))+
+    ggnewscale::new_scale_fill()+
+    geom_tile(aes(fill=phase.y, x=0))+
+    scale_fill_manual(values = c("#497", "#B64", "#7BB"))+
+    labs(x=NULL, y="Clownfish modules")+
+    theme_minimal()+
+    theme(strip.text = element_blank(),
+          strip.background = element_blank(),
+          panel.grid = element_blank(),
+          axis.text.x =  element_blank(),
+          legend.position = "none")->p3
+  
+  qnt<-max(membership_stats$mod.z.clown)
+  membership_stats %>% 
+  ggplot(aes(x = stages.clown,y = col.clown))+
+  facet_grid(rows = vars(clown.pres),space = "free",scales = "free")+
+  geom_tile(aes(fill = mod.z.clown), color = "grey80",) +
+  scale_fill_gradientn(colors = rev(cols.clown(11)), limits = c(-qnt, qnt),
+                       breaks = c(-qnt, 0, qnt), labels = c(paste0("<", round(-qnt)), "0", paste0(">", round(qnt))))+
+  labs(y=NULL, x="Clownfish stages")+
+  theme_minimal()+
+  theme(axis.text.x = element_text(angle = 90,hjust = -0.005,vjust = 0.2),
+                        strip.text = element_blank(),
+                        strip.background = element_blank(),
+                        panel.grid = element_blank(),
+                        axis.text.y = element_blank(),
+                        legend.position = "top")->p4
+  
+  qnt<-max(membership_stats$mod.z.manini)
+  membership_stats %>% 
+  ggplot(aes(y = stages.manini,x = col.manini))+
+  facet_grid(cols = vars(manini.pres),space = "free",scales = "free")+
+  geom_tile(aes(fill = mod.z.manini), color = "grey80",) +
+  scale_fill_gradientn(colors = rev(cols.manini(11)), limits = c(-qnt, qnt),
+                       breaks = c(-qnt, 0, qnt), labels = c(paste0("<", round(-qnt)), "0", paste0(">", round(qnt))))+
+  labs(x=NULL, y="manini stages")+
+  theme_minimal()+
+  theme(strip.text = element_blank(),
+                        strip.background = element_blank(),
+                        panel.grid = element_blank(),
+                        axis.text.x = element_blank(),
+                        legend.position = "bottom")->p5
+  
+wrap_plots(p1,p3,p2,nrow = 2,ncol = 2, heights = c(1,0.05), widths = c(1, 0.05))->wrapped_plot_clown_manini
+wrapped_plot_clown_manini
+```
+
+#### Clownfish and danio
+
+```{r 06_homologous_modules_and_gene_lists-chunk-007, cache=TRUE, cache.path="cache/06_homologous_modules_and_gene_lists/"}
+#clown:317
+#Grouper:310
+#Goby:363
+#Manini:385
+#Zebrafish:385
+
+expand_grid(c1=(clown_orth_net$connectivity %>% distinct(module) %>% pull(module)), 
+            c2=(danio_orth_net$connectivity %>% distinct(module) %>% pull(module)))->jac_input
+
+# Run the function with the ability to specify net1 and net2
+purrr::map2(.x = jac_input$c1, 
+            .y = jac_input$c2,  
+            ~ get_jaccard_estimate(.x, .y, 
+                                   net1 = clown_orth_net$moduleColors, 
+                                   net2 = danio_orth_net$moduleColors)) %>% list_rbind() %>% 
+  arrange(desc(jaccard_index))->membership_stats
+
+#Reorder colums and adjust the pvalues
+membership_stats %>% mutate(col.danio=reorder(c2,-jaccard_index)) %>% 
+  mutate(col.clown=reorder(c1,-jaccard_index)) %>% 
+  mutate(padj=p.adjust(membership_stats$f.test.pval,"BH"))->membership_stats
+
+#Join with the heatmap data
+full_join(mp_plot_clown_ref_danio$dat %>% dplyr::rename(col.clown=mods),
+          membership_stats, by = "col.clown",relationship = "many-to-many") %>% 
+  dplyr::rename(clown.pres=pres, stages.clown=stages, mod.z.clown=mod.z)->membership_stats
+#Join with the heatmap data
+full_join(mp_plot_danio_ref_clown$dat %>% dplyr::rename(col.danio=mods),
+          membership_stats, by = "col.danio",relationship = "many-to-many") %>% 
+  dplyr::rename(danio.pres=pres, stages.danio=stages, mod.z.danio=mod.z) ->membership_stats
+
+
+membership_stats %>% dplyr::select(c(col.clown, col.danio, jaccard_index, padj, clown.pres, danio.pres)) %>% 
+  mutate(sig_ovelap=case_when(
+  padj < 0.05 ~ "yes", padj > 0.05 ~ "no")) %>% mutate(col.clown=reorder(col.clown,-jaccard_index))->membership_stats2
+
+ full_join(membership_stats %>% dplyr::select(c(col.clown, col.danio, jaccard_index, padj, clown.pres, danio.pres)) %>%
+             mutate(sig_ovelap=case_when(
+               padj < 0.05 ~ "yes", padj > 0.05 ~ "no")) %>% mutate(col.clown=reorder(col.clown,-jaccard_index)),
+           membership_stats2 %>% filter(sig_ovelap == "yes") %>% 
+             mutate(homo=case_when(
+               jaccard_index >= quantile(membership_stats$jaccard_index,0.75) & sig_ovelap == "yes" ~ "homologous",
+               .default = "non-homologous")) %>% 
+     distinct(col.clown,col.danio, .keep_all = T) %>% 
+   slice_max(order_by = jaccard_index,by = col.clown, n=2) %>% dplyr::select(col.clown,col.danio,homo),by = c("col.clown","col.danio")) %>%
+   replace_na(list(homo="non-homologous"))->membership_stats2
+  
+membership_stats2 %>%  
+  ggplot(aes(x=col.danio, y=col.clown))+
+  geom_tile(aes(fill=jaccard_index, color=homo, width=0.8, height=0.8), size=0.3)+
+  scale_y_discrete(position = "right") +
+  facet_grid(clown.pres~danio.pres,space = "free",scales = "free")+
+  labs(x=NULL, y=NULL)+
+  scale_fill_gradientn(colours = RColorBrewer::brewer.pal(9,"Oranges"),limits=c(0,0.5))+
+  scale_color_manual(values = c("black","white"))+
+  ggnewscale::new_scale_color()+
+  geom_point(aes(color = sig_ovelap),alpha=0.3,size=0.3,shape=8)+
+  scale_color_manual(values = c("white","red3"))+
+  theme_void()+
+  theme(strip.text = element_blank(),
+        strip.background = element_blank(),
+        panel.grid = element_blank(),
+        legend.position = "left",
+        axis.text = element_blank())->p1
+
+  
+  membership_stats %>% dplyr::select(c(col.clown, col.danio, jaccard_index, padj, clown.pres, danio.pres,phase.x)) %>% mutate(col.clown=reorder(col.clown,-jaccard_index)) %>% 
+    ggplot(aes(x=col.danio,y=1))+
+    geom_tile(aes(fill=danio.pres))+
+    facet_grid(cols = vars(danio.pres),space = "free",scales = "free")+
+    scale_fill_manual(values = c("#497BB6", "#B6497B", "#7BB649"))+
+    ggnewscale::new_scale_fill()+
+    geom_tile(aes(fill=phase.x, y=2))+
+    scale_fill_manual(values = c("#497", "#B64", "#7BB"))+
+    labs(x="danio modules", y=NULL)+
+    theme_minimal()+
+    theme(axis.text.x = element_text(angle = -90,hjust = -0.005,vjust = 0.2),
+          strip.text = element_blank(),
+          strip.background = element_blank(),
+          panel.grid = element_blank(),
+          axis.text.y = element_blank(),
+          legend.position = "none")->p2
+  
+  membership_stats %>% dplyr::select(c(col.clown, col.danio, jaccard_index, padj, clown.pres, danio.pres,phase.y)) %>% mutate(col.clown=reorder(col.clown,-jaccard_index)) %>% 
+    ggplot(aes(y=col.clown,x=1))+
+    facet_grid(rows = vars(clown.pres),space = "free",scales = "free")+
+    geom_tile(aes(fill=clown.pres))+
+    scale_y_discrete(position = "right") +
+    scale_fill_manual(values = c("#497BB6", "#B6497B", "#7BB649"))+
+    ggnewscale::new_scale_fill()+
+    geom_tile(aes(fill=phase.y, x=0))+
+    scale_fill_manual(values = c("#497", "#B64", "#7BB"))+
+    labs(x=NULL, y="Clownfish modules")+
+    theme_minimal()+
+    theme(strip.text = element_blank(),
+          strip.background = element_blank(),
+          panel.grid = element_blank(),
+          axis.text.x =  element_blank(),
+          legend.position = "none")->p3
+  
+  qnt<-max(membership_stats$mod.z.clown)
+  membership_stats %>% 
+  ggplot(aes(x = stages.clown,y = col.clown))+
+  facet_grid(rows = vars(clown.pres),space = "free",scales = "free")+
+  geom_tile(aes(fill = mod.z.clown), color = "grey80",) +
+  scale_fill_gradientn(colors = rev(cols.clown(11)), limits = c(-qnt, qnt),
+                       breaks = c(-qnt, 0, qnt), labels = c(paste0("<", round(-qnt)), "0", paste0(">", round(qnt))))+
+  labs(y=NULL, x="Clownfish stages")+
+  theme_minimal()+
+  theme(axis.text.x = element_text(angle = 90,hjust = -0.005,vjust = 0.2),
+                        strip.text = element_blank(),
+                        strip.background = element_blank(),
+                        panel.grid = element_blank(),
+                        axis.text.y = element_blank(),
+                        legend.position = "top")->p4
+  
+  qnt<-max(membership_stats$mod.z.danio)
+  membership_stats %>% 
+  ggplot(aes(y = stages.danio,x = col.danio))+
+  facet_grid(cols = vars(danio.pres),space = "free",scales = "free")+
+  geom_tile(aes(fill = mod.z.danio), color = "grey80",) +
+  scale_fill_gradientn(colors = rev(cols.danio(11)), limits = c(-qnt, qnt),
+                       breaks = c(-qnt, 0, qnt), labels = c(paste0("<", round(-qnt)), "0", paste0(">", round(qnt))))+
+  labs(x=NULL, y="danio stages")+
+  theme_minimal()+
+  theme(strip.text = element_blank(),
+                        strip.background = element_blank(),
+                        panel.grid = element_blank(),
+                        axis.text.x = element_blank(),
+                        legend.position = "bottom")->p5
+  
+wrap_plots(p1,p3,p2,nrow = 2,ncol = 2, heights = c(1,0.05), widths = c(1, 0.05))->wrapped_plot_clown_danio
+wrapped_plot_clown_danio
+```
+
+#### Grouper and manini
+
+```{r 06_homologous_modules_and_gene_lists-chunk-008, cache=TRUE, cache.path="cache/06_homologous_modules_and_gene_lists/"}
+#clown:317
+#Grouper:310
+#Goby:363
+#Manini:385
+#Zebrafish:385
+
+expand_grid(c1=(grouper_orth_net$connectivity %>% distinct(module) %>% pull(module)), 
+            c2=(manini_orth_net$connectivity %>% distinct(module) %>% pull(module)))->jac_input
+
+# Run the function with the ability to specify net1 and net2
+purrr::map2(.x = jac_input$c1, 
+            .y = jac_input$c2,  
+            ~ get_jaccard_estimate(.x, .y, 
+                                   net1 = grouper_orth_net$moduleColors, 
+                                   net2 = manini_orth_net$moduleColors)) %>% list_rbind() %>% 
+  arrange(desc(jaccard_index))->membership_stats
+
+#Reorder colums and adjust the pvalues
+membership_stats %>% mutate(col.manini=reorder(c2,-jaccard_index)) %>% 
+  mutate(col.grouper=reorder(c1,-jaccard_index)) %>% 
+  mutate(padj=p.adjust(membership_stats$f.test.pval,"BH"))->membership_stats
+
+#Join with the heatmap data
+full_join(mp_plot_grouper_ref_manini$dat %>% dplyr::rename(col.grouper=mods),
+          membership_stats, by = "col.grouper",relationship = "many-to-many") %>% 
+  dplyr::rename(grouper.pres=pres, stages.grouper=stages, mod.z.grouper=mod.z)->membership_stats
+#Join with the heatmap data
+full_join(mp_plot_manini_ref_grouper$dat %>% dplyr::rename(col.manini=mods),
+          membership_stats, by = "col.manini",relationship = "many-to-many") %>% 
+  dplyr::rename(manini.pres=pres, stages.manini=stages, mod.z.manini=mod.z) ->membership_stats
+
+
+membership_stats %>% dplyr::select(c(col.grouper, col.manini, jaccard_index, padj, grouper.pres, manini.pres)) %>% 
+  mutate(sig_ovelap=case_when(
+  padj < 0.05 ~ "yes", padj > 0.05 ~ "no")) %>%  mutate(col.grouper=reorder(col.grouper,-jaccard_index))->membership_stats2
+
+
+ full_join(membership_stats %>% dplyr::select(c(col.grouper, col.manini, jaccard_index, padj, grouper.pres, manini.pres)) %>%
+             mutate(sig_ovelap=case_when(
+               padj < 0.05 ~ "yes", padj > 0.05 ~ "no")) %>% mutate(col.grouper=reorder(col.grouper,-jaccard_index)),
+           membership_stats2 %>% filter(sig_ovelap == "yes") %>% 
+             mutate(homo=case_when(
+               jaccard_index >= quantile(membership_stats$jaccard_index,0.75) & sig_ovelap == "yes" ~ "homologous",
+               .default = "non-homologous")) %>% 
+     distinct(col.grouper,col.manini, .keep_all = T) %>% 
+   slice_max(order_by = jaccard_index,by = col.grouper, n=2) %>% dplyr::select(col.grouper,col.manini,homo),by = c("col.grouper","col.manini")) %>%
+   replace_na(list(homo="non-homologous"))->membership_stats2
+  
+membership_stats2 %>%  
+  ggplot(aes(x=col.manini, y=col.grouper))+
+  geom_tile(aes(fill=jaccard_index, color=homo, width=0.8, height=0.8), size=0.3)+
+  facet_grid(grouper.pres~manini.pres,space = "free",scales = "free")+
+  scale_y_discrete(position = "right") +
+  labs(x=NULL, y=NULL)+
+  scale_fill_gradientn(colours = RColorBrewer::brewer.pal(9,"Oranges"),limits=c(0,0.5))+
+  scale_color_manual(values = c("black","white"))+
+  ggnewscale::new_scale_color()+
+  geom_point(aes(color = sig_ovelap),alpha=0.3,size=0.3,shape=8)+
+  scale_color_manual(values = c("white","red3"))+
+  theme_void()+
+  theme(strip.text = element_blank(),
+        strip.background = element_blank(),
+        panel.grid = element_blank(),
+        legend.position = "left",
+        axis.text = element_blank())->p1
+  
+  membership_stats %>% dplyr::select(c(col.grouper, col.manini, jaccard_index, padj, grouper.pres, manini.pres,phase.x)) %>% mutate(col.grouper=reorder(col.grouper,-jaccard_index)) %>% 
+    ggplot(aes(x=col.manini,y=1))+
+    geom_tile(aes(fill=manini.pres))+
+    facet_grid(cols = vars(manini.pres),space = "free",scales = "free")+
+    scale_fill_manual(values = c("#497BB6", "#B6497B", "#7BB649"))+
+    ggnewscale::new_scale_fill()+
+    geom_tile(aes(fill=phase.x, y=2))+
+    scale_fill_manual(values = c("#497", "#B64", "#7BB"))+
+    labs(x="Manini modules", y=NULL)+
+    theme_minimal()+
+    theme(axis.text.x = element_text(angle = -90,hjust = -0.005,vjust = 0.2),
+          strip.text = element_blank(),
+          strip.background = element_blank(),
+          panel.grid = element_blank(),
+          axis.text.y = element_blank(),
+          legend.position = "none")->p2
+  
+  membership_stats %>% dplyr::select(c(col.grouper, col.manini, jaccard_index, padj, grouper.pres, manini.pres,phase.y)) %>% mutate(col.grouper=reorder(col.grouper,-jaccard_index)) %>% 
+    ggplot(aes(y=col.grouper,x=1))+
+    facet_grid(rows = vars(grouper.pres),space = "free",scales = "free")+
+    geom_tile(aes(fill=grouper.pres))+
+    scale_y_discrete(position = "right") +
+    scale_fill_manual(values = c("#497BB6", "#B6497B", "#7BB649"))+
+    ggnewscale::new_scale_fill()+
+    geom_tile(aes(fill=phase.y, x=0))+
+    scale_fill_manual(values = c("#497", "#B64", "#7BB"))+
+    labs(x=NULL, y="Grouper modules")+
+    theme_minimal()+
+    theme(strip.text = element_blank(),
+          strip.background = element_blank(),
+          panel.grid = element_blank(),
+          axis.text.x =  element_blank(),
+          legend.position = "none")->p3
+  
+  qnt<-max(membership_stats$mod.z.grouper)
+  membership_stats %>% 
+  ggplot(aes(x = stages.grouper,y = col.grouper))+
+  facet_grid(rows = vars(grouper.pres),space = "free",scales = "free")+
+  geom_tile(aes(fill = mod.z.grouper), color = "grey80",) +
+  scale_fill_gradientn(colors = rev(cols.grouper(11)), limits = c(-qnt, qnt),
+                       breaks = c(-qnt, 0, qnt), labels = c(paste0("<", round(-qnt)), "0", paste0(">", round(qnt))))+
+  labs(y=NULL, x="Grouper stages")+
+  theme_minimal()+
+  theme(axis.text.x = element_text(angle = 90,hjust = -0.005,vjust = 0.2),
+                        strip.text = element_blank(),
+                        strip.background = element_blank(),
+                        panel.grid = element_blank(),
+                        axis.text.y = element_blank(),
+                        legend.position = "top")->p4
+  
+  qnt<-max(membership_stats$mod.z.manini)
+  membership_stats %>% 
+  ggplot(aes(y = stages.manini,x = col.manini))+
+  facet_grid(cols = vars(manini.pres),space = "free",scales = "free")+
+  geom_tile(aes(fill = mod.z.manini), color = "grey80",) +
+  scale_fill_gradientn(colors = rev(cols.manini(11)), limits = c(-qnt, qnt),
+                       breaks = c(-qnt, 0, qnt), labels = c(paste0("<", round(-qnt)), "0", paste0(">", round(qnt))))+
+  labs(x=NULL, y="Manini stages")+
+  theme_minimal()+
+  theme(strip.text = element_blank(),
+                        strip.background = element_blank(),
+                        panel.grid = element_blank(),
+                        axis.text.x = element_blank(),
+                        legend.position = "bottom")->p5
+  
+wrap_plots(p1,p3,p2,nrow = 2,ncol = 2, heights = c(1,0.05), widths = c(1, 0.05))->wrapped_plot_grouper_manini
+wrapped_plot_grouper_manini
+```
+
+#### Grouper and goby
+
+```{r 06_homologous_modules_and_gene_lists-chunk-009, cache=TRUE, cache.path="cache/06_homologous_modules_and_gene_lists/"}
+#clown:317
+#Grouper:310
+#Goby:363
+#Manini:385
+#Zebrafish:385
+
+expand_grid(c1=(grouper_orth_net$connectivity %>% distinct(module) %>% pull(module)), 
+            c2=(goby_orth_net$connectivity %>% distinct(module) %>% pull(module)))->jac_input
+
+# Run the function with the ability to specify net1 and net2
+purrr::map2(.x = jac_input$c1, 
+            .y = jac_input$c2,  
+            ~ get_jaccard_estimate(.x, .y, 
+                                   net1 = grouper_orth_net$moduleColors, 
+                                   net2 = goby_orth_net$moduleColors)) %>% list_rbind() %>% 
+  arrange(desc(jaccard_index))->membership_stats
+
+#Reorder colums and adjust the pvalues
+membership_stats %>% mutate(col.goby=reorder(c2,-jaccard_index)) %>% 
+  mutate(col.grouper=reorder(c1,-jaccard_index)) %>% 
+  mutate(padj=p.adjust(membership_stats$f.test.pval,"BH"))->membership_stats
+
+#Join with the heatmap data
+full_join(mp_plot_grouper_ref_goby$dat %>% dplyr::rename(col.grouper=mods),
+          membership_stats, by = "col.grouper",relationship = "many-to-many") %>% 
+  dplyr::rename(grouper.pres=pres, stages.grouper=stages, mod.z.grouper=mod.z)->membership_stats
+#Join with the heatmap data
+full_join(mp_plot_goby_ref_grouper$dat %>% dplyr::rename(col.goby=mods),
+          membership_stats, by = "col.goby",relationship = "many-to-many") %>% 
+  dplyr::rename(goby.pres=pres, stages.goby=stages, mod.z.goby=mod.z) ->membership_stats
+
+
+membership_stats %>% dplyr::select(c(col.grouper, col.goby, jaccard_index, padj, grouper.pres, goby.pres)) %>% 
+  mutate(sig_ovelap=case_when(
+  padj < 0.05 ~ "yes", padj > 0.05 ~ "no")) %>%  mutate(col.grouper=reorder(col.grouper,-jaccard_index))->membership_stats2
+
+
+ full_join(membership_stats %>% dplyr::select(c(col.grouper, col.goby, jaccard_index, padj, grouper.pres, goby.pres)) %>%
+             mutate(sig_ovelap=case_when(
+               padj < 0.05 ~ "yes", padj > 0.05 ~ "no")) %>% mutate(col.grouper=reorder(col.grouper,-jaccard_index)),
+           membership_stats2 %>% filter(sig_ovelap == "yes") %>% 
+             mutate(homo=case_when(
+               jaccard_index >= quantile(membership_stats$jaccard_index,0.75) & sig_ovelap == "yes" ~ "homologous",
+               .default = "non-homologous")) %>% 
+     distinct(col.grouper,col.goby, .keep_all = T) %>% 
+   slice_max(order_by = jaccard_index,by = col.grouper, n=2) %>% dplyr::select(col.grouper,col.goby,homo),by = c("col.grouper","col.goby")) %>%
+   replace_na(list(homo="non-homologous"))->membership_stats2
+  
+membership_stats2 %>%  
+  ggplot(aes(x=col.goby, y=col.grouper))+
+  geom_tile(aes(fill=jaccard_index, color=homo, width=0.8, height=0.8), size=0.3)+
+  facet_grid(grouper.pres~goby.pres,space = "free",scales = "free")+
+  scale_y_discrete(position = "right") +
+  labs(x=NULL, y=NULL)+
+  scale_fill_gradientn(colours = RColorBrewer::brewer.pal(9,"Oranges"),limits=c(0,0.5))+
+  scale_color_manual(values = c("black","white"))+
+  ggnewscale::new_scale_color()+
+  geom_point(aes(color = sig_ovelap),alpha=0.3,size=0.3,shape=8)+
+  scale_color_manual(values = c("white","red3"))+
+  theme_void()+
+  theme(strip.text = element_blank(),
+        strip.background = element_blank(),
+        panel.grid = element_blank(),
+        legend.position = "left",
+        axis.text = element_blank())->p1
+
+  
+  membership_stats %>% dplyr::select(c(col.grouper, col.goby, jaccard_index, padj, grouper.pres, goby.pres,phase.x)) %>% mutate(col.grouper=reorder(col.grouper,-jaccard_index)) %>% 
+    ggplot(aes(x=col.goby,y=1))+
+    geom_tile(aes(fill=goby.pres))+
+    facet_grid(cols = vars(goby.pres),space = "free",scales = "free")+
+    scale_fill_manual(values = c("#497BB6", "#B6497B", "#7BB649"))+
+    ggnewscale::new_scale_fill()+
+    geom_tile(aes(fill=phase.x, y=2))+
+    scale_fill_manual(values = c("#497", "#B64", "#7BB"))+
+    labs(x="Goby modules", y=NULL)+
+    theme_minimal()+
+    theme(axis.text.x = element_text(angle = -90,hjust = -0.005,vjust = 0.2),
+          strip.text = element_blank(),
+          strip.background = element_blank(),
+          panel.grid = element_blank(),
+          axis.text.y = element_blank(),
+          legend.position = "none")->p2
+  
+  membership_stats %>% dplyr::select(c(col.grouper, col.goby, jaccard_index, padj, grouper.pres, goby.pres,phase.y)) %>% mutate(col.grouper=reorder(col.grouper,-jaccard_index)) %>% 
+    ggplot(aes(y=col.grouper,x=1))+
+    facet_grid(rows = vars(grouper.pres),space = "free",scales = "free")+
+    geom_tile(aes(fill=grouper.pres))+
+    scale_y_discrete(position = "right") +
+    scale_fill_manual(values = c("#497BB6", "#B6497B", "#7BB649"))+
+    ggnewscale::new_scale_fill()+
+    geom_tile(aes(fill=phase.y, x=0))+
+    scale_fill_manual(values = c("#497", "#B64", "#7BB"))+
+    labs(x=NULL, y="Grouper modules")+
+    theme_minimal()+
+    theme(strip.text = element_blank(),
+          strip.background = element_blank(),
+          panel.grid = element_blank(),
+          axis.text.x =  element_blank(),
+          legend.position = "none")->p3
+  
+  qnt<-max(membership_stats$mod.z.grouper)
+  membership_stats %>% 
+  ggplot(aes(x = stages.grouper,y = col.grouper))+
+  facet_grid(rows = vars(grouper.pres),space = "free",scales = "free")+
+  geom_tile(aes(fill = mod.z.grouper), color = "grey80",) +
+  scale_fill_gradientn(colors = rev(cols.grouper(11)), limits = c(-qnt, qnt),
+                       breaks = c(-qnt, 0, qnt), labels = c(paste0("<", round(-qnt)), "0", paste0(">", round(qnt))))+
+  labs(y=NULL, x="Grouper stages")+
+  theme_minimal()+
+  theme(axis.text.x = element_text(angle = 90,hjust = -0.005,vjust = 0.2),
+                        strip.text = element_blank(),
+                        strip.background = element_blank(),
+                        panel.grid = element_blank(),
+                        axis.text.y = element_blank(),
+                        legend.position = "top")->p4
+  
+  qnt<-max(membership_stats$mod.z.goby)
+  membership_stats %>% 
+  ggplot(aes(y = stages.goby,x = col.goby))+
+  facet_grid(cols = vars(goby.pres),space = "free",scales = "free")+
+  geom_tile(aes(fill = mod.z.goby), color = "grey80",) +
+  scale_fill_gradientn(colors = rev(cols.goby(11)), limits = c(-qnt, qnt),
+                       breaks = c(-qnt, 0, qnt), labels = c(paste0("<", round(-qnt)), "0", paste0(">", round(qnt))))+
+  labs(x=NULL, y="Goby stages")+
+  theme_minimal()+
+  theme(strip.text = element_blank(),
+                        strip.background = element_blank(),
+                        panel.grid = element_blank(),
+                        axis.text.x = element_blank(),
+                        legend.position = "bottom")->p5
+  
+wrap_plots(p1,p3,p2,nrow = 2,ncol = 2, heights = c(1,0.05), widths = c(1, 0.05))->wrapped_plot_grouper_goby
+wrapped_plot_grouper_goby
+```
+
+#### Grouper and danio
+
+```{r 06_homologous_modules_and_gene_lists-chunk-010, cache=TRUE, cache.path="cache/06_homologous_modules_and_gene_lists/"}
+#clown:317
+#Grouper:310
+#Goby:363
+#Manini:385
+#Zebrafish:385
+
+expand_grid(c1=(grouper_orth_net$connectivity %>% distinct(module) %>% pull(module)), 
+            c2=(danio_orth_net$connectivity %>% distinct(module) %>% pull(module)))->jac_input
+
+# Run the function with the ability to specify net1 and net2
+purrr::map2(.x = jac_input$c1, 
+            .y = jac_input$c2,  
+            ~ get_jaccard_estimate(.x, .y, 
+                                   net1 = grouper_orth_net$moduleColors, 
+                                   net2 = danio_orth_net$moduleColors)) %>% list_rbind() %>% 
+  arrange(desc(jaccard_index))->membership_stats
+
+#Reorder colums and adjust the pvalues
+membership_stats %>% mutate(col.danio=reorder(c2,-jaccard_index)) %>% 
+  mutate(col.grouper=reorder(c1,-jaccard_index)) %>% 
+  mutate(padj=p.adjust(membership_stats$f.test.pval,"BH"))->membership_stats
+
+#Join with the heatmap data
+full_join(mp_plot_grouper_ref_danio$dat %>% dplyr::rename(col.grouper=mods),
+          membership_stats, by = "col.grouper",relationship = "many-to-many") %>% 
+  dplyr::rename(grouper.pres=pres, stages.grouper=stages, mod.z.grouper=mod.z)->membership_stats
+#Join with the heatmap data
+full_join(mp_plot_danio_ref_grouper$dat %>% dplyr::rename(col.danio=mods),
+          membership_stats, by = "col.danio",relationship = "many-to-many") %>% 
+  dplyr::rename(danio.pres=pres, stages.danio=stages, mod.z.danio=mod.z) ->membership_stats
+
+
+membership_stats %>% dplyr::select(c(col.grouper, col.danio, jaccard_index, padj, grouper.pres, danio.pres)) %>% 
+  mutate(sig_ovelap=case_when(
+  padj < 0.05 ~ "yes", padj > 0.05 ~ "no")) %>%  mutate(col.grouper=reorder(col.grouper,-jaccard_index))->membership_stats2
+
+
+ full_join(membership_stats %>% dplyr::select(c(col.grouper, col.danio, jaccard_index, padj, grouper.pres, danio.pres)) %>%
+             mutate(sig_ovelap=case_when(
+               padj < 0.05 ~ "yes", padj > 0.05 ~ "no")) %>% mutate(col.grouper=reorder(col.grouper,-jaccard_index)),
+           membership_stats2 %>% filter(sig_ovelap == "yes") %>% 
+             mutate(homo=case_when(
+               jaccard_index >= quantile(membership_stats$jaccard_index,0.75) & sig_ovelap == "yes" ~ "homologous",
+               .default = "non-homologous")) %>% 
+     distinct(col.grouper,col.danio, .keep_all = T) %>% 
+   slice_max(order_by = jaccard_index,by = col.grouper, n=2) %>% dplyr::select(col.grouper,col.danio,homo),by = c("col.grouper","col.danio")) %>%
+   replace_na(list(homo="non-homologous"))->membership_stats2
+  
+membership_stats2 %>%  
+  ggplot(aes(x=col.danio, y=col.grouper))+
+  geom_tile(aes(fill=jaccard_index, color=homo, width=0.8, height=0.8), size=0.3)+
+  facet_grid(grouper.pres~danio.pres,space = "free",scales = "free")+
+  scale_y_discrete(position = "right") +
+  labs(x=NULL, y=NULL)+
+  scale_fill_gradientn(colours = RColorBrewer::brewer.pal(9,"Oranges"),limits=c(0,0.5))+
+  scale_color_manual(values = c("black","white"))+
+  ggnewscale::new_scale_color()+
+  geom_point(aes(color = sig_ovelap),alpha=0.3,size=0.3,shape=8)+
+  scale_color_manual(values = c("white","red3"))+
+  theme_void()+
+  theme(strip.text = element_blank(),
+        strip.background = element_blank(),
+        panel.grid = element_blank(),
+        legend.position = "left",
+        axis.text = element_blank())->p1
+
+  
+  membership_stats %>% dplyr::select(c(col.grouper, col.danio, jaccard_index, padj, grouper.pres, danio.pres,phase.x)) %>% mutate(col.grouper=reorder(col.grouper,-jaccard_index)) %>% 
+    ggplot(aes(x=col.danio,y=1))+
+    geom_tile(aes(fill=danio.pres))+
+    facet_grid(cols = vars(danio.pres),space = "free",scales = "free")+
+    scale_fill_manual(values = c("#497BB6", "#B6497B", "#7BB649"))+
+    ggnewscale::new_scale_fill()+
+    geom_tile(aes(fill=phase.x, y=2))+
+    scale_fill_manual(values = c("#497", "#B64", "#7BB"))+
+    labs(x="danio modules", y=NULL)+
+    theme_minimal()+
+    theme(axis.text.x = element_text(angle = -90,hjust = -0.005,vjust = 0.2),
+          strip.text = element_blank(),
+          strip.background = element_blank(),
+          panel.grid = element_blank(),
+          axis.text.y = element_blank(),
+          legend.position = "none")->p2
+  
+  membership_stats %>% dplyr::select(c(col.grouper, col.danio, jaccard_index, padj, grouper.pres, danio.pres,phase.y)) %>% mutate(col.grouper=reorder(col.grouper,-jaccard_index)) %>% 
+    ggplot(aes(y=col.grouper,x=1))+
+    facet_grid(rows = vars(grouper.pres),space = "free",scales = "free")+
+    geom_tile(aes(fill=grouper.pres))+
+    scale_y_discrete(position = "right") +
+    scale_fill_manual(values = c("#497BB6", "#B6497B", "#7BB649"))+
+    ggnewscale::new_scale_fill()+
+    geom_tile(aes(fill=phase.y, x=0))+
+    scale_fill_manual(values = c("#497", "#B64", "#7BB"))+
+    labs(x=NULL, y="Grouper modules")+
+    theme_minimal()+
+    theme(strip.text = element_blank(),
+          strip.background = element_blank(),
+          panel.grid = element_blank(),
+          axis.text.x =  element_blank(),
+          legend.position = "none")->p3
+  
+  qnt<-max(membership_stats$mod.z.grouper)
+  membership_stats %>% 
+  ggplot(aes(x = stages.grouper,y = col.grouper))+
+  facet_grid(rows = vars(grouper.pres),space = "free",scales = "free")+
+  geom_tile(aes(fill = mod.z.grouper), color = "grey80",) +
+  scale_fill_gradientn(colors = rev(cols.grouper(11)), limits = c(-qnt, qnt),
+                       breaks = c(-qnt, 0, qnt), labels = c(paste0("<", round(-qnt)), "0", paste0(">", round(qnt))))+
+  labs(y=NULL, x="Grouper stages")+
+  theme_minimal()+
+  theme(axis.text.x = element_text(angle = 90,hjust = -0.005,vjust = 0.2),
+                        strip.text = element_blank(),
+                        strip.background = element_blank(),
+                        panel.grid = element_blank(),
+                        axis.text.y = element_blank(),
+                        legend.position = "top")->p4
+  
+  qnt<-max(membership_stats$mod.z.danio)
+  membership_stats %>% 
+  ggplot(aes(y = stages.danio,x = col.danio))+
+  facet_grid(cols = vars(danio.pres),space = "free",scales = "free")+
+  geom_tile(aes(fill = mod.z.danio), color = "grey80",) +
+  scale_fill_gradientn(colors = rev(cols.danio(11)), limits = c(-qnt, qnt),
+                       breaks = c(-qnt, 0, qnt), labels = c(paste0("<", round(-qnt)), "0", paste0(">", round(qnt))))+
+  labs(x=NULL, y="danio stages")+
+  theme_minimal()+
+  theme(strip.text = element_blank(),
+                        strip.background = element_blank(),
+                        panel.grid = element_blank(),
+                        axis.text.x = element_blank(),
+                        legend.position = "bottom")->p5
+  
+wrap_plots(p1,p3,p2,nrow = 2,ncol = 2, heights = c(1,0.05), widths = c(1, 0.05))->wrapped_plot_grouper_danio
+wrapped_plot_grouper_danio
+```
+
+#### Manini and goby
+
+```{r 06_homologous_modules_and_gene_lists-chunk-011, cache=TRUE, cache.path="cache/06_homologous_modules_and_gene_lists/"}
+#clown:317
+#Grouper:310
+#Goby:363
+#Manini:385
+#Zebrafish:385
+
+
+expand_grid(c1=(manini_orth_net$connectivity %>% distinct(module) %>% pull(module)), 
+            c2=(goby_orth_net$connectivity %>% distinct(module) %>% pull(module)))->jac_input
+
+# Run the function with the ability to specify net1 and net2
+purrr::map2(.x = jac_input$c1, 
+            .y = jac_input$c2,  
+            ~ get_jaccard_estimate(.x, .y, 
+                                   net1 = manini_orth_net$moduleColors, 
+                                   net2 = goby_orth_net$moduleColors)) %>% list_rbind() %>% 
+  arrange(desc(jaccard_index))->membership_stats
+
+#Reorder colums and adjust the pvalues
+membership_stats %>% mutate(col.goby=reorder(c2,-jaccard_index)) %>% 
+  mutate(col.manini=reorder(c1,-jaccard_index)) %>% 
+  mutate(padj=p.adjust(membership_stats$f.test.pval,"BH"))->membership_stats
+
+#Join with the heatmap data
+full_join(mp_plot_manini_ref_goby$dat %>% dplyr::rename(col.manini=mods),
+          membership_stats, by = "col.manini",relationship = "many-to-many") %>% 
+  dplyr::rename(manini.pres=pres, stages.manini=stages, mod.z.manini=mod.z)->membership_stats
+#Join with the heatmap data
+full_join(mp_plot_goby_ref_manini$dat %>% dplyr::rename(col.goby=mods),
+          membership_stats, by = "col.goby",relationship = "many-to-many") %>% 
+  dplyr::rename(goby.pres=pres, stages.goby=stages, mod.z.goby=mod.z) ->membership_stats
+
+membership_stats %>% dplyr::select(c(col.manini, col.goby, jaccard_index, padj, manini.pres, goby.pres)) %>% 
+  mutate(sig_ovelap=case_when(
+  padj < 0.05 ~ "yes", padj > 0.05 ~ "no")) %>%  mutate(col.manini=reorder(col.manini,-jaccard_index))->membership_stats2
+
+
+
+ full_join(membership_stats %>% dplyr::select(c(col.manini, col.goby, jaccard_index, padj, manini.pres, goby.pres)) %>%
+             mutate(sig_ovelap=case_when(
+               padj < 0.05 ~ "yes", padj > 0.05 ~ "no")) %>% mutate(col.manini=reorder(col.manini,-jaccard_index)),
+           membership_stats2 %>% filter(sig_ovelap == "yes") %>% 
+             mutate(homo=case_when(
+               jaccard_index >= quantile(membership_stats$jaccard_index,0.75) & sig_ovelap == "yes" ~ "homologous",
+               .default = "non-homologous")) %>% 
+     distinct(col.manini,col.goby, .keep_all = T) %>% 
+   slice_max(order_by = jaccard_index,by = col.goby, n=2) %>% dplyr::select(col.manini,col.goby,homo),by = c("col.manini","col.goby")) %>%
+   replace_na(list(homo="non-homologous"))->membership_stats2
+  
+membership_stats2 %>%  
+  ggplot(aes(x=col.goby, y=col.manini))+
+  geom_tile(aes(fill=jaccard_index, color=homo, width=0.8, height=0.8), size=0.3)+
+  facet_grid(manini.pres~goby.pres,space = "free",scales = "free")+
+  scale_y_discrete(position = "right") +
+  labs(x=NULL, y=NULL)+
+  scale_fill_gradientn(colours = RColorBrewer::brewer.pal(9,"Oranges"),limits=c(0,0.5))+
+  scale_color_manual(values = c("grey15","white"))+
+  ggnewscale::new_scale_color()+
+  geom_point(aes(color = sig_ovelap),alpha=0.3,size=0.3,shape=8)+
+  scale_color_manual(values = c("white","red3"))+
+  theme_void()+
+  theme(strip.text = element_blank(),
+        strip.background = element_blank(),
+        panel.grid = element_blank(),
+        legend.position = "left",
+        axis.text = element_blank())->p1
+
+
+  membership_stats %>% dplyr::select(c(col.manini, col.goby, jaccard_index, padj, manini.pres, goby.pres,phase.x))  %>% mutate(col.manini=reorder(col.manini,-jaccard_index)) %>% 
+    ggplot(aes(x=col.goby,y=1))+
+    facet_grid(cols = vars(goby.pres),space = "free",scales = "free")+
+    geom_tile(aes(fill=goby.pres))+
+    scale_fill_manual(values = c("#497BB6", "#B6497B", "#7BB649"))+
+    ggnewscale::new_scale_fill()+
+    geom_tile(aes(fill=phase.x, y=2))+
+    scale_fill_manual(values = c("#497", "#B64", "#7BB"))+
+    labs(x="Goby modules", y=NULL)+
+    theme_minimal()+
+    theme(axis.text.x = element_text(angle = -90,hjust = -0.005,vjust = 0.2),
+          strip.text = element_blank(),
+          strip.background = element_blank(),
+          panel.grid = element_blank(),
+          axis.text.y = element_blank(),
+          legend.position = "none")->p2
+  
+  
+  
+  membership_stats %>% dplyr::select(c(col.manini, col.goby, jaccard_index, padj, manini.pres, goby.pres,phase.y)) %>% mutate(col.manini=reorder(col.manini,-jaccard_index)) %>% 
+    ggplot(aes(y=col.manini,x=1))+
+    facet_grid(rows = vars(manini.pres),space = "free",scales = "free")+
+    geom_tile(aes(fill=manini.pres))+
+    scale_fill_manual(values = c("#497BB6", "#B6497B", "#7BB649"))+
+    scale_y_discrete(position = "right") +
+    ggnewscale::new_scale_fill()+
+    geom_tile(aes(fill=phase.y, x=0))+
+    scale_fill_manual(values = c("#497", "#B64", "#7BB"))+
+    labs(x=NULL, y="Manini modules")+
+    theme_minimal()+
+    theme(strip.text = element_blank(),
+          strip.background = element_blank(),
+          panel.grid = element_blank(),
+          axis.text.x =  element_blank(),
+          legend.position = "none")->p3
+  
+  qnt<-max(membership_stats$mod.z.manini)
+  membership_stats %>% 
+  ggplot(aes(x = stages.manini,y = col.manini))+
+  facet_grid(rows = vars(manini.pres),space = "free",scales = "free")+
+  geom_tile(aes(fill = mod.z.manini), color = "grey80",) +
+  scale_fill_gradientn(colors = rev(cols.manini(11)), limits = c(-qnt, qnt),
+                       breaks = c(-qnt, 0, qnt), labels = c(paste0("<", round(-qnt)), "0", paste0(">", round(qnt))))+
+  labs(y=NULL, x="Manini stages")+
+  theme_minimal()+
+  theme(axis.text.x = element_text(angle = 90,hjust = -0.005,vjust = 0.2),
+                        strip.text = element_blank(),
+                        strip.background = element_blank(),
+                        panel.grid = element_blank(),
+                        axis.text.y = element_blank(),
+                        legend.position = "top")->p4
+  
+  qnt<-max(membership_stats$mod.z.goby)
+  membership_stats %>% 
+  ggplot(aes(y = stages.goby,x = col.goby))+
+  facet_grid(cols = vars(goby.pres),space = "free",scales = "free")+
+  geom_tile(aes(fill = mod.z.goby), color = "grey80",) +
+  scale_fill_gradientn(colors = rev(cols.goby(11)), limits = c(-qnt, qnt),
+                       breaks = c(-qnt, 0, qnt), labels = c(paste0("<", round(-qnt)), "0", paste0(">", round(qnt))))+
+  labs(x=NULL, y="Goby stages")+
+  theme_minimal()+
+  theme(strip.text = element_blank(),
+                        strip.background = element_blank(),
+                        panel.grid = element_blank(),
+                        axis.text.x = element_blank(),
+                        legend.position = "bottom")->p5
+  
+  
+  
+wrap_plots(p1,p3,p2,nrow = 2,ncol = 2, heights = c(1,0.05), widths = c(1, 0.05))->wrapped_plot_manini_goby
+wrapped_plot_manini_goby
+```
+
+#### Manini and danio
+
+```{r 06_homologous_modules_and_gene_lists-chunk-012, cache=TRUE, cache.path="cache/06_homologous_modules_and_gene_lists/"}
+#clown:317
+#Grouper:310
+#Goby:363
+#Manini:385
+#Zebrafish:385
+
+
+expand_grid(c1=(manini_orth_net$connectivity %>% distinct(module) %>% pull(module)), 
+            c2=(danio_orth_net$connectivity %>% distinct(module) %>% pull(module)))->jac_input
+
+# Run the function with the ability to specify net1 and net2
+purrr::map2(.x = jac_input$c1, 
+            .y = jac_input$c2,  
+            ~ get_jaccard_estimate(.x, .y, 
+                                   net1 = manini_orth_net$moduleColors, 
+                                   net2 = danio_orth_net$moduleColors)) %>% list_rbind() %>% 
+  arrange(desc(jaccard_index))->membership_stats
+
+#Reorder colums and adjust the pvalues
+membership_stats %>% mutate(col.danio=reorder(c2,-jaccard_index)) %>% 
+  mutate(col.manini=reorder(c1,-jaccard_index)) %>% 
+  mutate(padj=p.adjust(membership_stats$f.test.pval,"BH"))->membership_stats
+
+#Join with the heatmap data
+full_join(mp_plot_manini_ref_danio$dat %>% dplyr::rename(col.manini=mods),
+          membership_stats, by = "col.manini",relationship = "many-to-many") %>% 
+  dplyr::rename(manini.pres=pres, stages.manini=stages, mod.z.manini=mod.z)->membership_stats
+#Join with the heatmap data
+full_join(mp_plot_danio_ref_manini$dat %>% dplyr::rename(col.danio=mods),
+          membership_stats, by = "col.danio",relationship = "many-to-many") %>% 
+  dplyr::rename(danio.pres=pres, stages.danio=stages, mod.z.danio=mod.z) ->membership_stats
+
+membership_stats %>% dplyr::select(c(col.manini, col.danio, jaccard_index, padj, manini.pres, danio.pres)) %>% 
+  mutate(sig_ovelap=case_when(
+  padj < 0.05 ~ "yes", padj > 0.05 ~ "no")) %>%  mutate(col.manini=reorder(col.manini,-jaccard_index))->membership_stats2
+
+
+
+ full_join(membership_stats %>% dplyr::select(c(col.manini, col.danio, jaccard_index, padj, manini.pres, danio.pres)) %>%
+             mutate(sig_ovelap=case_when(
+               padj < 0.05 ~ "yes", padj > 0.05 ~ "no")) %>% mutate(col.manini=reorder(col.manini,-jaccard_index)),
+           membership_stats2 %>% filter(sig_ovelap == "yes") %>% 
+             mutate(homo=case_when(
+               jaccard_index >= quantile(membership_stats$jaccard_index,0.75) & sig_ovelap == "yes" ~ "homologous",
+               .default = "non-homologous")) %>% 
+     distinct(col.manini,col.danio, .keep_all = T) %>% 
+   slice_max(order_by = jaccard_index,by = col.danio, n=2) %>% dplyr::select(col.manini,col.danio,homo),by = c("col.manini","col.danio")) %>%
+   replace_na(list(homo="non-homologous"))->membership_stats2
+  
+membership_stats2 %>%  
+  ggplot(aes(x=col.danio, y=col.manini))+
+  geom_tile(aes(fill=jaccard_index, color=homo, width=0.8, height=0.8), size=0.3)+
+  facet_grid(manini.pres~danio.pres,space = "free",scales = "free")+
+  scale_y_discrete(position = "right") +
+  labs(x=NULL, y=NULL)+
+  scale_fill_gradientn(colours = RColorBrewer::brewer.pal(9,"Oranges"),limits=c(0,0.5))+
+  scale_color_manual(values = c("grey15","white"))+
+  ggnewscale::new_scale_color()+
+  geom_point(aes(color = sig_ovelap),alpha=0.3,size=0.3,shape=8)+
+  scale_color_manual(values = c("white","red3"))+
+  theme_void()+
+  theme(strip.text = element_blank(),
+        strip.background = element_blank(),
+        panel.grid = element_blank(),
+        legend.position = "left",
+        axis.text = element_blank())->p1
+
+
+  membership_stats %>% dplyr::select(c(col.manini, col.danio, jaccard_index, padj, manini.pres, danio.pres,phase.x))  %>% mutate(col.manini=reorder(col.manini,-jaccard_index)) %>% 
+    ggplot(aes(x=col.danio,y=1))+
+    facet_grid(cols = vars(danio.pres),space = "free",scales = "free")+
+    geom_tile(aes(fill=danio.pres))+
+    scale_fill_manual(values = c("#497BB6", "#B6497B", "#7BB649"))+
+    ggnewscale::new_scale_fill()+
+    geom_tile(aes(fill=phase.x, y=2))+
+    scale_fill_manual(values = c("#497", "#B64", "#7BB"))+
+    labs(x="danio modules", y=NULL)+
+    theme_minimal()+
+    theme(axis.text.x = element_text(angle = -90,hjust = -0.005,vjust = 0.2),
+          strip.text = element_blank(),
+          strip.background = element_blank(),
+          panel.grid = element_blank(),
+          axis.text.y = element_blank(),
+          legend.position = "none")->p2
+  
+  
+  
+  membership_stats %>% dplyr::select(c(col.manini, col.danio, jaccard_index, padj, manini.pres, danio.pres,phase.y)) %>% mutate(col.manini=reorder(col.manini,-jaccard_index)) %>% 
+    ggplot(aes(y=col.manini,x=1))+
+    facet_grid(rows = vars(manini.pres),space = "free",scales = "free")+
+    geom_tile(aes(fill=manini.pres))+
+    scale_fill_manual(values = c("#497BB6", "#B6497B", "#7BB649"))+
+    scale_y_discrete(position = "right") +
+    ggnewscale::new_scale_fill()+
+    geom_tile(aes(fill=phase.y, x=0))+
+    scale_fill_manual(values = c("#497", "#B64", "#7BB"))+
+    labs(x=NULL, y="Manini modules")+
+    theme_minimal()+
+    theme(strip.text = element_blank(),
+          strip.background = element_blank(),
+          panel.grid = element_blank(),
+          axis.text.x =  element_blank(),
+          legend.position = "none")->p3
+  
+  qnt<-max(membership_stats$mod.z.manini)
+  membership_stats %>% 
+  ggplot(aes(x = stages.manini,y = col.manini))+
+  facet_grid(rows = vars(manini.pres),space = "free",scales = "free")+
+  geom_tile(aes(fill = mod.z.manini), color = "grey80",) +
+  scale_fill_gradientn(colors = rev(cols.manini(11)), limits = c(-qnt, qnt),
+                       breaks = c(-qnt, 0, qnt), labels = c(paste0("<", round(-qnt)), "0", paste0(">", round(qnt))))+
+  labs(y=NULL, x="Manini stages")+
+  theme_minimal()+
+  theme(axis.text.x = element_text(angle = 90,hjust = -0.005,vjust = 0.2),
+                        strip.text = element_blank(),
+                        strip.background = element_blank(),
+                        panel.grid = element_blank(),
+                        axis.text.y = element_blank(),
+                        legend.position = "top")->p4
+  
+  qnt<-max(membership_stats$mod.z.danio)
+  membership_stats %>% 
+  ggplot(aes(y = stages.danio,x = col.danio))+
+  facet_grid(cols = vars(danio.pres),space = "free",scales = "free")+
+  geom_tile(aes(fill = mod.z.danio), color = "grey80",) +
+  scale_fill_gradientn(colors = rev(cols.danio(11)), limits = c(-qnt, qnt),
+                       breaks = c(-qnt, 0, qnt), labels = c(paste0("<", round(-qnt)), "0", paste0(">", round(qnt))))+
+  labs(x=NULL, y="danio stages")+
+  theme_minimal()+
+  theme(strip.text = element_blank(),
+                        strip.background = element_blank(),
+                        panel.grid = element_blank(),
+                        axis.text.x = element_blank(),
+                        legend.position = "bottom")->p5
+  
+  
+  
+wrap_plots(p1,p3,p2,nrow = 2,ncol = 2, heights = c(1,0.05), widths = c(1, 0.05))->wrapped_plot_manini_danio
+wrapped_plot_manini_danio
+```
+
+#### Goby and danio
+
+```{r 06_homologous_modules_and_gene_lists-chunk-013, cache=TRUE, cache.path="cache/06_homologous_modules_and_gene_lists/"}
+#clown:317
+#Grouper:310
+#Goby:363
+#Manini:385
+#Zebrafish:385
+
+
+expand_grid(c1=(goby_orth_net$connectivity %>% distinct(module) %>% pull(module)), 
+            c2=(danio_orth_net$connectivity %>% distinct(module) %>% pull(module)))->jac_input
+
+# Run the function with the ability to specify net1 and net2
+purrr::map2(.x = jac_input$c1, 
+            .y = jac_input$c2,  
+            ~ get_jaccard_estimate(.x, .y, 
+                                   net1 = goby_orth_net$moduleColors, 
+                                   net2 = danio_orth_net$moduleColors)) %>% list_rbind() %>% 
+  arrange(desc(jaccard_index))->membership_stats
+
+#Reorder colums and adjust the pvalues
+membership_stats %>% mutate(col.danio=reorder(c2,-jaccard_index)) %>% 
+  mutate(col.goby=reorder(c1,-jaccard_index)) %>% 
+  mutate(padj=p.adjust(membership_stats$f.test.pval,"BH"))->membership_stats
+
+#Join with the heatmap data
+full_join(mp_plot_goby_ref_danio$dat %>% dplyr::rename(col.goby=mods),
+          membership_stats, by = "col.goby",relationship = "many-to-many") %>% 
+  dplyr::rename(goby.pres=pres, stages.goby=stages, mod.z.goby=mod.z)->membership_stats
+#Join with the heatmap data
+full_join(mp_plot_danio_ref_goby$dat %>% dplyr::rename(col.danio=mods),
+          membership_stats, by = "col.danio",relationship = "many-to-many") %>% 
+  dplyr::rename(danio.pres=pres, stages.danio=stages, mod.z.danio=mod.z) ->membership_stats
+
+membership_stats %>% dplyr::select(c(col.goby, col.danio, jaccard_index, padj, goby.pres, danio.pres)) %>% 
+  mutate(sig_ovelap=case_when(
+  padj < 0.05 ~ "yes", padj > 0.05 ~ "no")) %>%  mutate(col.goby=reorder(col.goby,-jaccard_index))->membership_stats2
+
+
+
+ full_join(membership_stats %>% dplyr::select(c(col.goby, col.danio, jaccard_index, padj, goby.pres, danio.pres)) %>%
+             mutate(sig_ovelap=case_when(
+               padj < 0.05 ~ "yes", padj > 0.05 ~ "no")) %>% mutate(col.goby=reorder(col.goby,-jaccard_index)),
+           membership_stats2 %>% filter(sig_ovelap == "yes") %>% 
+             mutate(homo=case_when(
+               jaccard_index >= quantile(membership_stats$jaccard_index,0.75) & sig_ovelap == "yes" ~ "homologous",
+               .default = "non-homologous")) %>% 
+     distinct(col.goby,col.danio, .keep_all = T) %>% 
+   slice_max(order_by = jaccard_index,by = col.goby, n=2) %>% dplyr::select(col.goby,col.danio,homo),by = c("col.goby","col.danio")) %>%
+   replace_na(list(homo="non-homologous"))->membership_stats2
+  
+membership_stats2 %>%  
+  ggplot(aes(x=col.danio, y=col.goby))+
+  geom_tile(aes(fill=jaccard_index, color=homo, width=0.8, height=0.8), size=0.3)+
+  facet_grid(goby.pres~danio.pres,space = "free",scales = "free")+
+  scale_y_discrete(position = "right") +
+  labs(x=NULL, y=NULL)+
+  scale_fill_gradientn(colours = RColorBrewer::brewer.pal(9,"Oranges"),limits=c(0,0.5))+
+  scale_color_manual(values = c("grey15","white"))+
+  ggnewscale::new_scale_color()+
+  geom_point(aes(color = sig_ovelap),alpha=0.3,size=0.3,shape=8)+
+  scale_color_manual(values = c("white","red3"))+
+  theme_void()+
+  theme(strip.text = element_blank(),
+        strip.background = element_blank(),
+        panel.grid = element_blank(),
+        legend.position = "left",
+        axis.text = element_blank())->p1
+
+
+  membership_stats %>% dplyr::select(c(col.goby, col.danio, jaccard_index, padj, goby.pres, danio.pres,phase.x))  %>% mutate(col.goby=reorder(col.goby,-jaccard_index)) %>% 
+    ggplot(aes(x=col.danio,y=1))+
+    facet_grid(cols = vars(danio.pres),space = "free",scales = "free")+
+    geom_tile(aes(fill=danio.pres))+
+    scale_fill_manual(values = c("#497BB6", "#B6497B", "#7BB649"))+
+    ggnewscale::new_scale_fill()+
+    geom_tile(aes(fill=phase.x, y=2))+
+    scale_fill_manual(values = c("#497", "#B64", "#7BB"))+
+    labs(x="danio modules", y=NULL)+
+    theme_minimal()+
+    theme(axis.text.x = element_text(angle = -90,hjust = -0.005,vjust = 0.2),
+          strip.text = element_blank(),
+          strip.background = element_blank(),
+          panel.grid = element_blank(),
+          axis.text.y = element_blank(),
+          legend.position = "none")->p2
+  
+  
+  
+  membership_stats %>% dplyr::select(c(col.goby, col.danio, jaccard_index, padj, goby.pres, danio.pres,phase.y)) %>% mutate(col.goby=reorder(col.goby,-jaccard_index)) %>% 
+    ggplot(aes(y=col.goby,x=1))+
+    facet_grid(rows = vars(goby.pres),space = "free",scales = "free")+
+    geom_tile(aes(fill=goby.pres))+
+    scale_fill_manual(values = c("#497BB6", "#B6497B", "#7BB649"))+
+    scale_y_discrete(position = "right") +
+    ggnewscale::new_scale_fill()+
+    geom_tile(aes(fill=phase.y, x=0))+
+    scale_fill_manual(values = c("#497", "#B64", "#7BB"))+
+    labs(x=NULL, y="goby modules")+
+    theme_minimal()+
+    theme(strip.text = element_blank(),
+          strip.background = element_blank(),
+          panel.grid = element_blank(),
+          axis.text.x =  element_blank(),
+          legend.position = "none")->p3
+  
+  qnt<-max(membership_stats$mod.z.goby)
+  membership_stats %>% 
+  ggplot(aes(x = stages.goby,y = col.goby))+
+  facet_grid(rows = vars(goby.pres),space = "free",scales = "free")+
+  geom_tile(aes(fill = mod.z.goby), color = "grey80",) +
+  scale_fill_gradientn(colors = rev(cols.goby(11)), limits = c(-qnt, qnt),
+                       breaks = c(-qnt, 0, qnt), labels = c(paste0("<", round(-qnt)), "0", paste0(">", round(qnt))))+
+  labs(y=NULL, x="goby stages")+
+  theme_minimal()+
+  theme(axis.text.x = element_text(angle = 90,hjust = -0.005,vjust = 0.2),
+                        strip.text = element_blank(),
+                        strip.background = element_blank(),
+                        panel.grid = element_blank(),
+                        axis.text.y = element_blank(),
+                        legend.position = "top")->p4
+  
+  qnt<-max(membership_stats$mod.z.danio)
+  membership_stats %>% 
+  ggplot(aes(y = stages.danio,x = col.danio))+
+  facet_grid(cols = vars(danio.pres),space = "free",scales = "free")+
+  geom_tile(aes(fill = mod.z.danio), color = "grey80",) +
+  scale_fill_gradientn(colors = rev(cols.danio(11)), limits = c(-qnt, qnt),
+                       breaks = c(-qnt, 0, qnt), labels = c(paste0("<", round(-qnt)), "0", paste0(">", round(qnt))))+
+  labs(x=NULL, y="danio stages")+
+  theme_minimal()+
+  theme(strip.text = element_blank(),
+                        strip.background = element_blank(),
+                        panel.grid = element_blank(),
+                        axis.text.x = element_blank(),
+                        legend.position = "bottom")->p5
+  
+  
+  
+wrap_plots(p1,p3,p2,nrow = 2,ncol = 2, heights = c(1,0.05), widths = c(1, 0.05))->wrapped_plot_goby_danio
+wrapped_plot_goby_danio
+```
+
+#### Extract homologous modules
+
+Start in sequence with the largest pairs first.
+
+```{r 06_homologous_modules_and_gene_lists-chunk-014, cache=TRUE, cache.path="cache/06_homologous_modules_and_gene_lists/"}
+#clown:317
+#Grouper:310
+#Goby:363
+#Manini:385
+#Zebrafish:385
+
+inner_join(
+  wrapped_plot_clown_manini[[1]][1] %>% as.data.frame() %>% filter(data.sig_ovelap == "yes") %>%
+    distinct(data.col.clown, data.col.manini, .keep_all = T) %>%
+    dplyr::rename(col.clown=data.col.clown, 
+                  col.manini=data.col.manini, 
+                  jaccard.index.clown.manini=data.jaccard_index, 
+                  clown.ref.pres.manini=data.clown.pres, 
+                  manini.ref.pres.clown=data.manini.pres),
+  
+      wrapped_plot_clown_danio[[1]][1] %>% as.data.frame() %>% filter(data.sig_ovelap == "yes") %>% distinct(data.col.clown, data.col.danio, .keep_all = T) %>% 
+    dplyr::rename(col.clown=data.col.clown, 
+                  col.danio=data.col.danio, 
+                  jaccard.index.clown.danio=data.jaccard_index, 
+                  clown.ref.pres.danio=data.clown.pres, 
+                  danio.ref.pres.clown=data.danio.pres),
+ by = "col.clown", relationship = "many-to-many") %>% 
+  
+  inner_join(
+     wrapped_plot_clown_goby[[1]][1] %>% as.data.frame() %>% filter(data.sig_ovelap == "yes") %>% 
+    distinct(data.col.clown, data.col.goby, .keep_all = T) %>% 
+    dplyr::rename(col.clown=data.col.clown, 
+                  col.goby=data.col.goby, 
+                  jaccard.index.clown.goby=data.jaccard_index, 
+                  clown.ref.pres.goby=data.clown.pres, 
+                  goby.ref.pres.clown=data.goby.pres),
+    by = "col.clown", relationship = "many-to-many") %>% 
+  
+  inner_join(
+    wrapped_plot_clown_grouper[[1]][1] %>% as.data.frame() %>% filter(data.sig_ovelap == "yes")
+    %>% distinct(data.col.clown, data.col.grouper, .keep_all = T) %>%
+      dplyr::rename(col.clown=data.col.clown, 
+                  col.grouper=data.col.grouper, 
+                  jaccard.index.clown.grouper=data.jaccard_index, 
+                  clown.ref.pres.grouper=data.clown.pres, 
+                  grouper.ref.pres.clown=data.grouper.pres),
+    by = "col.clown", relationship = "many-to-many") %>% 
+  dplyr::select(c(col.clown,
+                  col.goby,
+                  col.danio,
+                  col.manini,
+                  col.grouper,
+                  jaccard.index.clown.goby,
+                  jaccard.index.clown.danio,
+                  jaccard.index.clown.manini,
+                  jaccard.index.clown.grouper,
+                  clown.ref.pres.goby,
+                  clown.ref.pres.danio,
+                  clown.ref.pres.manini,
+                  clown.ref.pres.grouper,
+                  goby.ref.pres.clown,
+                  danio.ref.pres.clown,
+                  manini.ref.pres.clown,
+                  grouper.ref.pres.clown))->homologous_modules
+
+homologous_modules %>% saveRDS("./RDS/homologous_modules.rds")
+
+```
+
+```{r 06_homologous_modules_and_gene_lists-chunk-015, cache=TRUE, cache.path="cache/06_homologous_modules_and_gene_lists/"}
+homologous_modules<-readRDS("./RDS/homologous_modules.rds")
+```
+
+## Extract homologous gene lists {.tabset}
+Use this to extract homologous genes list. 
+```{r 06_homologous_modules_and_gene_lists-chunk-017, cache=TRUE, cache.path="cache/06_homologous_modules_and_gene_lists/", eval=FALSE}
+#combine all the jaccard similarities
+rbind(
+tibble(all_jac=homologous_modules$jaccard.index.clown.goby),
+tibble(all_jac=homologous_modules$jaccard.index.clown.danio),
+tibble(all_jac=homologous_modules$jaccard.index.clown.manini),
+tibble(all_jac=homologous_modules$jaccard.index.clown.grouper))->all_jac
+
+#long version of data
+homologous_modules %>% pivot_longer(contains("col"), names_to = "species.col", values_to = "col") %>% 
+  pivot_longer(contains("jaccard"), names_to = "jaccard.comp", values_to = "jaccard.val") %>% 
+  pivot_longer(contains("pres"),names_to = "pres.comp", values_to = "pres.val")->homologous_long
+
+#filter out the top 30% homologous module comparisons
+homologous_long %>% filter(jaccard.val >= quantile(all_jac$all_jac,0.70)) %>% 
+  dplyr::select(species.col, col) %>% pivot_wider(names_from = species.col, values_from = col) %>% 
+  unnest(cols = c(col.goby, col.danio, col.manini, col.grouper, col.clown)) %>% 
+  distinct(col.goby, col.danio, col.manini, col.grouper, col.clown)->homologous_filtered
+
+homologous_gene_list<-function(mod){ 
+  #this functions takes stable module assignments e.g. from clown and then combines all the other species and collates the data 
+  #to obtain lists of genes shared between all 'homologous' modules
+  #these genes can be though to represent conserved processes across species
+  #annotating them shows which key processes have a high degree of co-regulation among species
+  #select one column with stable annotation
+  
+  #homologous_filtered %>% filter(col.clown==mod)->one_col
+  non_homologous_filtered %>% filter(col.clown==mod)->one_col #Use for non-homologus modules
+
+  #get the list of 'homologus' columns in other species
+  one_col %>% distinct(col.goby) %>% pull(col.goby)->goby_col_list
+  one_col %>% distinct(col.danio) %>% pull(col.danio)->danio_col_list
+  one_col %>% distinct(col.manini) %>% pull(col.manini)->manini_col_list
+  one_col %>% distinct(col.grouper) %>% pull(col.grouper)->grouper_col_list
+  
+  #Here I get the genes from the above list of modules
+  danio_col_get<-function(c1){danio_orth_net$connectivity %>% filter(module==c1) %>% return()}
+  
+  manini_col_get<-function(c1){manini_orth_net$connectivity %>% filter(module==c1) %>% return()}
+  
+  grouper_col_get<-function(c1){grouper_orth_net$connectivity %>% filter(module==c1) %>% return()}
+  
+  goby_col_get<-function(c1){goby_orth_net$connectivity %>% filter(module==c1) %>% return()}
+  
+  #I then combine all the genes from the list of modules above to select the genes that are present in all the modules. 
+  #e.g. The orange clownfish module has significant overlap between darkgrey, tan, and green modules in zebrafish. While in manini, it has significant overlaps between darkturquoise, greenyellow, red, and green modules.
+  #I take the genes from the zebrafish set and the manini set and combine them to only include genes that are present in both. I do this for the other two species.
+  #The result is a list of genes that are, to an extent, co-expressed together. I say to an extent because, the same gene might not always be co-expressed together in the same module, in all species. 
+  #For instance, look at the top ten genes in the common_all object. You'll see that all these genes are expressed together in the darkgrey module in zebrafish, but in manini some are expressed together in the greenyellow module, while some are expressed together in the red, or green module.  Essentially, this filtering approach captures genes that, on an average tend to be co-expressed together. This is expected considering they are different species with different developmental trajectories, but the fact that we can find a large degree of overlap between gene interactions across species highlights the presence of a common regulatory underpinning between orthologs. However, studying the deviations and specific modification of the network in each species will provide valuable information regarding the interplay of gene expression and regulatory evolution. 
+  
+inner_join(
+    purrr::map(danio_col_list,danio_col_get) %>% list_rbind(),
+    purrr::map(manini_col_list,manini_col_get) %>% list_rbind(), by = "gene", suffix = c(".danio", ".manini")) %>% 
+    inner_join(purrr::map(grouper_col_list,grouper_col_get) %>% list_rbind(), by = "gene") %>% 
+    inner_join(purrr::map(goby_col_list,goby_col_get) %>% list_rbind(), by = "gene", suffix = c(".grouper",".goby"))->common_all
+  
+  tibble(genes=common_all %>% inner_join(clown_orth_net$connectivity, by = "gene") %>% filter(module==mod)  %>% pull(gene)) %>% 
+    mutate(mod=mod)%>% return()
+  }
+
+cols<-homologous_filtered %>% distinct(col.clown)
+purrr::map(cols$col.clown, homologous_gene_list) %>% list_rbind() %>% distinct(genes, .keep_all = T)->homologous_genes
+homologous_genes %>% distinct(mod)
+
+homologous_genes %>% saveRDS("./RDS/homologous_genes.rds")
+
+#Non-homologus, low preservation modules
+clown_orth_net$connectivity %>% filter(!module %in% (homologous_genes %>% distinct(mod) %>% pull(mod))) %>% distinct(module)->non_homologous_mods
+
+homologous_modules %>% filter(col.clown %in% non_homologous_mods$module) %>% pivot_longer(contains("col"), names_to = "species.col", values_to = "col") %>% 
+  pivot_longer(contains("jaccard"), names_to = "jaccard.comp", values_to = "jaccard.val") %>% 
+  pivot_longer(contains("pres"),names_to = "pres.comp", values_to = "pres.val")->homologous_long_non_homologus
+
+#filter out the top 30% non-homologous module comparisons
+homologous_long_non_homologus %>% filter(jaccard.val >= quantile(homologous_long_non_homologus$jaccard.val,0.70)) %>% 
+  dplyr::select(species.col, col) %>% pivot_wider(names_from = species.col, values_from =
+                                                    col) %>% 
+  unnest(cols = c(col.goby, col.danio, col.manini, col.grouper, col.clown)) %>%
+  distinct(col.goby, col.danio, col.manini, col.grouper, col.clown)->non_homologous_filtered
+
+cols<-non_homologous_filtered %>% distinct(col.clown)
+purrr::map(cols$col.clown, homologous_gene_list) %>% list_rbind() %>% distinct(genes, .keep_all = T)->non_homologous_genes
+non_homologous_genes %>% distinct(mod)
+
+non_homologous_genes %>% saveRDS("./RDS/non_homologous_genes.rds")
+```
+
+### Genes in conserved network
+These are the genes in the conserved network. Then module names are based on the module assignment in clownfish.
+```{r 06_homologous_modules_and_gene_lists-chunk-018, cache=TRUE, cache.path="cache/06_homologous_modules_and_gene_lists/"}
+homologous_genes<-readRDS("./RDS/homologous_genes.rds")
+
+homologous_genes %>% 
+  kableExtra::kbl() %>% 
+  kableExtra::kable_styling() %>%
+  kableExtra::scroll_box(width = "200px", height = "200px")
+```
+
+### Average connectivity of homologus genes
+The genes in the consereved network on an average have higher connectivity than the other genes not in the network. Therefore, they represent hub genes.
+```{r 06_homologous_modules_and_gene_lists-chunk-019, cache=TRUE, cache.path="cache/06_homologous_modules_and_gene_lists/"}
+homologous_genes<-readRDS("./RDS/homologous_genes.rds")
+
+#non_homologous_genes<-readRDS("./RDS/non_homologous_genes.rds")
+rbind(
+  clown_orth_net$connectivity %>% filter(gene %in% homologous_genes$genes) %>% dplyr::select(gene, degree) %>% 
+    mutate(type="Yes"),
+  clown_orth_net$connectivity %>% filter(!gene %in% homologous_genes$genes) %>% dplyr::select(gene, degree) %>% 
+    mutate(type="No ")) %>% mutate(sp="clownfish") %>% 
+  rbind(
+    rbind(
+      grouper_orth_net$connectivity %>% filter(gene %in% homologous_genes$genes) %>% dplyr::select(gene, degree) %>% 
+        mutate(type="Yes"),
+      grouper_orth_net$connectivity %>% filter(!gene %in% homologous_genes$genes) %>% dplyr::select(gene, degree) %>% 
+        mutate(type="No")) %>% mutate(sp="grouper")) %>% 
+  rbind(
+    rbind(
+      goby_orth_net$connectivity %>% filter(gene %in% homologous_genes$genes) %>% dplyr::select(gene, degree) %>% 
+        mutate(type="Yes"),
+      goby_orth_net$connectivity %>% filter(!gene %in% homologous_genes$genes) %>% dplyr::select(gene, degree) %>% 
+        mutate(type="No")) %>% mutate(sp="goby")) %>% 
+  rbind(
+    rbind(
+      manini_orth_net$connectivity %>% filter(gene %in% homologous_genes$genes) %>% dplyr::select(gene, degree) %>% 
+        mutate(type="Yes"),
+      manini_orth_net$connectivity %>% filter(!gene %in% homologous_genes$genes) %>% dplyr::select(gene, degree) %>% 
+        mutate(type="No")) %>% mutate(sp="manini")) %>% 
+  rbind(
+    rbind(
+      danio_orth_net$connectivity %>% filter(gene %in% homologous_genes$genes) %>% dplyr::select(gene, degree) %>% 
+        mutate(type="Yes"),
+      danio_orth_net$connectivity %>% filter(!gene %in% homologous_genes$genes) %>% dplyr::select(gene, degree) %>% 
+        mutate(type="No")) %>% mutate(sp="zebrafish"))->connect_dat
+
+
+```
+
+```{r 06_homologous_modules_and_gene_lists-chunk-020, cache=TRUE, cache.path="cache/06_homologous_modules_and_gene_lists/", out.width="70%"}
+ggarrange(
+connect_dat %>% filter(sp=="clownfish") %>% 
+  ggplot(aes(y=log2(degree),x=type))+
+  geom_violin(alpha=0.6, color="grey35", fill="#e77515",linewidth=0.2)+
+  geom_boxplot(alpha=0.5, fill="grey80", outliers = FALSE, width=0.3)+
+  scale_y_continuous(limits = c(4,7.5))+
+  annotate("segment", x = 1, xend = 2, y = 7.3, yend = 7.3, linewidth=0.3) +
+  annotate("segment", x = 1, xend = 1, y = 7.1, yend = 7.3, linewidth=0.3) +
+  annotate("segment", x = 2, xend = 2, y = 7.1, yend = 7.3, linewidth=0.3) +
+  annotate("text", x = 1.5, y = 7.3, label = "***", size=5)+
+  labs(x=NULL,
+       y="Connectivity",
+       subtitle = "Clownfish")+
+  theme_bw()+
+  theme(axis.text.x = element_text(size = 10)),
+
+
+connect_dat %>% filter(sp=="manini") %>% 
+  ggplot(aes(y=log2(degree),x=type))+
+  geom_violin(alpha=0.6, color="grey35", fill="#9acd32",linewidth=0.2)+
+  geom_boxplot(alpha=0.5, fill="grey80", outliers = FALSE, width=0.3)+
+  scale_y_continuous(limits = c(4,7.5))+
+  annotate("segment", x = 1, xend = 2, y = 7.3, yend = 7.3, linewidth=0.3) +
+  annotate("segment", x = 1, xend = 1, y = 7.1, yend = 7.3, linewidth=0.3) +
+  annotate("segment", x = 2, xend = 2, y = 7.1, yend = 7.3, linewidth=0.3) +
+  annotate("text", x = 1.5, y = 7.3, label = "***", size=5)+
+  labs(x=NULL,
+       y=NULL,
+       subtitle = "Manini")+
+  theme_bw()+
+  theme(axis.text.x = element_text(size = 10)),
+
+connect_dat %>% filter(sp=="goby") %>% 
+  ggplot(aes(y=log2(degree),x=type))+
+  geom_violin(alpha=0.6, color="grey35", fill="#BA4566",linewidth=0.2)+
+  geom_boxplot(alpha=0.5, fill="grey80", outliers = FALSE, width=0.3)+
+  scale_y_continuous(limits = c(4,7.5))+
+  annotate("segment", x = 1, xend = 2, y = 7.3, yend = 7.3, linewidth=0.3) +
+  annotate("segment", x = 1, xend = 1, y = 7.1, yend = 7.3, linewidth=0.3) +
+  annotate("segment", x = 2, xend = 2, y = 7.1, yend = 7.3, linewidth=0.3) +
+  annotate("text", x = 1.5, y = 7.3, label = "**", size=5)+
+  labs(x=NULL,
+       y=NULL,
+       subtitle = "Goby")+
+  theme_bw()+
+  theme(axis.text.x = element_text(size = 10)),
+
+connect_dat %>% filter(sp=="grouper") %>% 
+  ggplot(aes(y=log2(degree),x=type))+
+  geom_violin(alpha=0.6, color="grey35", fill="#D9C343",linewidth=0.2)+
+  geom_boxplot(alpha=0.5, fill="grey80", outliers = FALSE, width=0.3)+
+  scale_y_continuous(limits = c(4,7.5))+
+  annotate("segment", x = 1, xend = 2, y = 7.3, yend = 7.3, linewidth=0.3) +
+  annotate("segment", x = 1, xend = 1, y = 7.1, yend = 7.3, linewidth=0.3) +
+  annotate("segment", x = 2, xend = 2, y = 7.1, yend = 7.3, linewidth=0.3) +
+  annotate("text", x = 1.5, y = 7.3, label = "***", size=5)+
+  labs(x=NULL,
+       y="Connectivity",
+       subtitle = "Grouper")+
+  theme_bw()+
+  theme(axis.text.x = element_text(size = 10)),
+
+connect_dat %>% filter(sp=="grouper") %>% 
+  ggplot(aes(y=log2(degree),x=type))+
+  geom_violin(alpha=0.4, color="grey35", fill="#343BC2",linewidth=0.2)+
+  geom_boxplot(alpha=0.5, fill="grey80", outliers = FALSE, width=0.3)+
+  scale_y_continuous(limits = c(4,7.5))+
+  annotate("segment", x = 1, xend = 2, y = 7.3, yend = 7.3, linewidth=0.3) +
+  annotate("segment", x = 1, xend = 1, y = 7.1, yend = 7.3, linewidth=0.3) +
+  annotate("segment", x = 2, xend = 2, y = 7.1, yend = 7.3, linewidth=0.3) +
+  annotate("text", x = 1.5, y = 7.3, label = "*", size=5)+
+  labs(x=NULL,
+       y=NULL,
+       subtitle = "Zebrafish")+
+  theme_bw()+
+  theme(axis.text.y = element_blank(),
+        axis.text.x = element_text(size = 10)),
+ncol = 3, nrow = 2)
+```
+
+```{r 06_homologous_modules_and_gene_lists-chunk-021, eval=FALSE}
+
+wil_test_boot<-function(dat,species){
+  rbind(
+    dat$connectivity %>% filter(gene %in% homologous_genes$genes) %>% dplyr::select(gene, degree) %>% mutate(type="homologous"),
+    dat$connectivity %>% filter(!gene %in% homologous_genes$genes) %>% dplyr::select(gene, degree) %>% mutate(type="other") %>% 
+      slice_sample(n = 25)
+  )->test_dat
+  
+  
+  tibble(p.value=(
+    wilcox.test(
+      x = test_dat %>% filter(type=="homologous") %>% pull(degree),
+      y = test_dat %>% filter(type=="other") %>% pull(degree),
+      alternative = "greater")
+    )$p.value,
+         sp=paste0(species)
+  ) %>% return()
+}
+
+rbind(
+purrr::map(1:1000, ~wil_test_boot(dat = clown_orth_net, species = "Clownfish")) %>% 
+  list_rbind(),
+purrr::map(1:1000, ~wil_test_boot(dat = grouper_orth_net, species = "Grouper")) %>% 
+  list_rbind(),
+purrr::map(1:1000, ~wil_test_boot(dat = goby_orth_net, species = "Goby")) %>%
+  list_rbind(),
+purrr::map(1:1000, ~wil_test_boot(dat = manini_orth_net, species = "Manini")) %>% 
+  list_rbind(),
+purrr::map(1:1000, ~wil_test_boot(dat = danio_orth_net, species = "zebrafish")) %>% 
+  list_rbind()
+)->all_fish_wil_test_res
+
+all_fish_wil_test_res %>% saveRDS("./RDS/all_fish_wil_test_res,rds")
+```
+
+P-values for above test
+```{r 06_homologous_modules_and_gene_lists-chunk-022, cache=TRUE, cache.path="cache/06_homologous_modules_and_gene_lists/"}
+all_fish_wil_test_res<-readRDS("./RDS/all_fish_wil_test_res,rds")
+
+all_fish_wil_test_res %>% 
+  mutate(p.adj=p.adjust(all_fish_wil_test_res$p.value, method = "BH")) %>% 
+    mutate(p.adj=p.adjust(all_fish_wil_test_res$p.value, method = "BH")) %>% summarise(mean_padj=mean(p.adj), .by="sp") %>% 
+  kableExtra::kbl() %>% 
+  kableExtra::kable_styling() %>%
+  kableExtra::scroll_box(width = "200px", height = "200px")
+```
+
+### Preservation of conserved network modules
+The modules in the conserved network had a high degree of preservation in all the species. 
+```{r, fig.align='center'}
+homologous_modules %>% filter(col.clown %in% homologous_genes$mod) %>% pivot_longer(c(clown.ref.pres.goby,clown.ref.pres.danio,clown.ref.pres.manini,
+                                      clown.ref.pres.grouper,goby.ref.pres.clown,danio.ref.pres.clown,
+                                      manini.ref.pres.clown,grouper.ref.pres.clown), 
+                                    names_to = "comparisons", values_to = "module_pres") %>% 
+  dplyr::count(module_pres) %>% mutate(n.per=n/sum(n)) %>% 
+  ggplot(aes(x=module_pres, y=n.per, fill=module_pres))+
+  geom_col(color="black", linewidth=0.2)+
+  scale_fill_manual(values = c("#8C6BB1", "#2AA198", "#C97A5A"))+
+  scale_y_continuous(labels = scales::percent)+
+  geom_text(aes(label = paste0(round(n.per,2)*100,"%"), y=n.per-0.03), size=3, color="white")+
+  labs(x="Module\npreservation", y="Percentage in\npairwise comparisons")+
+  theme_bw()+
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_text(size=8),
+        legend.position = "none",
+        panel.grid.major = element_line(colour = "grey95"),
+        panel.grid.minor = element_line(colour = "grey95"))->homo_pres_plots
+
+homo_pres_plots
+```
+
+### Gene copy-number of conserved network genes
+Genes in the conserved network  are not comprised of gene families that vary copy-number as compared to the full ortholog set. Suggesting that the developmental network likely does not have more redundancy (purely from a genetic perspective) than other sets of gene networks. 
+```{r 06_homologous_modules_and_gene_lists-chunk-023, cache=TRUE, cache.path="cache/06_homologous_modules_and_gene_lists/", fig.align='center'}
+
+rbind(
+  orth %>% filter(Orthogroup %in% homologous_genes$genes) %>% dplyr::count(Orthogroup) %>% mutate(type="Homologous"),
+  orth %>% filter(Orthogroup %in% full_orths$Orthogroup & !Orthogroup %in% homologous_genes$genes) %>% 
+    dplyr::count(Orthogroup)  %>% slice_sample(n=2000) %>% mutate(type="Non-homologous"))->ss_test
+
+wilcox.test(x = ss_test %>% 
+              filter(type=="Homologous") %>% pull(n) %>% log2(),
+            
+            y = ss_test %>% 
+              filter(type=="Non-homologous") %>% 
+              pull(n) %>% log2(), alternative = "two.sided")
+
+ss_test %>%  ggplot(aes(y=log2(n), x=type, fill = type))+
+  ggbeeswarm::geom_quasirandom(shape=21)+
+  geom_boxplot(color="black", alpha=0.5, outliers = FALSE)+
+  theme_bw()+  
+  scale_fill_manual(values = c("#EA5B15","#1AAEC0"))+
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank())->gene_copy_number_homologous
+
+gene_copy_number_homologous
+```
+
+
+## Annotate the conserved modules {.tabset}
+```{r 06_homologous_modules_and_gene_lists-chunk-024, eval=FALSE}
+homologous_genes<-readRDS("./RDS/homologous_genes.rds")
+non_homologous_genes<-readRDS("./RDS/non_homologous_genes.rds")
+
+homologous_genes %>% distinct(mod) %>% pull(mod)->cols
+#gene_list<-tibble(genes=homologous_genes$genes) #input gene list for GO
+
+purrr::map2(.x=cols, .y="BP",
+            ~get_GOterms_homomods(module  = .x, 
+                                  cat = .y,
+                                  gene_set = homologous_genes),.progress = T)->homologous_mods_BP_proc
+names(homologous_mods_BP_proc)<-cols
+homologous_mods_BP_proc %>% saveRDS("./03.Annotations/homologous_mods_BP_proc.rds")
+
+purrr::map2(.x=cols, .y="CC",
+            ~get_GOterms_homomods(module  = .x,
+                                  cat = .y,
+                                  gene_set = homologous_genes),.progress = T)->homologous_mods_CC_proc
+names(homologous_mods_CC_proc)<-cols
+homologous_mods_CC_proc %>% saveRDS("./03.Annotations/homologous_mods_CC_proc.rds")
+
+purrr::map2(.x=cols, .y="MF",
+            ~get_GOterms_homomods(module  = .x, cat = .y,
+                                  gene_set = homologous_genes),.progress = T)->homologous_mods_MF_proc
+names(homologous_mods_MF_proc)<-cols
+homologous_mods_MF_proc %>% saveRDS("./03.Annotations/homologous_mods_MF_proc.rds")
+
+#Non-homologous module
+#non_homologous_genes<-readRDS("./RDS/non_homologous_genes.rds")
+non_homologous_genes %>% distinct(mod) %>% pull(mod)->cols
+
+purrr::map2(.x=cols, .y="BP",
+            ~get_GOterms_homomods(module = .x, 
+                                  cat = .y, 
+                                  gene_set = non_homologous_genes),.progress = T)->non_homologous_mods_BP_proc
+names(non_homologous_mods_BP_proc)<-cols
+non_homologous_mods_BP_proc %>% saveRDS("./03.Annotations/non_homologous_mods_BP_proc.rds")
+
+
+purrr::map2(.x=cols, .y="CC",
+            ~get_GOterms_homomods(mod = .x, 
+                                  cat = .y,
+                                  gene_set = non_homologous_genes),.progress = T)->non_homologous_mods_CC_proc
+names(non_homologous_mods_CC_proc)<-cols
+non_homologous_mods_CC_proc %>% saveRDS("./03.Annotations/non_homologous_mods_CC_proc.rds")
+
+purrr::map2(.x=cols, .y="MF",
+            ~get_GOterms_homomods(mod = .x, 
+                                  cat = .y,
+                                  gene_set = non_homologous_genes),.progress = T)->non_homologous_mods_MF_proc
+names(non_homologous_mods_MF_proc)<-cols
+non_homologous_mods_MF_proc %>% saveRDS("./03.Annotations/non_homologous_mods_MF_proc.rds")
+
+```
+
+```{r 06_homologous_modules_and_gene_lists-chunk-025, cache=TRUE, cache.path="cache/06_homologous_modules_and_gene_lists/"}
+non_homologous_mods_BP_proc<-readRDS("./03.Annotations/non_homologous_mods_BP_proc.rds")
+non_homologous_mods_MF_proc<-readRDS("./03.Annotations/non_homologous_mods_MF_proc.rds")
+non_homologous_mods_CC_proc<-readRDS("./03.Annotations/non_homologous_mods_CC_proc.rds")
+homologous_mods_BP_proc<-readRDS("./03.Annotations/homologous_mods_BP_proc.rds")
+homologous_mods_MF_proc<-readRDS("./03.Annotations/homologous_mods_MF_proc.rds")
+homologous_mods_CC_proc<-readRDS("./03.Annotations/homologous_mods_CC_proc.rds")
+
+```
+
+### Biological process GO terms
+
+```{r 06_homologous_modules_and_gene_lists-chunk-026, cache=TRUE, cache.path="cache/06_homologous_modules_and_gene_lists/"}
+purrr::map(homologous_mods_BP_proc,
+           ~purrr::pluck(.x) %>% head(10)
+) %>% list_rbind() %>%  
+  kableExtra::kbl() %>% kableExtra::kable_styling() %>%
+  kableExtra::scroll_box(width = "600px", height = "500px")
+```
+
+### Molecular function GO terms
+
+```{r 06_homologous_modules_and_gene_lists-chunk-027, cache=TRUE, cache.path="cache/06_homologous_modules_and_gene_lists/"}
+purrr::map(homologous_mods_MF_proc,
+           ~purrr::pluck(.x) %>% head(10)
+) %>% list_rbind() %>%  
+  kableExtra::kbl() %>% kableExtra::kable_styling() %>%
+  kableExtra::scroll_box(width = "600px", height = "500px")
+```
+
+### Cellular compartmentGO terms
+
+```{r 06_homologous_modules_and_gene_lists-chunk-028, cache=TRUE, cache.path="cache/06_homologous_modules_and_gene_lists/"}
+purrr::map(homologous_mods_CC_proc,
+           ~purrr::pluck(.x) %>% head(10)
+) %>% list_rbind() %>%  
+  kableExtra::kbl() %>% kableExtra::kable_styling() %>%
+  kableExtra::scroll_box(width = "600px", height = "500px")
+```
+
+### Conserved modules GO plots
+Use this to make the GO term plots in figure S4.
+```{r 06_homologous_modules_and_gene_lists-chunk-016, cache=TRUE, cache.path="cache/06_homologous_modules_and_gene_lists/", eval=FALSE}
+homologous_modules %>% dplyr::select(col.clown, col.goby, col.danio, col.manini, col.grouper) %>% distinct(col.clown, .keep_all = TRUE) %>% filter(col.clown %in% unique(as.character((homologous_mods_BP_proc %>% list_rbind())$mod)))->mods_combs
+#mods_combs %>% 
+#  filter(col.clown %in% 
+#           (cafe_genefamily_outs %>% filter(is_sig=="y") %>% pull(mod)))->mods_combs
+
+  
+safe_homo <- purrr::safely(homo_mods_lines, otherwise = NULL, quiet = TRUE)
+
+  purrr::pmap(list(as.character(mods_combs$col.clown),
+                   as.character(mods_combs$col.manini),
+                   as.character(mods_combs$col.goby),
+                   as.character(mods_combs$col.grouper),
+                   as.character(mods_combs$col.danio)),
+              ~safe_homo(mod.clown = ..1,
+                                    mod.manini = ..2,
+                                    mod.goby = ..3,
+                                    mod.grouper = ..4,
+                                    mod.danio = ..5,
+                               GO_dat = homologous_mods_BP_proc %>% list_rbind() %>% 
+                           filter(mod %in% mods_combs$col.clown))) %>%
+  purrr::map("result") %>% purrr::compact()->homo_lines
+  
+  
+
+names(homo_lines)<-homologous_mods_BP_proc %>% list_rbind() %>% 
+    filter(mod %in% mods_combs$col.clown) %>% pull(mod) %>% as.character() %>% unique()
+  
+```
+
+### Module annotation
+These are the annotations of the modules. 
+```{r 06_homologous_modules_and_gene_lists-chunk-029, cache=TRUE, cache.path="cache/06_homologous_modules_and_gene_lists/"}
+homologous_genes %>% distinct(mod) %>% mutate(annot=
+                                                c("RNA processing 1",
+                                                  "Aerobic respiration",
+                                                  "Translation",
+                                                  "Neuron migration and placode development",
+                                                  "Synaptic signalling 1",
+                                                  "Peroxisome process",
+                                                  "Synaptic signalling 2",
+                                                  "Cell cycle process",
+                                                  "DNA replication",
+                                                  "Protein catabolism",
+                                                  "Ribosome related",
+                                                  "RNA processing 2",
+                                                  "Translation 2",
+                                                  "Extracellular matrix and cartilage development 1",
+                                                  "Extracellular matrix and cartilage development 2",
+                                                  "Muscle system",
+                                                  "Immune system",
+                                                  "Nutrient absorption",
+                                                  "Brush border epithelium development",
+                                                  "Blood related",
+                                                  "Neural plate formation",
+                                                  "Eye development","Protein folding",
+                                                  "Hormone response",
+                                                  "Sterol synthesis"))->module_annot
+
+module_annot %>%  
+  kableExtra::kbl() %>% kableExtra::kable_styling() %>%
+  kableExtra::scroll_box(width = "600px", height = "500px")
+```

@@ -1,0 +1,639 @@
+## Evolutionary dynamics of copy number variation
+In this section I carry out the comparative evolutionary analysis using CAFE5. For the CAFE and the subsequent evolutionary analyses I excluded teleost lineages with additional lineage-specific WGDs because their genomes introduce extra paralogy, lineage-specific duplicate retention and loss, and extended rediploidisation dynamics, which can bias comparative estimates of copy-number evolution and regulatory divergence . The evolutionary analyses therefore focused on genomes sharing the same duplication background. Additionally, I selected species that were present in the phylogenetic tree from the Fish Tree of Life. The final list included 134  species and can be found in table S6. 
+
+```{r 07_comparative_genomics_phylogenomics_cafe-chunk-001, message=FALSE}
+#Get orthology data
+orth<-readRDS("./04.Orthogroups/Orthologer_latest2.rds") %>% 
+  mutate(sp=case_match(sp, "Goby" ~ "Rhinogobius_brunneus",
+                           "Grouper" ~ "Epinephelus_malabaricus",
+                           "Manini" ~ "Acanthurus_triostegus", 
+                           "Gasterosteus_aculeatus_aculeatus" ~ "Gasterosteus_aculeatus", #fix this extra name
+                       .default = sp))
+#Get tree
+tree<-read.tree("./06.CAFE5/actinopt_12k_treePL.tre.xz")
+tibble(tips=tree$tip.label) %>% filter(tips %in% (orth %>% distinct(sp) %>% pull(sp)))->include.tips
+pruned_tree<-drop.tip(tree,tree$tip.label[-match(include.tips$tips, tree$tip.label)])
+pruned_tree<-drop.tip(pruned_tree,tip = "Carassius_langsdorfii")
+force.ultrametric(pruned_tree)->pruned_tree
+is.ultrametric(pruned_tree)
+is.rooted(pruned_tree)
+is.binary(pruned_tree)
+
+#Taxonomic data from Fishbase
+#This can take a while leading to timeout
+#I provide an RDS object instead
+#library(rfishbase)
+#fish_call<-validate_names(str_replace(include.tips$tips,"_"," "))
+#taxa<-rfishbase::load_taxa() %>% filter(Species %in% fish_call) %>% collect()
+#taxa<-taxa %>% mutate(sp=str_replace(taxa$Species," ","_" )) %>% dplyr::select(sp, Family, Order, SpecCode) %>% mutate(Order=taxa$Order %>% str_remove_all("/.*"))
+taxa<-readRDS("./RDS/taxa.rds")
+
+##Remove species with extra WGD
+left_join(taxa %>% filter(!Family %in% c("Cyprinidae","Cobitidae","Catostomidae","Salmonidae")), 
+            tibble(sp=pruned_tree$tip.label),by = "sp")->tips_to_keep
+drop.tip(pruned_tree,pruned_tree$tip.label[-match(tips_to_keep$sp, pruned_tree$tip.label)])->no_WGD_tree
+  
+#Calculate average orthogroup size
+og_sizes <- orth %>% group_by(Orthogroup) %>% summarise(og_size = n_distinct(sp),.groups = "drop")
+species_avg_size <- orth %>%  distinct(sp, Orthogroup) %>%
+  left_join(og_sizes, by = "Orthogroup") %>%
+  group_by(sp) %>%
+  summarise(avg_og_size = mean(og_size),.groups = "drop")
+
+orth %>% group_by(Orthogroup) %>% dplyr::count(sp,name = "no_of_gene_copies") %>% ungroup()->orth_gene_copy
+orth_gene_copy<-orth_gene_copy %>% left_join(taxa, by="sp")
+
+#Search for the clownfish and the danio orthologs in the orthgroups. 
+#These objects are used throughout the analyses downstream so I create them here and then use them at later instances. 
+orth<-readRDS("./04.Orthogroups/Orthologer_latest2.rds")
+left_join(danio_orth_net$connectivity,orth %>% filter(sp=="Danio_rerio") %>% filter(Orthogroup %in% danio_all_orth_exp_mat$Orthogroup),by=c("gene"="Orthogroup")) %>% dplyr::select(module,gene,orths)->danio_orth_genes_modules
+danio_biomart<-read_csv("./Danio_biomart.csv") %>% 
+  dplyr::select(`Gene stable ID`,`Gene stable ID version`,`Protein stable ID`,`Gene name`, `Gene description`)
+
+danio_orth_genes_modules %>%
+  left_join(danio_biomart %>% dplyr::select(`Gene stable ID version`,`Gene name`),
+            by=c("orths"="Gene stable ID version"))->orths_gene_name
+orths_gene_name %>% filter(`Gene name` != "BX530018.2")->orths_gene_name
+
+danio_orth_net<-readRDS("./02.Gene_expression_and_network/danio_orth_net.rds")
+orth_danio<-orth %>% filter(sp=="Danio_rerio") %>% mutate(orths=str_remove(orths,"\\.[0-9]"))
+orth_danio<-orth_danio %>% mutate(Orthogroup=as.character(orth_danio$Orthogroup))
+
+
+danio_orth_mods<-left_join(danio_orth_net$connectivity, orth_danio, by=c("gene"="Orthogroup")) %>% 
+  left_join(danio_biomart, by=c("orths"="Gene stable ID")) %>% na.omit()
+```
+
+I use CAFE5 to estimate evolutionary dynamics in copy-number evolution. First I ran a single-rate error corrected base model and a multi-rate model . The error model accounts for any non-biological factors such as genome sequencing and coverage differences, as well as gene family count estimation errors. I compared model fits using negative log-likelihood scores. The CAFE script can be found in the 'Codes' folder on zenodo. 
+```{r 07_comparative_genomics_phylogenomics_cafe-chunk-007, cache=TRUE, cache.path="cache/07_comparative_genomics_phylogenomics_cafe/"}
+non_homologous_genes<-readRDS("./RDS/non_homologous_genes.rds")
+homologous_genes<-readRDS("./RDS/homologous_genes.rds")
+seq_stats<-read_tsv("./10.HyPhy/seq_dat_clean.tsv") %>% mutate(type=case_when(Orthogroup %in% homologous_genes$genes ~ "Homologous", 
+                            .default = "Non homologous")) #This contains data for the set of randomly selected genes that acts as the null.
+#Use this random data for a null
+seq_stats %>% filter(type=="Non homologous") %>% slice_head(n=1175) %>%   mutate(mod=paste0("random_mod", rep(1:25, each = 47))) %>% dplyr::rename("genes"="Orthogroup")->random_cafe
+#it is 1175 because CAFE didn't converge for one of the modules. 
+```
+
+This code chunk is used to make the input files for CAFE. They can be found on zenodo. 
+```{r 07_comparative_genomics_phylogenomics_cafe-chunk-008, eval=FALSE}
+#random_non_homologus_genes<-clown_orth_net$connectivity %>% 
+#  filter(!gene %in% homologous_genes$genes) %>% 
+#    slice_sample(n = 1196) %>% dplyr::rename("genes"="gene","mod"="module")#Random gene set to test specificity of CAFE
+
+#random_non_homologus_genes<-random_non_homologus_genes3
+
+#Make CAFE input
+make_cafe_input<-function(genelist, cols){
+  specific_module<-genelist %>% filter(mod==cols)
+  
+  orth_gene_copy %>% filter(sp %in% no_WGD_tree$tip.label) %>% filter(Orthogroup %in% specific_module$genes) %>%
+    dplyr::select(-c(Family, Order, SpecCode)) %>% pivot_wider(names_from = sp, values_from = no_of_gene_copies) %>%
+    replace(is.na(.), 0) %>% mutate(`Family ID`=paste0("OG",Orthogroup), Desc="(null)") %>% 
+    dplyr::select(c(Desc, `Family ID`, everything(), -Orthogroup)) %>% 
+    write_tsv(paste0("./06.CAFE5/New_random/cafe_input_",cols,".tsv"))#change destination if needed
+}
+
+random_cafe %>% distinct(mod) %>% pull(mod)->cols
+purrr::map(.x = cols, 
+           ~make_cafe_input(genelist = random_cafe, cols = .x))
+
+homologous_genes %>% distinct(mod) %>% pull(mod)->cols
+purrr::map(.x = cols, 
+           ~make_cafe_input(genelist = homologous_genes, cols = .x))
+
+random_non_homologus_genes %>% distinct(mod) %>% pull(mod)->cols
+purrr::map(.x = cols, 
+           ~make_cafe_input(genelist = random_non_homologus_genes, cols = .x))
+
+```
+
+### Results {.tabset}
+Here I collect the outputs of CAFE and combine them into data frames. Adjust the file sources as per your system. 
+```{r 07_comparative_genomics_phylogenomics_cafe-chunk-009, message=FALSE, cache=TRUE, cache.path="cache/07_comparative_genomics_phylogenomics_cafe/"}
+
+get_cafe_family_results<-function(cols,type){
+  read_table(paste0("./06.CAFE5/",type,"/results_cafe_",cols,"/Multi_lambda_model_1/Base_family_results.txt"),
+             skip = 1, col_names= c("genes","pval","is_sig"))->fam
+  
+  fam %>% mutate(mod=cols,
+                 genes=str_remove_all(genes,"OG")) %>% return()
+}
+
+get_cafe_model_outputs<-function(cols,type){
+  read_table(paste0("./06.CAFE5/",type,"/results_cafe_",cols,"/Base_model/Base_results.txt"),col_names = c("q","w","e","r","t","y"))->b
+  
+  tibble("neglogL"=b$y[1],
+         "lambda1"=b$w[2] %>% str_remove_all(",") %>% as.numeric(),
+         "lambda2"=b$e[2] %>% str_remove_all(",") %>% as.numeric(),
+         "model_type"="base")->base_model
+  
+  read_table(paste0("./06.CAFE5/",type,"/results_cafe_",cols,"/Multi_lambda_model_1/Base_results.txt"),
+             col_names=c("q","w","e","r","t","y"))->m1
+  
+  tibble("neglogL"=m1$y[1],
+       "lambda1"=m1$w[2] %>% str_remove_all(",") %>% as.numeric(),
+         "lambda2"=m1$e[2] %>% str_remove_all(",") %>% as.numeric(),
+         "model_type"="multi_lambda_1")->multi_1
+  
+  read_table(paste0("./06.CAFE5/",type,"/results_cafe_",cols,"/Multi_lambda_model_2/Base_results.txt"),
+             col_names=c("q","w","e","r","t","y"))->m2
+  
+  tibble("neglogL"=m2$y[1],
+         "lambda1"=m2$w[2] %>% str_remove_all(",") %>% as.numeric(),
+         "lambda2"=m2$e[2] %>% str_remove_all(",") %>% as.numeric(),
+         "model_type"="multi_lambda_2")->multi_2
+  
+  read_table(paste0("./06.CAFE5/",type,"/results_cafe_",cols,"/Multi_lambda_model_3/Base_results.txt"),
+           col_names=c("q","w","e","r","t","y"))->m3
+  
+  tibble("neglogL"=m3$y[1],
+         "lambda1"=m3$w[2] %>% str_remove_all(",") %>% as.numeric(),
+         "lambda2"=m3$e[2] %>% str_remove_all(",") %>% as.numeric(),
+         "model_type"="multi_lambda_3")->multi_3
+  
+ rbind(base_model, multi_1, multi_2, multi_3) %>% mutate(mod=cols) %>% 
+    replace(is.na(.), 0) %>% return()
+
+} 
+#These are just the module names which were used in the file names of the output.
+cols_h<-read_csv("./06.CAFE5/test/cafe_colours.csv")
+
+rbind(
+  purrr::map2(.x=as.list(unique(random_cafe$mod)),
+              .y=as.list("random"),
+              ~get_cafe_model_outputs(cols = .x, 
+                                      type = .y)) %>% 
+    list_rbind() %>% 
+    mutate(mod_type="Non homologous"),
+  
+  purrr::map2(.x=as.list(unique(cols_h$colours)),
+              .y=as.list("test"),
+              ~get_cafe_model_outputs(cols = .x, 
+                                      type = .y)) %>% 
+    list_rbind() %>% 
+    mutate(mod_type="Homologous"))->cafe_model_outs
+  
+  
+rbind(
+  purrr::map2(.x=as.list(unique(cols_h$colours)),
+              .y="test",
+              ~get_cafe_family_results(cols = .x,
+                                       type = .y)) %>% 
+    list_rbind() %>% mutate(mod_type="Homologous") %>% 
+    left_join(module_annot,by="mod"),
+  
+  purrr::map2(.x=as.list(unique(random_cafe$mod)),
+            .y="random",
+            ~get_cafe_family_results(cols = .x,
+                                     type = .y)) %>% 
+    list_rbind() %>% mutate(mod_type="Non homologous", annot="random")
+)->cafe_genefamily_outs
+```
+
+#### Connectivity of the fast evolving genes
+Here I check whether the high turnover genes estimated by CAFE have different connectivity than low turnover genes form the conserved network.  
+The connectivity of the high turnover conserved network genes is not significantly different from all the other, low-turnover genes in the conserved network. Therefore, the fast evolving genes are not hyper-hubs.
+
+```{r 07_comparative_genomics_phylogenomics_cafe-chunk-010, cache=TRUE, cache.path="cache/07_comparative_genomics_phylogenomics_cafe/", eval=FALSE}
+rbind(
+  clown_orth_net$connectivity %>% filter(gene %in% (cafe_genefamily_outs %>% filter(is_sig=="y" & mod_type=="Homologous") %>% pull(genes))) %>% dplyr::select(gene, degree) %>% 
+    mutate(type="High turnover"),
+  clown_orth_net$connectivity %>% filter(gene %in% homologous_genes$genes & !gene %in% (cafe_genefamily_outs %>% filter(is_sig=="y" & mod_type=="Homologous") %>% pull(genes))) %>% dplyr::select(gene, degree) %>% 
+    mutate(type="Low turnover")) %>% mutate(sp="Clownfish") %>% 
+  rbind(
+    rbind(
+      grouper_orth_net$connectivity %>% filter(gene %in% (cafe_genefamily_outs %>% filter(is_sig=="y"& mod_type=="Homologous") %>% pull(genes))) %>% dplyr::select(gene, degree) %>% 
+        mutate(type="High turnover"),
+      grouper_orth_net$connectivity %>% filter(gene %in% homologous_genes$genes & !gene %in% (cafe_genefamily_outs %>% filter(is_sig=="y"& mod_type=="Homologous") %>% pull(genes))) %>% dplyr::select(gene, degree) %>% 
+        mutate(type="Low turnover")) %>% mutate(sp="Grouper")) %>% 
+  rbind(
+    rbind(
+      goby_orth_net$connectivity %>% filter(gene %in% (cafe_genefamily_outs %>% filter(is_sig=="y"& mod_type=="Homologous") %>% pull(genes))) %>% dplyr::select(gene, degree) %>% 
+        mutate(type="High turnover"),
+      goby_orth_net$connectivity %>% filter(gene %in% homologous_genes$genes & !gene %in% (cafe_genefamily_outs %>% filter(is_sig=="y"& mod_type=="Homologous") %>% pull(genes))) %>% dplyr::select(gene, degree) %>% 
+        mutate(type="Low turnover")) %>% mutate(sp="Goby")) %>% 
+  rbind(
+    rbind(
+      manini_orth_net$connectivity %>% filter(gene %in% (cafe_genefamily_outs %>% filter(is_sig=="y"& mod_type=="Homologous") %>% pull(genes)))%>% dplyr::select(gene, degree) %>% 
+        mutate(type="High turnover"),
+      manini_orth_net$connectivity %>% filter(gene %in% homologous_genes$genes & !gene %in% (cafe_genefamily_outs %>% filter(is_sig=="y"& mod_type=="Homologous") %>% pull(genes))) %>% dplyr::select(gene, degree) %>% 
+        mutate(type="Low turnover")) %>% mutate(sp="Manini")) %>% 
+  rbind(
+    rbind(
+      danio_orth_net$connectivity %>% filter(gene %in% (cafe_genefamily_outs %>% filter(is_sig=="y"& mod_type=="Homologous") %>% pull(genes))) %>% dplyr::select(gene, degree) %>% 
+        mutate(type="High turnover"),
+      danio_orth_net$connectivity %>% filter(gene %in% homologous_genes$genes & !gene %in% (cafe_genefamily_outs %>% filter(is_sig=="y"& mod_type=="Homologous") %>% pull(genes))) %>% dplyr::select(gene, degree) %>% 
+        mutate(type="Low turnover")) %>% mutate(sp="Zebrafish"))->all_fish_wil_test_dat 
+
+  all_fish_wil_test_dat %>% 
+    ggplot(aes(y=log2(degree),x=type))+
+    facet_wrap(~sp, scales="free", nrow=1)+
+    geom_quasirandom(shape=21, alpha=0.5, color="white", fill="grey40")+
+    geom_boxplot(alpha=0.3, fill="grey40", outliers = FALSE)+
+    labs(x="Gene copy evolution",
+         y="Connectivity")+
+    theme_bw()+
+    theme(strip.background = element_rect(fill="grey96"),
+          axis.text.x = element_text(angle = 90))
+```
+
+```{r, out.width="100%"}
+knitr::include_graphics("./Figures_for_report/turnover_connect_plot.png")
+```
+
+```{r, eval=FALSE}
+wil_test_boot<-function(dat,species){
+  rbind(
+    dat$connectivity %>% filter(gene %in% (cafe_genefamily_outs %>% filter(is_sig=="y" & mod_type=="Homologous") %>% pull(genes))) %>% dplyr::select(gene, degree) %>% mutate(type="homologous"),
+    dat$connectivity %>% filter(gene %in% homologous_genes$genes & !gene %in% (cafe_genefamily_outs %>% filter(is_sig=="y" & mod_type=="Homologous") %>% pull(genes))) %>% dplyr::select(gene, degree) %>% mutate(type="other") %>% 
+      slice_sample(n=170)
+  )->test_dat
+  
+  
+  tibble(p.value=(
+    wilcox.test(
+      x = test_dat %>% filter(type=="homologous") %>% pull(degree),
+      y = test_dat %>% filter(type=="other") %>% pull(degree),
+      alternative = "two.sided")
+    )$p.value,
+         sp=paste0(species)
+  ) %>% return()
+}
+
+rbind(
+purrr::map(1:1000, ~wil_test_boot(dat = clown_orth_net, species = "Clownfish")) %>% 
+  list_rbind(),
+purrr::map(1:1000, ~wil_test_boot(dat = grouper_orth_net, species = "Grouper")) %>% 
+  list_rbind(),
+purrr::map(1:1000, ~wil_test_boot(dat = goby_orth_net, species = "Goby")) %>%
+  list_rbind(),
+purrr::map(1:1000, ~wil_test_boot(dat = manini_orth_net, species = "Manini")) %>% 
+  list_rbind(),
+purrr::map(1:1000, ~wil_test_boot(dat = danio_orth_net, species = "zebrafish")) %>% 
+  list_rbind()
+)->all_fish_wil_test_cafe_res
+
+all_fish_wil_test_cafe_res %>% saveRDS("./RDS/all_fish_wil_test_cafe_res.rds")
+```
+
+
+#### Model fit
+The plot below shows the negative log-likelihoods for two models implemented in CAFE. The Base model, with a single rate across the entire tree, and a multi-lambda model where the acanthomorpha and non-acanthomorpha fish have different rates. For all of the homologous modules, except royalblue, the multi-lambda model is a better fit to the data.
+
+```{r 07_comparative_genomics_phylogenomics_cafe-chunk-012, cache=TRUE, cache.path="cache/07_comparative_genomics_phylogenomics_cafe/", eval=FALSE}
+cafe_model_outs %>% filter(mod_type=="Homologous") %>% left_join(module_annot, by="mod")->cafe_homo_plot_dat
+  cafe_homo_plot_dat %>% 
+    mutate(model_type=cafe_homo_plot_dat$model_type %>% str_remove_all("_[1-3]")) %>% 
+  filter(mod !="white") %>% 
+  ggplot(aes(x=model_type,y=neglogL, group=annot, fill=model_type))+
+  facet_wrap(~annot, scales="free_y")+
+  geom_point(shape=21, color="grey20", size=3)+
+  ggsci::scale_fill_aaas()+
+  labs(subtitle = "Conserved network")+
+  theme_linedraw()+
+  theme(axis.text.x = element_blank(),
+         strip.background = element_rect(fill = "#67980C"))->cafe_homo_model_plots
+  
+  cafe_model_outs %>% filter(mod_type=="Non homologous")->cafe_nonhomo_plot_dat
+  cafe_nonhomo_plot_dat %>% 
+    mutate(model_type=cafe_nonhomo_plot_dat$model_type %>% str_remove_all("_[1-3]")) %>% 
+  filter(mod !="white") %>% 
+  ggplot(aes(x=model_type,y=neglogL, group=mod, fill=model_type))+
+  facet_wrap(~mod, scales="free_y")+
+  geom_point(shape=21, color="grey20", size=3)+
+  ggsci::scale_fill_aaas()+
+  labs(subtitle = "Random network")+
+  theme_linedraw()+
+  theme(axis.text.x = element_blank(),
+         strip.background = element_rect(fill = "#67980C"))->cafe_nonhomo_model_plots
+```
+
+```{r, out.width="100%"}
+knitr::include_graphics("./Figures_for_report/cafe_homo_model_plots.png")
+```
+```{r, out.width="100%"}
+knitr::include_graphics("./Figures_for_report/cafe_nonhomo_model_plots.png")
+```
+
+#### Difference in rates
+Here I check whether these ins actual difference in the rate estimates from CAFE for the conserved network and the random set. Plotting the values between the two gene classes shows that the genes in conserved network evolve at a lower rate. I use a bootsrapped one-sided wilcoxon rank sum test to test whether the rate estimates is significantly lower for the genes in the conserved network. 
+
+```{r 07_comparative_genomics_phylogenomics_cafe-chunk-013, cache=TRUE, cache.path="cache/07_comparative_genomics_phylogenomics_cafe/", eval=FALSE}
+cafe_model_outs %>% filter(model_type != "base" 
+                           & mod_type=="Homologous") %>% 
+  summarise(mean_lambda1=mean(lambda1), mean_lambda2=mean(lambda2),.by = mod) %>% 
+  pivot_longer(cols = contains("mean"), names_to = "lam", values_to = "rate") %>% 
+  mutate(mod=reorder(mod, -rate)) %>% 
+  left_join(module_annot,  by="mod") %>% 
+  ggplot(aes(y=rate, x=annot, fill = lam))+
+  facet_wrap(~annot, scales="free")+
+  geom_col(position = position_dodge(width = 1))+
+  scale_fill_manual(values = c("#8E5572","#6B8E23"))+
+  theme_bw()+
+  theme(axis.text.x = element_blank())
+```
+
+
+```{r 07_comparative_genomics_phylogenomics_cafe-chunk-014, cache=TRUE, cache.path="cache/07_comparative_genomics_phylogenomics_cafe/", eval=FALSE}
+rbind(
+cafe_model_outs %>% filter(model_type != "base" & mod_type=="Non homologous" & mod != "random_mod25") %>% 
+  pivot_longer(cols = c(lambda1,lambda2), names_to = "lam", values_to = "rate") %>% 
+  mutate(mod_type="Non-Conserved"),
+cafe_model_outs %>% filter(model_type != "base" & mod_type=="Homologous") %>% 
+  pivot_longer(cols = c(lambda1,lambda2), names_to = "lam", values_to = "rate") %>% 
+  mutate(mod_type="Conserved"))->lambda_rates_dat
+
+lambda_rates_dat %>% 
+  ggplot(aes(y=log2(rate), x=mod_type, fill=lam))+
+  facet_wrap(~lam)+
+  geom_quasirandom(method = "tukey", 
+                   shape=21, 
+                   size=3,
+                   color="black",
+                   stroke=0.2, alpha=0.8)+
+  geom_boxplot(
+               alpha=0.9,
+               fill="grey95",
+               width=0.3,
+               outliers = FALSE)+
+  scale_fill_manual(values = c("#8E5572","#6B8E23"))+
+  theme_bw()+
+  theme(axis.text.x = element_text(angle=45,hjust = 1))
+```
+
+```{r, out.width="100%"}
+knitr::include_graphics("./Figures_for_report/diff_in_rate_res.png")
+```
+```{r,out.width="60%"}
+knitr::include_graphics("./Figures_for_report/Diff_lambda.png")
+```
+
+```{r 07_comparative_genomics_phylogenomics_cafe-chunk-015, eval=FALSE}
+wil_test_cafe_rates<-function(lambda){
+wilcox.test(
+  x=lambda_rates_dat %>% filter(lam==lambda & mod_type=="Conserved") %>% 
+    slice_sample(n=50,replace = TRUE) %>% pull(rate),
+  y=lambda_rates_dat %>% filter(lam==lambda & mod_type=="Non-Conserved") %>%  
+    slice_sample(n=50,replace = TRUE) %>% pull(rate))->test_out
+  
+  tibble(lam=lambda, pval=test_out$p.value) %>% return()
+}
+
+rbind(
+purrr::map(1:200, ~wil_test_cafe_rates(lambda = "lambda1")) %>% 
+  list_rbind() %>% mutate(padj=p.adjust(pval,"BH")),
+purrr::map(1:200, ~wil_test_cafe_rates(lambda = "lambda2")) %>% 
+  list_rbind() %>% mutate(padj=p.adjust(pval,"BH")))->cafe_rates_wil_res
+
+cafe_rates_wil_res %>% saveRDS("./RDS/cafe_rates_wil_res.rds")
+```
+
+
+```{r 07_comparative_genomics_phylogenomics_cafe-chunk-016, eval=TRUE, cache=TRUE, cache.path="cache/07_comparative_genomics_phylogenomics_cafe/"}
+cafe_rates_wil_res<-readRDS("./RDS/cafe_rates_wil_res.rds")
+
+cafe_rates_wil_res %>% summarise(m_padj = mean(padj),.by = lam) %>% 
+  kableExtra::kbl() %>% 
+  kableExtra::kable_styling()
+```
+
+#### Processes with significant expansion and contractions
+```{r 07_comparative_genomics_phylogenomics_cafe-chunk-017, cache=TRUE, cache.path="cache/07_comparative_genomics_phylogenomics_cafe/", eval=FALSE}
+cafe_genefamily_outs %>% drop_na() %>% filter(is_sig=="y" & mod_type=="Homologous") %>% dplyr::count(annot) %>% mutate(prop=(n/sum(n))) %>%  
+  mutate(annot=reorder(annot,prop)) %>% 
+  ggplot(aes(y=annot, x=prop))+
+  geom_col(fill="#5C6B8A", color="black", linewidth=0.2)+
+  geom_text(aes(x=prop+0.009, label = paste0(round(prop*100,1),"%")), size=3)+
+  scale_x_continuous(labels = scales::percent)+
+  labs(x="Proportion of high turnover genes",
+       y="Module annotation")+
+  theme_bw()
+```
+
+```{r, out.width="80%"}
+knitr::include_graphics("./Figures_for_report/Process_with_ex_cont.png")
+```
+
+#### Expansion and contraction of gene families {.tabset}
+
+Here I plot the relative expansion and contraction of homologous gene families estimated by CAFE. We see that there are different points of expansion/contraction along the tree occurring at different nodes. The highest expansion occurred at the root of teleost as a result of the teleost specific whole genome duplication (3R).  
+The expansions and contractions are all significant.
+
+##### Along the tree
+CAFE identified multiple instances of gene copy expansion and contraction along the phylogeny of teleosts, with a large number of expansions estimated at the base of teleost fish radiation followed by more lineage specific instances of expansion and contraction
+```{r 07_comparative_genomics_phylogenomics_cafe-chunk-018, warning=FALSE, cache=TRUE, cache.path="cache/07_comparative_genomics_phylogenomics_cafe/", eval=FALSE}
+#CAFE colors
+cafe_genefamily_outs %>% 
+  filter(is_sig=="y" & mod_type=="Homologous") %>% 
+  janitor::get_dupes(mod) %>% distinct(mod) %>% 
+  pull(mod)->cafe_cols
+cafe_genefamily_outs %>% filter(is_sig=="y" & mod_type=="Homologous")->cafe_sig
+#CAFE trees
+paste0("./06.CAFE5/test/",cafe_cols,"_trees.tre") %>% as.list()->tree_list
+#CAFE change results
+paste0("./06.CAFE5/test/results_cafe_",cafe_cols,"/Multi_lambda_model_1/Base_change.tab") %>% as.list()->change_dat_list
+purrr::map2(.x=tree_list, .y=change_dat_list,
+            ~cafe_get_age_of_change(tree = readNexus(.x), 
+                                    change_dat = read_tsv(.y),
+                                    cafe_genefamily_res = cafe_sig)) %>% 
+  list_rbind()->all_tree_dat
+all_tree_dat %>% saveRDS("./RDS/all_tree_dat.rds")
+```
+ 
+```{r 07_comparative_genomics_phylogenomics_cafe-chunk-021, cache=TRUE, cache.path="cache/07_comparative_genomics_phylogenomics_cafe/"}
+#Expansion/Contraction ratio per node
+#Shows which nodes have more expansion/contraction; inclusive of all genes
+all_tree_dat<-readRDS("./RDS/all_tree_dat.rds")
+all_tree_dat %>% filter(isSig=="yes") %>% dplyr::select(node, type_of_change) %>% 
+  dplyr::count(node,type_of_change) %>%
+  pivot_wider(names_from = type_of_change, values_from = n, values_fill = 0) %>%
+  mutate(
+    total = expansion + contraction,
+    net   = expansion - contraction)->node_sum
+
+g <- ggtree::ggtree(all_tree_dat, layout = "rectangular") + geom_tree() +
+    geom_tiplab(aes(label=str_replace_all(species,pattern = "_",replacement = " ")),as_ylab = FALSE,offset = 5, size=3,geom = "text", fontface="italic")+ hexpand(.7)
+  
+gdat <- g$data %>% left_join(node_sum, by = "node")
+
+top_qnt_net<-gdat %>% filter(total > 0 & isSig=="yes" & isTip=="FALSE") %>% pull(net) %>% quantile(0.9)
+low_qnt_net<-gdat %>% filter(total > 0 & isSig=="yes" & isTip=="FALSE") %>% pull(net) %>% quantile(0.1)
+
+top_qnt_total<-gdat %>% filter(total > 0 & isSig=="yes" & isTip=="FALSE") %>% pull(total) %>% quantile(0.9)
+
+
+g+ geom_point(
+    data = gdat %>% filter(total > 0 & isSig=="yes" & isTip=="FALSE") %>% 
+      mutate(net=case_when(net >= top_qnt_net ~ top_qnt_net,# top 10%
+                           net <= low_qnt_net ~ low_qnt_net, .default = net),
+             total=case_when(total >= top_qnt_total ~ top_qnt_total, .default = total)),
+    aes(x = x, y = y, size = total, fill = net),
+    shape = 21, colour = "black",stroke=0.25)+
+  scale_size(range = c(1, 5), name = "Total (exp+contr)") +
+  scale_fill_gradient2(
+    low = "#5430D9", mid = "white", high = "#D90467",
+    midpoint = 0, name = "Net (exp−contr)", breaks=c(low_qnt_net,-4,0,4,top_qnt_net), 
+    labels=c(paste0(">",low_qnt_net),"-4", "0", "4", paste0(">",top_qnt_net)))->cafe_tree_expansion
+
+```
+
+```{r, out.width="50%", out.height="900px"}
+knitr::include_graphics("./Figures_for_report/cafe_tree.pdf")
+```
+
+This code snipet is for the random genes.
+```{r 07_comparative_genomics_phylogenomics_cafe-chunk-020, cache=TRUE, cache.path="cache/07_comparative_genomics_phylogenomics_cafe/", eval=FALSE}
+#For the random data
+#CAFE colors
+cafe_genefamily_outs %>% filter(is_sig=="y" & mod_type=="Non homologous") %>% janitor::get_dupes(mod) %>% distinct(mod) %>% pull(mod)->cafe_cols_random
+
+
+#cafe_genefamily_outs %>% filter(is_sig=="n") %>% slice_sample(n=167) %>% janitor::get_dupes(mod) %>% drop_na() %>% distinct(mod) %>% pull(mod)->cafe_cols 
+
+#CAFE trees
+paste0("./06.CAFE5/random/",cafe_cols_random,"_trees.tre") %>% as.list()->tree_list_random
+#CAFE change results
+paste0("./06.CAFE5/random/results_cafe_",cafe_cols_random,"/Multi_lambda_model_1/Base_change.tab") %>% as.list()->change_dat_list_random
+purrr::map2(.x=tree_list_random, .y=change_dat_list_random,
+            ~cafe_get_age_of_change(tree = readNexus(.x), 
+                                    change_dat = read_tsv(.y),
+                                    cafe_genefamily_res = cafe_genefamily_outs)) %>% 
+  list_rbind()->all_tree_dat_random
+```
+
+##### Specific nodes
+There were many lineage specific points of expansions and contractions. For example, at the base of the teleost radiation there was extensive expansion primarily in gene families related to synaptic signalling and nervous system development. At the base of anguilliformes, there were expansions in genes related to translation and synaptic signalling. Another point of expansion was at the base of scombriformes which involved the expansion of the immune system and synaptic signalling genes. In contrast, at the base of siluriformes there were major contractions in genes related to synaptic signalling. Another major point of contraction was at the base of syngnathiformes, which involved contractions in genes related to the immune system and synaptic signalling. There were multiple instances of expansions and contractions at the base of cichliformes, with a major expansion in gene families related to the immune system, and a loss in families related to synaptic signalling  and brushborder epithelium development. The full list of high turnover genes can be found in table S3. 
+
+```{r 07_comparative_genomics_phylogenomics_cafe-chunk-022, cache=TRUE, cache.path="cache/07_comparative_genomics_phylogenomics_cafe/"}
+all_tree_dat %>% filter(isSig=="yes" & node %in% c("136","265","249","188","200","160")) %>% 
+    mutate(genes=str_remove_all(genes, "OG")) %>% 
+    left_join(cafe_genefamily_outs, by = "genes") %>% 
+    dplyr::count(type_of_change, annot, node) %>%
+    mutate(node=
+               case_when(
+                   node=="136" ~ "Base of Teleost WGD",
+                   node=="265" ~ "Base of Anguiliformes",
+                   node=="249" ~ "Base of Siluriformes",
+                   node=="188" ~ "Base of Syngnathiformes",
+                   node=="200" ~ "Base of Scombriformes",
+                   #node=="202" ~ "Base of Thunnus",
+                   node=="160" ~ "Base of Cichliformes"
+               ))  %>% mutate(annot=tidytext::reorder_within(annot,n,node)) %>% 
+    ggplot(aes(y=annot, x=n, fill = type_of_change))+ 
+    facet_wrap(~node, scale="free")+
+    geom_col(alpha=0.8, position = "stack", linewidth=0.05, color="black")+
+    scale_fill_manual(values = c("#5430D9","#D90467"))+
+    labs(x="Number of expansion/contraction")+
+    tidytext::scale_y_reordered() +
+    theme_bw()+
+    theme(axis.text.x = element_text( size = 9),
+          strip.background = element_rect(fill = "grey95"))->specific_nodes_cafe
+```
+
+```{r, out.width="100%", out.height="280px"}
+knitr::include_graphics("./Figures_for_report/specifc_nodes_cafe.pdf")
+```
+
+##### Proportion of turnover between homologous and random genes
+Of all the gene families in the conserved network, 14% (170 out of 1196) had significant evidence of high turnover. However, the proportion of gene families with evidence of high turnover differed significantly (two-sided Fisher’s exact test *P = 5x10-4*, odds ratio 1.56) between the conserved network and null network, with the conserved network comprising a higher proportion of high turnover gene families.  
+Doing the test without the re-sampling gives a significant difference (reported P above) in proportions between homologous and non-homologous networks. I perform the re-sampling to ensure there is consistency in the data sampling and results.  
+```{r, out.width="70%"}
+cafe_genefamily_outs %>% dplyr::count(mod_type, is_sig)  %>%
+    mutate(prop=(n/sum(n))) %>% 
+    ggplot(aes(x=mod_type, y=prop, fill=is_sig)) +
+    geom_col(width = 0.6, position = position_dodge(width = 0.65)) +
+    scale_y_continuous(labels = scales::percent) +
+    labs(y = "Proportion", x = NULL) +
+    scale_fill_manual(values = c("#B39E88","#4EB5AA"))+
+    labs(subtitle = "CAFE5 analysis",x="Gene class", fill="Is significant") +
+    theme_bw()+
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+The median, multiple testing adjusted *P=0.036* (in blue), lower than significance threshold of 0.05 (in red). 
+```{r 07_comparative_genomics_phylogenomics_cafe-chunk-023, cache=TRUE, cache.path="cache/07_comparative_genomics_phylogenomics_cafe/", out.width="50%"}
+#Test with all data
+rbind(
+    cafe_genefamily_outs %>% filter(mod_type=="Homologous"),
+    cafe_genefamily_outs %>% filter(mod_type=="Non homologous")) %>% 
+    dplyr::count(is_sig, mod_type) %>% 
+    pivot_wider(names_from = is_sig, 
+                values_from = n, 
+                values_fill = 0) %>% dplyr::select(y,n) %>%
+    as.matrix() %>% fisher.test()->test_res
+
+fisher_boot_test<-function(){
+  rbind(
+    cafe_genefamily_outs %>% filter(mod_type=="Homologous") %>% 
+      slice_sample(n=500,replace = TRUE),
+    cafe_genefamily_outs %>% filter(mod_type=="Non homologous") %>% 
+      slice_sample(n=500,replace = TRUE)) %>% 
+    dplyr::count(is_sig, mod_type) %>% 
+    pivot_wider(names_from = is_sig, 
+                values_from = n, 
+                values_fill = 0) %>% dplyr::select(y,n) %>%
+    as.matrix() %>% fisher.test()->test_res
+  
+  tibble(pval=test_res$p.value,
+         odds=test_res$estimate) %>% return()
+}
+
+purrr::map(1:1000, ~fisher_boot_test()) %>% 
+  list_rbind() %>% mutate(padj=p.adjust(pval,"BH"))->fisher_boot_test_res
+
+fisher_boot_test_res %>% 
+  ggplot(aes(x=padj))+
+  geom_histogram(bins=100, fill="grey70", color="black", linewidth = 0.2)+
+  geom_vline(xintercept = 0.05, color="red", linetype="dashed")+
+  geom_vline(xintercept = median(fisher_boot_test_res$padj), color="blue", linetype="dashed")+
+  theme_bw()
+```
+
+Gene families involved in synaptic signalling, neuron migration, and muscle system development had the highest relative turnover (after accounting for module size)
+```{r 07_comparative_genomics_phylogenomics_cafe-chunk-024, cache=TRUE, cache.path="cache/07_comparative_genomics_phylogenomics_cafe/", out.width="80%"}
+homologous_genes %>% 
+  dplyr::count(mod,name = "mod_size") %>%
+  left_join(module_annot)->annot_count
+
+
+all_tree_dat %>% filter(isSig=="yes" & isTip==FALSE) %>% 
+  left_join(taxa, by=c("species"="sp")) %>% mutate(genes=str_remove_all(genes, "OG")) %>% 
+    left_join(cafe_genefamily_outs, by = "genes") %>% 
+    mutate(species=str_replace_all(species,pattern = "_",replacement = " ")) %>% 
+    dplyr::count(type_of_change, annot, genes, name = "event_count")->turnover_event_annot #event rate per gene
+
+
+turnover_event_annot %>% dplyr::count(type_of_change,annot,name = "num_gene_per_change")->num_gene_per_change
+
+left_join(num_gene_per_change,annot_count, by="annot") %>% 
+  mutate(enrich_factor=(num_gene_per_change/mod_size)) %>% 
+  mutate(annot=tidytext::reorder_within(annot, enrich_factor, type_of_change)) %>% 
+    ggplot(aes(y=annot, x=enrich_factor, fill = type_of_change))+ 
+    facet_wrap(~type_of_change, scales="free", nrow=2)+
+    geom_col(alpha=0.8, position = position_dodge(width=0.9), linewidth=0.05, color="black")+
+    tidytext::scale_y_reordered()+
+    scale_fill_manual(values = c("#5430D9","#D90467"))+
+    labs(x="Relative expansion/contraction", y="Modules")+
+    theme_bw()+
+    theme(axis.text.y = element_text(angle = 0,hjust = 1, vjust = 0.3, 
+                                     size = 9),
+          axis.text.x = element_text(angle = 0,hjust = 1, vjust = 0.3, 
+                                     size = 6))
+```
+
+##### Difference in number of expansions and contractions
+There are no differences in number of expansion and contraction events. Suggesting that the network doesn't preferentially evolve via either expansion and contraction. 
+```{r 07_comparative_genomics_phylogenomics_cafe-chunk-025, cache=TRUE, cache.path="cache/07_comparative_genomics_phylogenomics_cafe/"}
+  all_tree_dat %>% filter(isSig=="yes"& isTip==FALSE) %>% 
+    left_join(taxa, by=c("species"="sp")) %>% 
+    mutate(genes=str_remove_all(genes, "OG")) %>% 
+    left_join(cafe_genefamily_outs, by = "genes") %>% group_by(genes) %>%
+    dplyr::count(type_of_change) %>% ungroup() %>% 
+    pivot_wider(names_from = type_of_change, values_from = n) %>% 
+    replace_na(list(contraction=0, expansion=0)) %>% 
+    mutate(diff = expansion - contraction)->d
+    
+  wilcox.test(d$expansion, d$contraction, paired = TRUE, alternative = "two.sided")
+```
+

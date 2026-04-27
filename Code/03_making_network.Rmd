@@ -1,0 +1,51 @@
+## Making the network {.tabset}
+
+### Soft threshold
+The first step is to estimate the power to achieve the scale free topology of the data. Choosing a soft threshold power for the developmental time-series data is not straight forward due to the dynamic nature of the gene expression. Therefore, I chose a power that balances the scale free nature of the data and it's mean connectivity to ensure that I don't get too sparse networks. I pick the highest power that has a mean connectivity of greater than 100.  
+I do not load these networks as they were not used in the study. I keep this code here for completeness. 
+```{r 03_making_network-chunk-001, eval=FALSE}
+#Grouper
+soft_threshold(grouper$wgcna_in)->sft_grouper#pick 14
+#Manini
+soft_threshold(manini$wgcna_in)->sft_manini #pick 13
+#Goby
+soft_threshold(goby$wgcna_in)->sft_goby #pick 10
+#Clownfish
+soft_threshold(clown$wgcna_in)->sft_clown#pick 11
+#Danio
+soft_threshold(danio$wgcna_in)->sft_danio#pick 11
+```
+
+### Network construction step
+This step constructs the network.
+```{r 03_making_network-chunk-002, eval=FALSE}
+#Grouper
+wgcna_adjacency(datExpr = grouper$wgcna_in, power = 14)->grouper_net
+grouper_net %>% saveRDS("./02.Gene_expression_and_network/grouper_net.rds")
+
+#Manini
+wgcna_adjacency(datExpr = manini$wgcna_in, power = 13)->manini_net
+manini_net %>% saveRDS("./02.Gene_expression_and_network/manini_net.rds")
+
+#Goby
+wgcna_adjacency(datExpr = goby$wgcna_in, power = 10)->goby_net
+goby_net %>% saveRDS("./02.Gene_expression_and_network/goby_net.rds")
+
+#Clown
+wgcna_adjacency(datExpr = clown$wgcna_in, power = 11)->clown_net
+clown_net %>% saveRDS("./02.Gene_expression_and_network/clown_net.rds")
+
+#Danio
+wgcna_adjacency(datExpr = danio$wgcna_in, power = 11)->danio_net
+danio_net %>% saveRDS("./02.Gene_expression_and_network/danio_net.rds")
+
+```
+
+### Load networks
+```{r 03_making_network-chunk-003, cache=TRUE, cache.path="cache/03_making_network/",eval=FALSE}
+grouper_net<-readRDS("./02.Gene_expression_and_network/grouper_net.rds")
+manini_net<-readRDS("./02.Gene_expression_and_network/manini_net.rds")
+goby_net<-readRDS("./02.Gene_expression_and_network/goby_net.rds")
+clown_net<-readRDS("./02.Gene_expression_and_network/clown_net.rds")
+danio_net<-readRDS("./02.Gene_expression_and_network/danio_net_pruned.rds")
+```

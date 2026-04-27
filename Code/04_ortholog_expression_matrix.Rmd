@@ -1,0 +1,133 @@
+## Getting ortholog expression matrix {.tabset}
+Since the goal of this project is to identify core sets of genes mediating metamophorosis across different species of fish I need to estimate the orthologs between the genes and construct networks of the orthologous genes. For that I need to construct an ortholog gene expression matrix. I estimate orthlogs using OrthoDB and filter out only the genes families that are present in all 5 species. This step ensures we select gene families that have a common evolutionary history, and not ones that have species-specific evolutionary trajectories (either gains or losses).
+
+```{r 04_ortholog_expression_matrix-chunk-001, cache=TRUE, cache.path="cache/04_ortholog_expression_matrix/"}
+orth<-readRDS("./04.Orthogroups/Orthologer_latest2.rds") 
+
+rbind(
+rbind(
+  orth %>% filter(str_detect(orths,"ENSAOCG")),
+  orth %>% filter(str_detect(orths,"ENSDARG"))) %>% 
+  mutate(orths= str_remove(orths,"\\.[0-9]*")) %>% 
+  dplyr::select(Orthogroup,orths,sp),
+rbind(
+    orth %>% filter(str_detect(orths,"Goby")),
+    orth %>% filter(str_detect(orths,"Grouper")),
+    orth %>% filter(str_detect(orths,"Manini")))  %>%
+  dplyr::select(Orthogroup,orths,sp))->metamorph_orthlist
+
+full_orths<-metamorph_orthlist %>% summarise(n = n(),.by = c(Orthogroup,sp)) %>% summarise(n = n(),.by = c(Orthogroup)) %>% filter(n == 5)
+
+#Get clown orths
+left_join(clown$dge_keep$counts %>% as.data.frame() %>% rownames_to_column("orths"),
+          metamorph_orthlist %>% filter(str_detect(orths, "ENSAOCG"))) %>% filter(Orthogroup %in% full_orths$Orthogroup) %>% drop_na() %>% distinct(orths,.keep_all = T)->clown_orth_exp
+
+#Get grouper orths
+left_join(grouper$dge_keep$counts %>% as.data.frame() %>% rownames_to_column("orths"),
+          metamorph_orthlist %>% filter(str_detect(orths, "Grouper"))) %>% filter(Orthogroup %in% full_orths$Orthogroup) %>% drop_na()->grouper_orth_exp
+
+#Get manini orths
+left_join(manini$dge_keep$counts %>% as.data.frame() %>% rownames_to_column("orths"),
+          metamorph_orthlist %>% filter(str_detect(orths, "Manini"))) %>% filter(Orthogroup %in% full_orths$Orthogroup) %>% drop_na()->manini_orth_exp
+
+#Get goby orths
+left_join(goby$dge_keep$counts %>% as.data.frame() %>% rownames_to_column("orths"),
+          metamorph_orthlist %>% filter(str_detect(orths, "Goby"))) %>% filter(Orthogroup %in% full_orths$Orthogroup) %>% drop_na()->goby_orth_exp
+
+#Get danio orths
+left_join(danio$dge_keep$counts %>% as.data.frame() %>% rownames_to_column("orths"),
+          metamorph_orthlist %>% filter(str_detect(orths, "ENSDARG"))) %>% filter(Orthogroup %in% full_orths$Orthogroup) %>% drop_na()->danio_orth_exp
+
+```
+
+### Summarising expression across orthologs
+Since there are typically multiple gene copies we decided to use the copy with the highest expression for each orthogroup. Our objective is not to check how individual gene copies are co-expressed (at lease not yet), but rather get insight into the general co-expression of genes with similar functions. In this regard, choosing the gene copy with the highest expression will generally capture the most predominant signal and expression trends. The following piece of code shows that there is almost no difference in general expression trends when representing ortholog expression by using summary measure like mean, median, or summed expression and when selecting the ortholog with the highest expression.
+
+```{r 04_ortholog_expression_matrix-chunk-002, cache=TRUE, cache.path="cache/04_ortholog_expression_matrix/", fig.width=20, fig.height=10, out.width="200%", fig.align="left"}
+#Randomly picks genes with multiple copies and displays summary metrics; users can try other fish and change the higher range of the runif
+check_orth_exp_sumarries(exp_dat = clown_orth_exp,
+                         a = (clown_orth_exp %>% janitor::get_dupes(Orthogroup) %>% distinct(Orthogroup))[runif(n = 1,min = 1,max =1835),1],
+                         b = (clown_orth_exp %>% janitor::get_dupes(Orthogroup) %>% distinct(Orthogroup))[runif(n = 1,min = 1,max =1835),1])
+```
+
+### Making ortholog expression matrix
+In this step I process the gene expression matrices to obtain a one-to-one orthogroup expression matrix. This resulted in a gene expression matrix of 12,700 genes for each species. This matrix represents an orthologous expression matrix composed of the same gene families in all five species, which differ by their expression patterns across post-embryonic development in each species.  Here you can see the clownfish matrix with genes as rows and samples as columns. 
+```{r 04_ortholog_expression_matrix-chunk-003, cache=TRUE, cache.path="cache/04_ortholog_expression_matrix/"}
+#Making ortholog matix
+#Clown
+clown_orth_exp %>% distinct(orths,.keep_all = T) %>% rowwise(orths) %>% 
+           mutate(m=mean(Sample1:Sample21)) %>% ungroup() %>%  
+           slice_max(m,by = "Orthogroup") %>% distinct(orths,.keep_all = T) %>% 
+  distinct(Orthogroup,.keep_all = T)->clown_orth_exp
+cln<-clown_orth_exp %>% dplyr::select(-c(orths,Orthogroup,sp,m)) %>% as.matrix()
+colnames(cln)<-paste0(clown$dge_keep$samples$group, rep(".clown",length(clown$dge_keep$samples$group)))
+clown_orth_exp_mat<-cbind(orths.clown = clown_orth_exp$orths, Orthogroup = clown_orth_exp$Orthogroup,
+                      cln %>% as.data.frame())
+#Grouper
+grouper_orth_exp %>% distinct(orths,.keep_all = T) %>% rowwise(orths) %>% 
+           mutate(m=mean(Sample1:Sample23)) %>% ungroup() %>%  
+           slice_max(m,by = "Orthogroup")%>% distinct(orths,.keep_all = T) %>% 
+  distinct(Orthogroup,.keep_all = T)->grouper_orth_exp
+grp<-grouper_orth_exp %>% dplyr::select(-c(orths,Orthogroup,sp,m)) %>% as.matrix()
+colnames(grp)<-paste0(grouper$dge_keep$samples$group, rep(".grouper",length(grouper$dge_keep$samples$group)))
+grouper_orth_exp_mat<-cbind(orths.grouper = grouper_orth_exp$orths, Orthogroup = grouper_orth_exp$Orthogroup,
+                      grp %>% as.data.frame())
+#Manini
+manini_orth_exp %>% distinct(orths,.keep_all = T) %>% rowwise(orths) %>% 
+           mutate(m=mean(Sample1:Sample19)) %>% ungroup() %>%  
+           slice_max(m,by = "Orthogroup")%>% distinct(orths,.keep_all = T) %>% 
+  distinct(Orthogroup,.keep_all = T)->manini_orth_exp
+mnn<-manini_orth_exp %>% dplyr::select(-c(orths,Orthogroup,sp,m)) %>% as.matrix()
+colnames(mnn)<-paste0(manini$dge_keep$samples$group, rep(".manini",length(manini$dge_keep$samples$group)))
+manini_orth_exp_mat<-cbind(orths.manini = manini_orth_exp$orths, Orthogroup = manini_orth_exp$Orthogroup,
+                      mnn %>% as.data.frame())
+
+#Goby
+goby_orth_exp %>% distinct(orths,.keep_all = T) %>% rowwise(orths) %>% 
+           mutate(m=mean(Sample1:Sample24)) %>% ungroup() %>%  
+           slice_max(m,by = "Orthogroup") %>% distinct(orths,.keep_all = T) %>% 
+  distinct(Orthogroup,.keep_all = T)->goby_orth_exp
+gbb<-goby_orth_exp %>% dplyr::select(-c(orths,Orthogroup,sp,m)) %>% as.matrix()
+colnames(gbb)<-paste0(goby$dge_keep$samples$group, rep(".goby",length(goby$dge_keep$samples$group)))
+goby_orth_exp_mat<-cbind(orths.goby = goby_orth_exp$orths, Orthogroup = goby_orth_exp$Orthogroup,
+                      gbb %>% as.data.frame())
+
+#Danio
+danio_orth_exp %>% distinct(orths,.keep_all = T) %>% rowwise(orths) %>% 
+           mutate(m=mean(Sample1:Sample20)) %>% ungroup() %>%  
+           slice_max(m,by = "Orthogroup") %>% distinct(orths,.keep_all = T) %>% 
+  distinct(Orthogroup,.keep_all = T)->danio_orth_exp
+dnr<-danio_orth_exp %>% dplyr::select(-c(orths,Orthogroup,sp,m)) %>% as.matrix()
+colnames(dnr)<-paste0(danio$dge_keep$samples$group, rep(".danio",length(danio$dge_keep$samples$group)))
+danio_orth_exp_mat<-cbind(orths.danio = danio_orth_exp$orths, Orthogroup = danio_orth_exp$Orthogroup,
+                      dnr %>% as.data.frame())
+
+#Use join to avoid non-unique column name and the filter from the above data frames.
+purrr::reduce(list(goby_orth_exp_mat %>% dplyr::select(c(Orthogroup,orths.goby)),
+                   manini_orth_exp_mat %>% dplyr::select(c(Orthogroup,orths.manini)),
+                   grouper_orth_exp_mat %>% dplyr::select(c(Orthogroup,orths.grouper)), 
+                   clown_orth_exp_mat %>% dplyr::select(c(Orthogroup,orths.clown)),
+                   danio_orth_exp_mat %>% dplyr::select(c(Orthogroup,orths.danio))),
+              dplyr::inner_join, by="Orthogroup")->all_exp_orths
+
+goby_orth_exp_mat %>% setNames(make.unique(names(goby_orth_exp_mat))) %>% filter(Orthogroup %in% all_exp_orths$Orthogroup) %>% setNames(names(goby_orth_exp_mat))->goby_all_orth_exp_mat
+manini_orth_exp_mat %>% setNames(make.unique(names(manini_orth_exp_mat))) %>% filter(Orthogroup %in% all_exp_orths$Orthogroup) %>% setNames(names(manini_orth_exp_mat))->manini_all_orth_exp_mat
+grouper_orth_exp_mat %>% setNames(make.unique(names(grouper_orth_exp_mat))) %>% filter(Orthogroup %in% all_exp_orths$Orthogroup) %>% setNames(names(grouper_orth_exp_mat))->grouper_all_orth_exp_mat
+clown_orth_exp_mat %>% setNames(make.unique(names(clown_orth_exp_mat))) %>% filter(Orthogroup %in% all_exp_orths$Orthogroup) %>% setNames(names(clown_orth_exp_mat))->clown_all_orth_exp_mat
+danio_orth_exp_mat %>% setNames(make.unique(names(danio_orth_exp_mat))) %>% filter(Orthogroup %in% all_exp_orths$Orthogroup) %>% setNames(names(danio_orth_exp_mat))->danio_all_orth_exp_mat
+
+clown_all_orth_exp_mat$orths.clown<-NULL
+grouper_all_orth_exp_mat$orths.grouper<-NULL
+manini_all_orth_exp_mat$orths.manini<-NULL
+goby_all_orth_exp_mat$orths.goby<-NULL
+danio_all_orth_exp_mat$orths.danio<-NULL
+
+
+make_orth_net_input(d = clown_all_orth_exp_mat %>% column_to_rownames("Orthogroup"))->clown_orth_net_in
+make_orth_net_input(d = grouper_all_orth_exp_mat %>% column_to_rownames("Orthogroup"))->grouper_orth_net_in
+make_orth_net_input(d = manini_all_orth_exp_mat %>% column_to_rownames("Orthogroup"))->manini_orth_net_in
+make_orth_net_input(d = goby_all_orth_exp_mat %>% column_to_rownames("Orthogroup"))->goby_orth_net_in
+make_orth_net_input(d = danio_all_orth_exp_mat %>% column_to_rownames("Orthogroup"))->danio_orth_net_in
+
+head(t(clown_orth_net_in$wgcna_in),n=10)
+```

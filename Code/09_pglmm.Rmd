@@ -1,0 +1,1951 @@
+## PGLMM {.tabset}
+
+Here I investigated the relationship between copy number variation of the high turnover gene families and phenotypic variation in multiple traits across teleosts. Using phylogenetic generalised linear mixed model (PGLMM) I model the trait of interest as a response variable with the scores of the first two principal components (PC) of a phylogenetic PCA of gene copy variation as the predictors, and phylogeny as the group level effect (random effect). The traits of interest were maximum age, age of maturity, average water temperature of sampled population, trophic level, von Bertalanffy growth coefficient (rate at which an organism approaches its maximum theoretical size),  body shape, demersal habitat type, aspect ratio of caudal fin height divided by area (proxy for swimming performance), and length of lower jaw. The data is primarily from the FishLife package, with has curated estimates from FishBase. The traits of interest are both categorical and continuous.  
+Details regarding transformation and units of measurements can be found in Table S4. 
+
+### Load the data
+To improve the interpretation of the model outputs and minimise the risk of spurious associations, I evaluated several aspects of both model fit and the underlying data. For all models with statistically significant parameter estimates, I first examined model diagnostics to confirm proper convergence. I then inspected the plotted data and the phylogenetic PCA to verify that the observed relationships were not driven by a small number of outlier species occupying extreme positions in the phylomorphic space. Lastly I checked the expression of the genes using data from the Bgee gene expression database to determine whether the genes are expressed in the relevant tissues. I also used data from the Zebrafish Information Network (ZFIN) to examine the unique phenotypic terms associated with genetic perturbation (knockdowns, mutation screens, and morpholino experiments) of genes comprising the modules in *Danio rerio* (41). The ZFIN database provides a wide array of expertly curated cross-referenced genetic and genomics data that is routinely used to study gene functions (41). For the phenotypes, I focus on genes making up entire modules in order to capture the functional outcome of all interaction partners. Applying these criteria, I identified evidence for several relationships between gene copy number variation and ecological or morphological traits. For brevity I focus on three noteworthy cases in the main manuscript. 
+```{r 09_pglmm-chunk-001, cache=TRUE, cache.path="cache/09_pglmm/"}
+shapes_dat<-readRDS("./RDS/shapes_dat.rds")#Need this as it contains the speices list to include in the analysis. This data is incorporated into FishLife, primarily the aspect ration measure
+
+#Prune the no_WGD_tree
+pglmm_tree<-drop.tip(no_WGD_tree,no_WGD_tree$tip.label[-match(shapes_dat$sp, no_WGD_tree$tip.label)])
+is.rooted(pglmm_tree)
+is.ultrametric(pglmm_tree)
+
+library(archetypes)
+library(FishLife)
+library(brms)
+data(FishBase_and_Morphometrics)
+```
+
+
+### Maximum age ~ gene copy number {.tabset}
+log of maximum age (years)
+```{r 09_pglmm-chunk-002, eval=FALSE}
+#log of maximum age (years)
+ brms_model_age<-function(col){
+   library(brms)
+   
+   cafe_genefamily_outs<-cafe_genefamily_outs %>% filter(is_sig=="y" & mod_type=="Homologous")
+   #lead the genecopy data
+   orth_gene_copy %>% filter(Orthogroup %in% (cafe_genefamily_outs %>% filter(mod==col) %>% 
+                                                pull(genes))) %>% 
+     filter(sp %in% pglmm_tree$tip.label) %>% 
+     dplyr::select(-c(Family, Order, SpecCode)) %>% 
+     pivot_wider(names_from = Orthogroup, values_from = no_of_gene_copies) %>% 
+     replace(is.na(.), 0) %>% filter(sp %in% shapes_dat$sp)->sp_genes_wide
+   #colnames(sp_genes_wide)<-c("sp", paste0("gene",seq(1:(ncol(sp_genes_wide)-1))))
+   
+   expr_scaled<-sp_genes_wide %>% column_to_rownames("sp")->pca_dat_gene
+   scale(pca_dat_gene, center = FALSE,scale = TRUE)->pca_dat_gene
+   pca_gene_pca <- phytools::phyl.pca(pglmm_tree, pca_dat_gene, method = "lambda", mode = "corr")
+   pca_gene <- as.data.frame(pca_gene_pca$S) %>% dplyr::rename_with(~paste0(.,".cpy")) %>% 
+     rownames_to_column("sp")
+   
+   #Get this data from FishLife
+   data(FishBase_and_Morphometrics)
+   tibble(log_age=FishBase_and_Morphometrics$Y_ij[,1]) %>%
+     mutate(sp=(rownames(FishBase_and_Morphometrics$Y_ij) %>% str_replace_all(" ","_"))) %>%
+     drop_na() %>% filter(sp %in% no_WGD_tree$tip.label) %>% 
+     summarise(mean_log_age=mean(log_age), .by = "sp")->fishbase_age_dat
+   
+   #join the datasets
+   left_join(pca_gene,fishbase_age_dat) %>% drop_na()->model_dat
+   
+   #Prune the pglmm tree
+   pglmm_tree_fishbase<-drop.tip(pglmm_tree,pglmm_tree$tip.label[-match(model_dat$sp, pglmm_tree$tip.label)])
+   is.rooted(pglmm_tree_fishbase)
+   is.ultrametric(pglmm_tree_fishbase)
+   #Must pass namecheck
+   geiger::name.check(pglmm_tree_fishbase,model_dat %>% column_to_rownames("sp"))
+   
+   #plots to visualise response and predictors
+   ggarrange(
+     model_dat %>% 
+       ggplot(aes(x=PC1.cpy, y=mean_log_age))+
+       geom_point(shape=21, fill="#8BAE06", size=3)+
+       geom_smooth(method = "lm", se = TRUE,colour = "#F0710F",show.legend = TRUE)+
+       theme_linedraw(),
+     
+     model_dat %>% 
+       ggplot(aes(x=PC2.cpy, y=mean_log_age))+
+       geom_point(shape=21, fill="#8BAE06", size=3)+
+       geom_smooth(method = "lm", se = TRUE,colour = "#F0710F")+
+       theme_linedraw(),
+     nrow = 1, ncol = 2)->age_plots
+   
+   #Phylogenetic covariance matrix
+   A<-MCMCglmm::inverseA(pglmm_tree_fishbase,scale = TRUE,nodes = "TIPS")
+   A<-A$Ainv
+   #Priors
+   priors_age<-get_prior(mean_log_age ~  
+                           PC1.cpy + PC2.cpy +(1 |gr(sp, cov = A)),  
+                           data = model_dat,
+                           data2   = list(A = A),
+                           family = gaussian())
+   #Model
+   model_brms_age <- brm(mean_log_age ~  PC1.cpy + PC2.cpy +(1 |gr(sp, cov = A)),
+     data = model_dat,
+     data2   = list(A = A),
+     prior = priors_age,
+     family = gaussian(),
+     chains = 4, 
+     cores = 4,
+     iter = 5000, 
+     warmup = 1000,
+     backend = "cmdstanr",
+     control = list(adapt_delta=0.999, max_treedepth = 12)
+   )
+   
+   
+   return(list(pca_gene_pca=pca_gene_pca,
+               age_plots=age_plots,
+               model_brms_age=model_brms_age))
+ }
+ 
+ cafe_cols<-cafe_sig %>% filter(is_sig=="y" & mod_type=="Homologous") %>% 
+   janitor::get_dupes(mod) %>% distinct(mod) %>% pull(mod)
+ purrr::map(cafe_cols, brms_model_age)->model_age
+ names(model_age)<-cafe_cols
+ model_age %>% saveRDS("./RDS/model_age.rds")
+```
+
+#### Significance table
+```{r 09_pglmm-chunk-003, cache=TRUE, cache.path="cache/09_pglmm/"}
+model_age<-readRDS("./RDS/model_age.rds")
+brms_significance_plot(model_list = model_age,
+                 submodel = "model_brms_age",
+                 trait = "mean_log_age",
+                 var_type = "continuous") %>%  
+  kableExtra::kbl() %>% kableExtra::kable_styling() %>%
+  kableExtra::scroll_box(width = "700px", height = "400px")
+```
+
+##### Immune system module {.tabset}
+###### Trait and PCA plot
+```{r 09_pglmm-chunk-004, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/", fig.height=5, fig.width=4, out.width="60%", out.height="60%"}
+model_age$brown$model_brms_age
+make_pca_trait_model_plot(model = model_age$brown$model_brms_age,
+                            pca_dat = model_age$brown$pca_gene_pca,
+                            trait = "mean_log_age",
+                            arrow_scale = 60,
+                            fill_label = "Scaled max age")
+```
+
+###### Diagnostics
+```{r 09_pglmm-chunk-005, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/"}
+ggarrange(
+  pp_check(model_age$brown$model_brms_age,ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_age$brown$model_brms_age,ndraws = 200, resp = "PC2cpy"),
+  pp_check(model_age$brown$model_brms_age, type = "ecdf_overlay", ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_age$brown$model_brms_age, type = "ecdf_overlay", ndraws = 200, resp = "PC2cpy")
+)
+```
+
+```{r, fig.height=10}
+plot(model_age$brown$model_brms_age, nvariables = 8, ask = FALSE)
+#Additional diagnostic plots.
+#Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
+#pairs(model_brms, regex = "^b_")
+#plot(loo(model_brms))
+```
+
+##### Hormone response module (unreliable) {.tabset}
+
+###### Trait and PCA plot
+```{r 09_pglmm-chunk-006, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/", fig.height=5, fig.width=4, out.width="60%", out.height="60%"}
+  model_age$midnightblue$model_brms_age
+  make_pca_trait_model_plot(model = model_age$midnightblue$model_brms_age,
+                            pca_dat = model_age$midnightblue$pca_gene_pca,
+                            trait = "mean_log_age",
+                            arrow_scale = 60,
+                            fill_label = "Scaled max age")
+```
+
+###### Diagnostics
+```{r 09_pglmm-chunk-007, cache=TRUE, cache.path="cache/09_pglmm/"}
+ggarrange(
+  pp_check(model_age$midnightblue$model_brms_age,ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_age$midnightblue$model_brms_age,ndraws = 200, resp = "PC2cpy"),
+  pp_check(model_age$midnightblue$model_brms_age, type = "ecdf_overlay", ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_age$midnightblue$model_brms_age, type = "ecdf_overlay", ndraws = 200, resp = "PC2cpy")
+)
+```
+
+```{r, fig.height=10}
+plot(model_age$midnightblue$model_brms_age, nvariables = 8, ask = FALSE)
+
+#Additional diagnostic plots.
+#Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
+#pairs(model_brms, regex = "^b_")
+#plot(loo(model_brms))
+```
+
+
+### Age of maturity ~ gene copy variation {.tabset}
+age at 50% sexual maturity (years)
+```{r 09_pglmm-chunk-008, cache=TRUE, cache.path="cache/09_pglmm/", eval=FALSE}
+ #age at 50% sexual maturity (years)
+  brms_model_age_maturity<-function(col){
+    library(brms)
+    
+    cafe_genefamily_outs<-cafe_genefamily_outs %>% filter(is_sig=="y" & mod_type=="Homologous")
+    #lead the genecopy data
+    orth_gene_copy %>% filter(Orthogroup %in% (cafe_genefamily_outs %>% filter(mod==col) %>% 
+                                                 pull(genes))) %>% 
+      filter(sp %in% pglmm_tree$tip.label) %>% 
+      dplyr::select(-c(Family, Order, SpecCode)) %>% 
+      pivot_wider(names_from = Orthogroup, values_from = no_of_gene_copies) %>% 
+      replace(is.na(.), 0) %>% filter(sp %in% shapes_dat$sp)->sp_genes_wide
+    #colnames(sp_genes_wide)<-c("sp", paste0("gene",seq(1:(ncol(sp_genes_wide)-1))))
+    
+    expr_scaled<-sp_genes_wide %>% column_to_rownames("sp")->pca_dat_gene
+    scale(pca_dat_gene, center = FALSE,scale = TRUE)->pca_dat_gene
+    pca_gene_pca <- phytools::phyl.pca(pglmm_tree, pca_dat_gene, method = "lambda", mode = "corr")
+    pca_gene <- as.data.frame(pca_gene_pca$S) %>% dplyr::rename_with(~paste0(.,".cpy")) %>% 
+      rownames_to_column("sp")
+    
+    #Get this data from FishLife
+    data(FishBase_and_Morphometrics)
+    tibble(age_maturity=FishBase_and_Morphometrics$Y_ij[,10]) %>%
+      mutate(sp=(rownames(FishBase_and_Morphometrics$Y_ij) %>% str_replace_all(" ","_"))) %>%
+      drop_na() %>% filter(sp %in% no_WGD_tree$tip.label) %>% 
+      summarise(age_maturity=mean(age_maturity), .by = "sp")->fishbase_age_maturity
+    
+    #join the datasets
+    left_join(pca_gene,fishbase_age_maturity) %>% drop_na()->model_dat
+    
+    #Prune the pglmm tree
+    pglmm_tree_fishbase<-drop.tip(pglmm_tree,pglmm_tree$tip.label[-match(model_dat$sp, pglmm_tree$tip.label)])
+    is.rooted(pglmm_tree_fishbase)
+    is.ultrametric(pglmm_tree_fishbase)
+    #Must pass namecheck
+    geiger::name.check(pglmm_tree_fishbase,model_dat %>% column_to_rownames("sp"))
+    
+    #plots to visualise response and predictors
+    ggarrange(
+      model_dat %>% 
+        ggplot(aes(y=PC1.cpy, x=age_maturity))+
+        geom_point(shape=21, fill="#8BAE06", size=3)+
+        geom_smooth(method = "lm", se = TRUE,colour = "#F0710F")+
+        theme_linedraw(),
+      
+      model_dat %>% 
+        ggplot(aes(y=PC2.cpy, x=age_maturity))+
+        geom_point(shape=21, fill="#8BAE06", size=3)+
+        geom_smooth(method = "lm", se = TRUE,colour = "#F0710F")+
+        theme_linedraw(),
+      nrow = 1, ncol = 2)->age_maturity_plots
+    
+    
+    #Phylogenetic covariance matrix
+    A<-MCMCglmm::inverseA(pglmm_tree_fishbase,scale = TRUE,nodes = "TIPS")
+    A<-A$Ainv
+    #Priors
+    priors<-get_prior(age_maturity ~  
+                        PC1.cpy + PC2.cpy +(1 |gr(sp, cov = A)),  
+                      data = model_dat,
+                      data2   = list(A = A),
+                      family = skew_normal())
+    #Model
+    model_brms_age_maturity <- brm(age_maturity ~ PC1.cpy + PC2.cpy +(1 |gr(sp, cov = A)),
+      data = model_dat,
+      data2   = list(A = A),
+      prior = priors,
+      family = skew_normal(),
+      chains = 4, 
+      cores = 4,
+      iter = 5000, 
+      warmup = 1000,
+      backend = "cmdstanr",
+      control = list(adapt_delta=0.999, max_treedepth = 12)
+    )
+    
+    
+    return(list(pca_gene_pca=pca_gene_pca,
+                age_maturity_plots=age_maturity_plots,
+                model_brms_age_maturity=model_brms_age_maturity))
+  }
+  
+  cafe_cols<-cafe_sig %>% filter(is_sig=="y" & mod_type=="Homologous") %>% 
+    janitor::get_dupes(mod) %>% distinct(mod) %>% pull(mod)
+  purrr::map(cafe_cols, brms_model_age_maturity)->model_age_maturity
+  names(model_age_maturity)<-cafe_cols
+  model_age_maturity %>% saveRDS("./RDS/model_age_maturity.rds")
+
+``` 
+
+#### Significance table
+```{r 09_pglmm-chunk-009, cache=TRUE, cache.path="cache/09_pglmm/"}
+model_age_maturity<-readRDS("./RDS/model_age_maturity.rds")
+brms_significance_plot(model_list = model_age_maturity,
+                  submodel = "model_brms_age_maturity",
+                  trait = "age_maturity",
+                  var_type = "continuous") %>%  
+  kableExtra::kbl() %>% kableExtra::kable_styling() %>%
+  kableExtra::scroll_box(width = "700px", height = "400px")
+```
+
+##### Brush border epithelium (unreliable) {.tabset}
+
+###### Trait and PCA plot
+```{r 09_pglmm-chunk-010, cache=TRUE, cache.path="cache/09_pglmm/", fig.height=5, fig.width=4, out.width="60%", out.height="60%"}
+model_age_maturity$greenyellow$model_brms_age_maturity
+make_pca_trait_model_plot(model = model_age_maturity$greenyellow$model_brms_age_maturity,
+                          pca_dat = model_age_maturity$greenyellow$pca_gene_pca,
+                          trait = "age_maturity",
+                          arrow_scale = 20,
+                          fill_label = "Scaled age of maturity")
+```
+
+###### Diagnostics
+The posteriors probability checks looks fine with ample overlap between sample predictor distribution and sampled posterior space. The ECDF overlays shows good coverage.
+```{r 09_pglmm-chunk-011, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/"}
+ggarrange(
+  pp_check(model_age_maturity$greenyellow$model_brms_age_maturity,ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_age_maturity$greenyellow$model_brms_age_maturity,ndraws = 200, resp = "PC2cpy"),
+  pp_check(model_age_maturity$greenyellow$model_brms_age_maturity, type = "ecdf_overlay", ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_age_maturity$greenyellow$model_brms_age_maturity, type = "ecdf_overlay", ndraws = 200, resp = "PC2cpy")
+)
+```
+
+```{r, fig.height=10}
+plot(model_age_maturity$greenyellow$model_brms_age_maturity, nvariables = 8, ask = FALSE)
+
+#Additional diagnostic plots.
+#Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
+#pairs(model_brms, regex = "^b_")
+#plot(loo(model_brms))
+```
+
+##### Cell cycle process module {.tabset}
+
+###### Trait and PCA plot
+```{r 09_pglmm-chunk-012, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/", fig.height=5, fig.width=4, out.width="60%", out.height="60%"}
+model_age_maturity$magenta$model_brms_age_maturity
+make_pca_trait_model_plot(model = model_age_maturity$magenta$model_brms_age_maturity,
+                            pca_dat = model_age_maturity$magenta$pca_gene_pca,
+                            trait = "age_maturity",
+                            arrow_scale = 20,
+                            fill_label = "Scaled age of maturity")
+```
+
+###### Diagnostics
+The posteriors probability checks looks fine with ample overlap between sample predictor distribution and sampled posterior space. The ECDF overlays shows good coverage.
+```{r 09_pglmm-chunk-013, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/"}
+ggarrange(
+  pp_check(model_age_maturity$magenta$model_brms_age_maturity,ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_age_maturity$magenta$model_brms_age_maturity,ndraws = 200, resp = "PC2cpy"),
+  pp_check(model_age_maturity$magenta$model_brms_age_maturity, type = "ecdf_overlay", ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_age_maturity$magenta$model_brms_age_maturity, type = "ecdf_overlay", ndraws = 200, resp = "PC2cpy")
+)
+```
+
+```{r, fig.height=10}
+plot(model_age_maturity$magenta$model_brms_age_maturity, nvariables = 8, ask = FALSE)
+
+#Additional diagnostic plots.
+#Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
+#pairs(model_brms, regex = "^b_")
+#plot(loo(model_brms))
+```
+
+##### Hormone response module (unreliable) {.tabset}
+
+###### Trait and PCA plot
+```{r 09_pglmm-chunk-014, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/", fig.height=5, fig.width=4, out.width="60%", out.height="60%"}
+model_age_maturity$midnightblue$model_brms_age_maturity
+make_pca_trait_model_plot(model = model_age_maturity$midnightblue$model_brms_age_maturity,
+                            pca_dat = model_age_maturity$midnightblue$pca_gene_pca,
+                            trait = "age_maturity",
+                            arrow_scale = 30,
+                            fill_label = "Scaled age of maturity")
+```
+
+###### Diagnostics
+```{r 09_pglmm-chunk-015, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/"}
+ggarrange(
+  pp_check(model_age_maturity$midnightblue$model_brms_age_maturity,ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_age_maturity$midnightblue$model_brms_age_maturity,ndraws = 200, resp = "PC2cpy"),
+  pp_check(model_age_maturity$midnightblue$model_brms_age_maturity, type = "ecdf_overlay", ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_age_maturity$midnightblue$model_brms_age_maturity, type = "ecdf_overlay", ndraws = 200, resp = "PC2cpy")
+)
+```
+
+```{r, fig.height=10}
+plot(model_age_maturity$midnightblue$model_brms_age_maturity, nvariables = 8, ask = FALSE)
+
+#Additional diagnostic plots.
+#Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
+#pairs(model_brms, regex = "^b_")
+#plot(loo(model_brms))
+```
+
+##### Peroxisome process module (unreliable) {.tabset}
+
+###### Trait and PCA plot
+```{r 09_pglmm-chunk-016, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/", fig.height=5, fig.width=4, out.width="60%", out.height="60%"}
+model_age_maturity$black$model_brms_age_maturity
+make_pca_trait_model_plot(model = model_age_maturity$black$model_brms_age_maturity,
+                            pca_dat = model_age_maturity$black$pca_gene_pca,
+                            trait = "age_maturity",
+                            arrow_scale = 20,
+                            fill_label = "Scaled age of maturity")
+```
+
+###### Diagnostics
+```{r 09_pglmm-chunk-017, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/"}
+ggarrange(
+  pp_check(model_age_maturity$black$model_brms_age_maturity,ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_age_maturity$black$model_brms_age_maturity,ndraws = 200, resp = "PC2cpy"),
+  pp_check(model_age_maturity$black$model_brms_age_maturity, type = "ecdf_overlay", ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_age_maturity$black$model_brms_age_maturity, type = "ecdf_overlay", ndraws = 200, resp = "PC2cpy")
+)
+```
+
+```{r}
+plot(model_age_maturity$black$model_brms_age_maturity, nvariables = 8, ask = FALSE)
+
+#Additional diagnostic plots.
+#Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
+#pairs(model_brms, regex = "^b_")
+#plot(loo(model_brms))
+```
+
+##### RNA processing 2 module {.tabset}
+
+###### Trait and PCA plot
+```{r 09_pglmm-chunk-018, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/", fig.height=5, fig.width=4, out.width="60%", out.height="60%"}
+model_age_maturity$royalblue$model_brms_age_maturity
+make_pca_trait_model_plot(model = model_age_maturity$royalblue$model_brms_age_maturity,
+                            pca_dat = model_age_maturity$royalblue$pca_gene_pca,
+                            trait = "age_maturity",
+                            arrow_scale = 40,
+                            fill_label = "Scaled age of maturity")
+```
+
+###### Diagnostics
+```{r 09_pglmm-chunk-019, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/"}
+ggarrange(
+  pp_check(model_age_maturity$orange$model_brms_age_maturity,ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_age_maturity$orange$model_brms_age_maturity,ndraws = 200, resp = "PC2cpy"),
+  pp_check(model_age_maturity$orange$model_brms_age_maturity, type = "ecdf_overlay", ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_age_maturity$orange$model_brms_age_maturity, type = "ecdf_overlay", ndraws = 200, resp = "PC2cpy")
+)
+```
+
+```{r, fig.height=10}
+plot(model_age_maturity$orange$model_brms_age_maturity, nvariables = 8, ask = FALSE)
+
+#Additional diagnostic plots.
+#Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
+#pairs(model_brms, regex = "^b_")
+#plot(loo(model_brms))
+```
+
+
+### Average temperature ~ gene copy number {.tabset}
+Average temperature from portion of population sampled (celcius)
+```{r 09_pglmm-chunk-020, cache=TRUE, cache.path="cache/09_pglmm/", eval=FALSE}
+ #average temperature from portion of population sampled (celcius)
+  brms_model_temp<-function(col){
+   library(brms)
+   
+   cafe_genefamily_outs<-cafe_genefamily_outs %>% filter(is_sig=="y" & mod_type=="Homologous")
+   #lead the genecopy data
+   orth_gene_copy %>% filter(Orthogroup %in% (cafe_genefamily_outs %>% filter(mod==col) %>% 
+                                                pull(genes))) %>% 
+     filter(sp %in% pglmm_tree$tip.label) %>% 
+     dplyr::select(-c(Family, Order, SpecCode)) %>% 
+     pivot_wider(names_from = Orthogroup, values_from = no_of_gene_copies) %>% 
+     replace(is.na(.), 0) %>% filter(sp %in% shapes_dat$sp)->sp_genes_wide
+   #colnames(sp_genes_wide)<-c("sp", paste0("gene",seq(1:(ncol(sp_genes_wide)-1))))
+   
+   expr_scaled<-sp_genes_wide %>% column_to_rownames("sp")->pca_dat_gene
+   scale(pca_dat_gene, center = FALSE,scale = TRUE)->pca_dat_gene
+   pca_gene_pca <- phytools::phyl.pca(pglmm_tree, pca_dat_gene, method = "lambda", mode = "corr")
+   pca_gene <- as.data.frame(pca_gene_pca$S) %>% dplyr::rename_with(~paste0(.,".cpy")) %>% 
+     rownames_to_column("sp")
+   
+   #Get this data from FishLife
+   data(FishBase_and_Morphometrics)
+   tibble(temperature=FishBase_and_Morphometrics$Y_ij[,6]) %>%
+     mutate(sp=(rownames(FishBase_and_Morphometrics$Y_ij) %>% str_replace_all(" ","_"))) %>%
+     drop_na() %>% filter(sp %in% no_WGD_tree$tip.label) %>% 
+     summarise(mean_temp=mean(temperature), .by = "sp")->fishbase_temperature_dat
+   
+   #join the datasets
+   left_join(pca_gene,fishbase_temperature_dat) %>% drop_na()->model_dat
+   
+   #Prune the pglmm tree
+   pglmm_tree_fishbase<-drop.tip(pglmm_tree,pglmm_tree$tip.label[-match(model_dat$sp, pglmm_tree$tip.label)])
+   is.rooted(pglmm_tree_fishbase)
+   is.ultrametric(pglmm_tree_fishbase)
+   #Must pass namecheck
+   geiger::name.check(pglmm_tree_fishbase,model_dat %>% column_to_rownames("sp"))
+   
+   #plots to visualise response and predictors
+   ggarrange(
+     model_dat %>% 
+       ggplot(aes(y=PC1.cpy, x=mean_temp))+
+       geom_point(shape=21, fill="#8BAE06", size=3)+
+       geom_smooth(method = "lm", se = TRUE,colour = "#F0710F")+
+       theme_linedraw(),
+     
+     model_dat %>% 
+       ggplot(aes(y=PC2.cpy, x=mean_temp))+
+       geom_point(shape=21, fill="#8BAE06", size=3)+
+       geom_smooth(method = "lm", se = TRUE,colour = "#F0710F")+
+       theme_linedraw(),
+     nrow = 1, ncol = 2)->temp_plots
+   
+   #Phylogenetic covariance matrix
+   A<-MCMCglmm::inverseA(pglmm_tree_fishbase,scale = TRUE,nodes = "TIPS")
+   A<-A$Ainv
+   #Priors
+   priors<-get_prior(mean_temp ~  
+                       PC1.cpy + PC2.cpy +(1 |gr(sp, cov = A)),  
+                         data = model_dat,
+                         data2   = list(A = A),
+                         family = skew_normal(link = "identity"))
+   #Model
+   model_brms_temp <- brm(mean_temp ~ PC1.cpy + PC2.cpy +(1 |gr(sp, cov = A)),
+     data = model_dat,
+     data2   = list(A = A),
+     prior = priors,
+     family = skew_normal(link = "identity"),
+     chains = 4, 
+     cores = 4,
+     iter = 5000, 
+     warmup = 1000,
+     backend = "cmdstanr",
+     control = list(adapt_delta=0.999, max_treedepth = 12)
+   )
+   
+   
+   return(list(pca_gene_pca=pca_gene_pca,
+               temp_plots=temp_plots,
+               model_brms_temp=model_brms_temp))
+ }
+ 
+ 
+ cafe_cols<-cafe_sig %>% filter(is_sig=="y" & mod_type=="Homologous") %>% 
+   janitor::get_dupes(mod) %>% distinct(mod) %>% pull(mod)
+ purrr::map(cafe_cols, brms_model_temp)->model_temp
+ names(model_temp)<-cafe_cols
+ model_temp %>% saveRDS("./RDS/model_temp.rds")
+```
+
+#### Significance table
+```{r 09_pglmm-chunk-021, cache=TRUE, cache.path="cache/09_pglmm/"}
+model_temp<-readRDS("./RDS/model_temp.rds")
+ brms_significance_plot(model_list = model_temp,
+                 submodel = "model_brms_temp",
+                 trait = "mean_temp",
+                 var_type = "continuous") %>%  
+  kableExtra::kbl() %>% kableExtra::kable_styling() %>%
+  kableExtra::scroll_box(width = "700px", height = "400px")
+```
+
+##### Cell cycle process module (unreliable) {.tabset}
+
+###### Trait and PCA plot
+```{r 09_pglmm-chunk-022, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/", fig.height=5, fig.width=4, out.width="60%", out.height="60%"}
+model_temp$magenta$model_brms_temp
+make_pca_trait_model_plot(model = model_temp$magenta$model_brms_temp,
+                            pca_dat = model_temp$magenta$pca_gene_pca,
+                            trait = "mean_temp",
+                            arrow_scale = 40,
+                            fill_label = "Scaled temperature")
+```
+
+###### Diagnostics
+The posteriors probability checks looks fine with ample overlap between sample predictor distribution and sampled posterior space. The ECDF overlays shows good coverage.
+```{r 09_pglmm-chunk-023, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/"}
+ggarrange(
+  pp_check(model_temp$magenta$model_brms_temp,ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_temp$magenta$model_brms_temp,ndraws = 200, resp = "PC2cpy"),
+  pp_check(model_temp$magenta$model_brms_temp, type = "ecdf_overlay", ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_temp$magenta$model_brms_temp, type = "ecdf_overlay", ndraws = 200, resp = "PC2cpy")
+)
+```
+
+```{r, fig.height=10}
+plot(model_temp$magenta$model_brms_temp, nvariables = 8, ask = FALSE)
+
+#Additional diagnostic plots.
+#Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
+#pairs(model_brms, regex = "^b_")
+#plot(loo(model_brms))
+```
+
+##### Neuron migration module (unreliable) {.tabset}
+
+###### Trait and PCA plot
+```{r 09_pglmm-chunk-024, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/", fig.height=5, fig.width=4, out.width="60%", out.height="60%"}
+model_temp$lightgreen$model_brms_temp
+make_pca_trait_model_plot(model = model_temp$lightgreen$model_brms_temp,
+                            pca_dat = model_temp$lightgreen$pca_gene_pca,
+                            trait = "mean_temp",
+                            arrow_scale = 30,
+                            fill_label = "Scaled temperature")
+```
+
+###### Diagnostics
+The posteriors probability checks looks fine with ample overlap between sample predictor distribution and sampled posterior space. The ECDF overlays shows good coverage.
+```{r 09_pglmm-chunk-025, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/"}
+ggarrange(
+  pp_check(model_temp$lightgreen$model_brms_temp,ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_temp$lightgreen$model_brms_temp,ndraws = 200, resp = "PC2cpy"),
+  pp_check(model_temp$lightgreen$model_brms_temp, type = "ecdf_overlay", ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_temp$lightgreen$model_brms_temp, type = "ecdf_overlay", ndraws = 200, resp = "PC2cpy")
+)
+```
+
+```{r}
+plot(model_temp$lightgreen$model_brms_temp, nvariables = 8, ask = FALSE)
+
+#Additional diagnostic plots.
+#Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
+#pairs(model_brms, regex = "^b_")
+#plot(loo(model_brms))
+```
+
+##### RNA processing 1 (unreliable) {.tabset}
+
+###### Trait and PCA plot
+```{r 09_pglmm-chunk-026, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/", fig.height=5, fig.width=4, out.width="60%", out.height="60%"}
+model_temp$orange$model_brms_temp
+make_pca_trait_model_plot(model = model_temp$orange$model_brms_temp,
+                            pca_dat = model_temp$orange$pca_gene_pca,
+                            trait = "mean_temp",
+                            arrow_scale = 40,
+                            fill_label = "Scaled temperature")
+```
+
+###### Diagnostics
+The posteriors probability checks looks fine with ample overlap between sample predictor distribution and sampled posterior space. The ECDF overlays shows good coverage.
+```{r 09_pglmm-chunk-027, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/"}
+ggarrange(
+  pp_check(model_temp$orange$model_brms_temp,ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_temp$orange$model_brms_temp,ndraws = 200, resp = "PC2cpy"),
+  pp_check(model_temp$orange$model_brms_temp, type = "ecdf_overlay", ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_temp$orange$model_brms_temp, type = "ecdf_overlay", ndraws = 200, resp = "PC2cpy")
+)
+```
+
+```{r, fig.height=10}
+plot(model_temp$orange$model_brms_temp, nvariables = 8, ask = FALSE)
+
+#Additional diagnostic plots.
+#Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
+#pairs(model_brms, regex = "^b_")
+#plot(loo(model_brms))
+```
+
+
+### Trophic level ~ gene copy variation {.tabset}
+Trophic level (dimensionless), where 1 is primary producers, etc.
+
+```{r 09_pglmm-chunk-028, cache=TRUE, cache.path="cache/09_pglmm/", eval=FALSE}
+ brms_model_trophic<-function(col){
+   library(brms)
+   
+   cafe_genefamily_outs<-cafe_genefamily_outs %>% filter(is_sig=="y" & mod_type=="Homologous")
+   #lead the genecopy data
+   orth_gene_copy %>% filter(Orthogroup %in% (cafe_genefamily_outs %>% filter(mod==col) %>% 
+                                                pull(genes))) %>% 
+     filter(sp %in% pglmm_tree$tip.label & sp != "Danio_rerio") %>% 
+     dplyr::select(-c(Family, Order, SpecCode)) %>% 
+     pivot_wider(names_from = Orthogroup, values_from = no_of_gene_copies) %>% 
+     replace(is.na(.), 0) %>% filter(sp %in% shapes_dat$sp)->sp_genes_wide
+
+   expr_scaled<-sp_genes_wide %>% column_to_rownames("sp")->pca_dat_gene
+   scale(pca_dat_gene, center = FALSE,scale = TRUE)->pca_dat_gene
+   pca_gene_pca <- phytools::phyl.pca(pglmm_tree, pca_dat_gene, method = "lambda", mode = "corr")
+   pca_gene <- as.data.frame(pca_gene_pca$S) %>% dplyr::rename_with(~paste0(.,".cpy")) %>% 
+     rownames_to_column("sp")
+   
+   #Get this data from FishLife
+   data(FishBase_and_Morphometrics)
+   tibble(trophic_level=FishBase_and_Morphometrics$Y_ij[,2]) %>%
+     mutate(sp=(rownames(FishBase_and_Morphometrics$Y_ij) %>% str_replace_all(" ","_"))) %>%
+     drop_na() %>% filter(sp %in% no_WGD_tree$tip.label) %>% 
+     summarise(trophic_level=mean(trophic_level), .by = "sp")->fishbase_trophiclevel
+   
+   #join the datasets
+   left_join(pca_gene,fishbase_trophiclevel) %>% drop_na()->model_dat
+   
+   #Prune the pglmm tree
+   pglmm_tree_fishbase<-drop.tip(pglmm_tree,pglmm_tree$tip.label[-match(model_dat$sp, pglmm_tree$tip.label)])
+   is.rooted(pglmm_tree_fishbase)
+   is.ultrametric(pglmm_tree_fishbase)
+   #Must pass namecheck
+   geiger::name.check(pglmm_tree_fishbase,model_dat %>% column_to_rownames("sp"))
+   
+   #plots to visualise response and predictors
+   ggarrange(
+     model_dat %>% 
+       ggplot(aes(y=PC1.cpy, x=trophic_level))+
+       geom_point(shape=21, fill="#8BAE06", size=3)+
+       geom_smooth(method = "lm", se = TRUE,colour = "#F0710F")+
+       theme_linedraw(),
+     
+     model_dat %>% 
+       ggplot(aes(y=PC2.cpy, x=trophic_level))+
+       geom_point(shape=21, fill="#8BAE06", size=3)+
+       geom_smooth(method = "lm", se = TRUE,colour = "#F0710F")+
+       theme_linedraw(),
+     nrow = 1, ncol = 2)->trophic_plots
+   
+   #Phylogenetic covariance matrix
+   A<-MCMCglmm::inverseA(pglmm_tree_fishbase,scale = TRUE,nodes = "TIPS")
+   A<-A$Ainv
+   #Priors
+   priors<-get_prior(trophic_level ~  
+                       PC1.cpy + PC2.cpy +(1 |gr(sp, cov = A)),  
+                     data = model_dat,
+                     data2   = list(A = A),
+                     family = skew_normal(link = "identity"))
+   #Model
+   model_brms_trophic <- brm(trophic_level ~ PC1.cpy + PC2.cpy +(1 |gr(sp, cov = A)),
+     data = model_dat,
+     data2   = list(A = A),
+     prior = priors,
+     family = skew_normal(link = "identity"),
+     chains = 4, 
+     cores = 4,
+     iter = 5000, 
+     warmup = 1000,
+     backend = "cmdstanr",
+     control = list(adapt_delta=0.999, max_treedepth = 12)
+   )
+   
+   
+   return(list(pca_gene_pca=pca_gene_pca,
+               trophic_plots=trophic_plots,
+               model_brms_trophic=model_brms_trophic))
+ }
+ 
+ cafe_cols<-cafe_sig %>% filter(is_sig=="y" & mod_type=="Homologous") %>% 
+   janitor::get_dupes(mod) %>% distinct(mod) %>% pull(mod)
+ purrr::map(cafe_cols, brms_model_trophic)->model_trophic
+ names(model_trophic)<-cafe_cols
+ model_trophic %>% saveRDS("./RDS/model_trophic.rds")
+```
+
+#### Significance table 
+```{r 09_pglmm-chunk-029, cache=TRUE, cache.path="cache/09_pglmm/"}
+model_trophic<-readRDS("./RDS/model_trophic.rds")
+brms_significance_plot(model_list = model_trophic,
+                 submodel = "model_brms_trophic",
+                 trait = "trophic_level",
+                 var_type = "continuous") %>%  
+  kableExtra::kbl() %>% kableExtra::kable_styling() %>%
+  kableExtra::scroll_box(width = "700px", height = "400px")
+```
+
+##### Aerobic respiration {.tabset}
+
+###### Trait and PCA plot
+```{r 09_pglmm-chunk-030, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/", fig.height=5, fig.width=4, out.width="60%", out.height="60%"}
+model_trophic$salmon$model_brms_trophic
+make_pca_trait_model_plot(model = model_trophic$salmon$model_brms_trophic,
+                            pca_dat = model_trophic$salmon$pca_gene_pca,
+                            trait = "trophic_level",
+                            arrow_scale = 30,
+                            fill_label = "Scaled trophic_level")
+```
+
+###### Diagnostics
+The posteriors probability checks looks fine with ample overlap between sample predictor distribution and sampled posterior space. The ECDF overlays shows good coverage.
+```{r 09_pglmm-chunk-031, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/"}
+ggarrange(
+  pp_check(model_trophic$blue$model_brms_trophic,ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_trophic$blue$model_brms_trophic,ndraws = 200, resp = "PC2cpy"),
+  pp_check(model_trophic$blue$model_brms_trophic, type = "ecdf_overlay", ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_trophic$blue$model_brms_trophic, type = "ecdf_overlay", ndraws = 200, resp = "PC2cpy")
+)
+```
+
+```{r, fig.height=10}
+plot(model_trophic$blue$model_brms_trophic, nvariables = 8, ask = FALSE)
+
+#Additional diagnostic plots.
+#Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
+#pairs(model_brms, regex = "^b_")
+#plot(loo(model_brms))
+```
+
+##### Hormone response (unreliable) {.tabset}
+
+###### Trait and PCA plot
+```{r 09_pglmm-chunk-032, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/", fig.height=5, fig.width=4, out.width="60%", out.height="60%"}
+model_trophic$midnightblue$model_brms_trophic
+make_pca_trait_model_plot(model = model_trophic$midnightblue$model_brms_trophic,
+                            pca_dat = model_trophic$midnightblue$pca_gene_pca,
+                            trait = "trophic_level",
+                            arrow_scale = 30,
+                            fill_label = "Scaled trophic_level")
+```
+
+###### Diagnostics
+The posteriors probability checks looks fine with ample overlap between sample predictor distribution and sampled posterior space. The ECDF overlays shows good coverage.
+```{r 09_pglmm-chunk-033, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/"}
+ggarrange(
+  pp_check(model_trophic$midnightblue$model_brms_trophic,ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_trophic$midnightblue$model_brms_trophic,ndraws = 200, resp = "PC2cpy"),
+  pp_check(model_trophic$midnightblue$model_brms_trophic, type = "ecdf_overlay", ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_trophic$midnightblue$model_brms_trophic, type = "ecdf_overlay", ndraws = 200, resp = "PC2cpy")
+)
+```
+
+```{r, fig.height=10}
+plot(model_trophic$midnightblue$model_brms_trophic, nvariables = 8, ask = FALSE)
+
+#Additional diagnostic plots.
+#Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
+#pairs(model_brms, regex = "^b_")
+#plot(loo(model_brms))
+```
+
+
+### Growth coefficient ~ gene copy variation {.tabset}
+von Bertalanffy growth coefficient (year^-1)
+
+```{r 09_pglmm-chunk-034, cache=TRUE, cache.path="cache/09_pglmm/", eval=FALSE}
+   brms_model_growthcoeff<-function(col){
+    library(brms)
+    
+    cafe_genefamily_outs<-cafe_genefamily_outs %>% filter(is_sig=="y" & mod_type=="Homologous")
+    #lead the genecopy data
+    orth_gene_copy %>% filter(Orthogroup %in% (cafe_genefamily_outs %>% filter(mod==col) %>% 
+                                                 pull(genes))) %>% 
+      filter(sp %in% pglmm_tree$tip.label) %>% 
+      dplyr::select(-c(Family, Order, SpecCode)) %>% 
+      pivot_wider(names_from = Orthogroup, values_from = no_of_gene_copies) %>% 
+      replace(is.na(.), 0) %>% filter(sp %in% shapes_dat$sp)->sp_genes_wide
+    #colnames(sp_genes_wide)<-c("sp", paste0("gene",seq(1:(ncol(sp_genes_wide)-1))))
+    
+    expr_scaled<-sp_genes_wide %>% column_to_rownames("sp")->pca_dat_gene
+    scale(pca_dat_gene, center = FALSE,scale = TRUE)->pca_dat_gene
+    pca_gene_pca <- phytools::phyl.pca(pglmm_tree, pca_dat_gene, method = "lambda", mode = "corr")
+    pca_gene <- as.data.frame(pca_gene_pca$S) %>% dplyr::rename_with(~paste0(.,".cpy")) %>% 
+      rownames_to_column("sp")
+    
+    #Get this data from FishLife
+    data(FishBase_and_Morphometrics)
+    tibble(growth_coefficient=FishBase_and_Morphometrics$Y_ij[,5]) %>%
+      mutate(sp=(rownames(FishBase_and_Morphometrics$Y_ij) %>% str_replace_all(" ","_"))) %>%
+      drop_na() %>% filter(sp %in% no_WGD_tree$tip.label) %>% 
+      summarise(growth_coefficient=mean(growth_coefficient), .by = "sp")->fishbase_growth_coefficient
+    
+    #join the datasets
+    left_join(pca_gene,fishbase_growth_coefficient) %>% drop_na()->model_dat
+    
+    #Prune the pglmm tree
+    pglmm_tree_fishbase<-drop.tip(pglmm_tree,pglmm_tree$tip.label[-match(model_dat$sp, pglmm_tree$tip.label)])
+    is.rooted(pglmm_tree_fishbase)
+    is.ultrametric(pglmm_tree_fishbase)
+    #Must pass namecheck
+    geiger::name.check(pglmm_tree_fishbase,model_dat %>% column_to_rownames("sp"))
+    
+    #plots to visualise response and predictors
+    ggarrange(
+      model_dat %>% 
+        ggplot(aes(y=PC1.cpy, x=growth_coefficient))+
+        geom_point(shape=21, fill="#8BAE06", size=3)+
+        geom_smooth(method = "lm", se = TRUE,colour = "#F0710F")+
+        theme_linedraw(),
+      
+      model_dat %>% 
+        ggplot(aes(y=PC2.cpy, x=growth_coefficient))+
+        geom_point(shape=21, fill="#8BAE06", size=3)+
+        geom_smooth(method = "lm", se = TRUE,colour = "#F0710F")+
+        theme_linedraw(),
+      nrow = 1, ncol = 2)->growthcoeff_plots
+    
+    #Phylogenetic covariance matrix
+    A<-MCMCglmm::inverseA(pglmm_tree_fishbase,scale = TRUE,nodes = "TIPS")
+    A<-A$Ainv
+    #Priors
+    priors<-get_prior(growth_coefficient ~  
+                        PC1.cpy + PC2.cpy +(1 |gr(sp, cov = A)),  
+                      data = model_dat,
+                      data2   = list(A = A),
+                      family = skew_normal())
+    #Model
+    model_brms_growthcoeff <- brm(growth_coefficient ~ PC1.cpy + PC2.cpy +(1 |gr(sp, cov = A)),
+      data = model_dat,
+      data2   = list(A = A),
+      prior = priors,
+      family = skew_normal(),
+      chains = 4, 
+      cores = 4,
+      iter = 5000, 
+      warmup = 1000,
+      backend = "cmdstanr",
+      control = list(adapt_delta=0.999, max_treedepth = 12)
+    )
+    
+    
+    return(list(pca_gene_pca=pca_gene_pca,
+                growthcoeff_plots=growthcoeff_plots,
+                model_brms_growthcoeff=model_brms_growthcoeff))
+  }
+  
+  cafe_cols<-cafe_sig %>% filter(is_sig=="y" & mod_type=="Homologous") %>% 
+    janitor::get_dupes(mod) %>% distinct(mod) %>% pull(mod)
+  purrr::map(cafe_cols, brms_model_growthcoeff)->model_growthcoeff
+  names(model_growthcoeff)<-cafe_cols
+  model_growthcoeff %>% saveRDS("./RDS/model_growthcoeff.rds")
+```
+
+#### Significance table
+```{r 09_pglmm-chunk-035, cache=TRUE, cache.path="cache/09_pglmm/"}
+model_growthcoeff<-readRDS("./RDS/model_growthcoeff.rds")
+brms_significance_plot(model_list = model_growthcoeff,
+                  submodel = "model_brms_growthcoeff",
+                trait = "growth_coefficient",
+                var_type = "continuous") %>%  
+  kableExtra::kbl() %>% kableExtra::kable_styling() %>%
+  kableExtra::scroll_box(width = "700px", height = "400px")
+```
+
+##### Hormone response module (unreliable) {.tabset}
+
+###### Trait and PCA plot
+```{r 09_pglmm-chunk-036, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/", fig.height=5, fig.width=4, out.width="60%", out.height="60%"}
+model_growthcoeff$midnightblue$model_brms_growthcoeff
+make_pca_trait_model_plot(model = model_growthcoeff$midnightblue$model_brms_growthcoeff,
+                            pca_dat = model_growthcoeff$midnightblue$pca_gene_pca,
+                            trait = "growth_coefficient",
+                            arrow_scale = 20,
+                            fill_label = "Scaled growth coefficient")
+```
+
+###### Diagnostics
+```{r 09_pglmm-chunk-037, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/"}
+ggarrange(
+  pp_check(model_growthcoeff$midnightblue$model_brms_growthcoeff,ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_growthcoeff$midnightblue$model_brms_growthcoeff,ndraws = 200, resp = "PC2cpy"),
+  pp_check(model_growthcoeff$midnightblue$model_brms_growthcoeff, type = "ecdf_overlay", ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_growthcoeff$midnightblue$model_brms_growthcoeff, type = "ecdf_overlay", ndraws = 200, resp = "PC2cpy"))
+```
+
+```{r, fig.height=10}
+plot(model_growthcoeff$brown$model_brms_growthcoeff, nvariables = 8, ask = FALSE)
+
+#Additional diagnostic plots.
+#Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
+#pairs(model_brms, regex = "^b_")
+#plot(loo(model_brms))
+```
+
+##### Synaptic signalling 1 {.tabset}
+
+###### Trait and PCA plot
+```{r 09_pglmm-chunk-038, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/", fig.height=5, fig.width=4, out.width="60%", out.height="60%"}
+model_growthcoeff$blue$model_brms_growthcoeff
+make_pca_trait_model_plot(model = model_growthcoeff$blue$model_brms_growthcoeff,
+                            pca_dat = model_growthcoeff$blue$pca_gene_pca,
+                            trait = "growth_coefficient",
+                            arrow_scale = 40,
+                            fill_label = "Scaled growth coefficient")
+```
+
+###### Diagnostics
+The posteriors probability checks looks fine with ample overlap between sample predictor distribution and sampled posterior space. The ECDF overlays shows good coverage.
+```{r 09_pglmm-chunk-039, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/"}
+ggarrange(
+  pp_check(model_temp$blue$model_brms_temp,ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_temp$blue$model_brms_temp,ndraws = 200, resp = "PC2cpy"),
+  pp_check(model_temp$blue$model_brms_temp, type = "ecdf_overlay", ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_temp$blue$model_brms_temp, type = "ecdf_overlay", ndraws = 200, resp = "PC2cpy")
+)
+```
+
+```{r, fig.height=10}
+plot(model_temp$blue$model_brms_temp, nvariables = 8, ask = FALSE)
+
+#Additional diagnostic plots.
+#Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
+#pairs(model_brms, regex = "^b_")
+#plot(loo(model_brms))
+```
+
+### Bodyshape ~ gene copy variation {.tabset}
+Body shape categories
+```{r 09_pglmm-chunk-040, cache=TRUE, cache.path="cache/09_pglmm/", eval=FALSE}
+ brms_model_bodyshape<-function(col){
+   
+    library(brms)
+    
+    cafe_genefamily_outs<-cafe_genefamily_outs %>% filter(is_sig=="y" & mod_type=="Homologous")
+    #lead the genecopy data
+    orth_gene_copy %>% filter(Orthogroup %in% (cafe_genefamily_outs %>% filter(mod==col) %>% 
+                                                 pull(genes))) %>% 
+      filter(sp %in% pglmm_tree$tip.label) %>% 
+      dplyr::select(-c(Family, Order, SpecCode)) %>% 
+      pivot_wider(names_from = Orthogroup, values_from = no_of_gene_copies) %>% 
+      replace(is.na(.), 0) %>% filter(sp %in% shapes_dat$sp)->sp_genes_wide
+    #colnames(sp_genes_wide)<-c("sp", paste0("gene",seq(1:(ncol(sp_genes_wide)-1))))
+    
+    expr_scaled<-sp_genes_wide %>% column_to_rownames("sp")->pca_dat_gene
+    scale(pca_dat_gene, center = FALSE,scale = TRUE)->pca_dat_gene
+    pca_gene_pca <- phytools::phyl.pca(pglmm_tree, pca_dat_gene, method = "lambda", mode = "corr")
+    pca_gene <- as.data.frame(pca_gene_pca$S) %>% dplyr::rename_with(~paste0(.,".cpy")) %>% 
+      rownames_to_column("sp")
+    
+    #Get this data from FishLife
+    data(FishBase_and_Morphometrics)
+    rbind( 
+      tibble(bodyshape=FishBase_and_Morphometrics$Y_ij[,26]) %>%
+        mutate(sp=(rownames(FishBase_and_Morphometrics$Y_ij) %>% str_replace_all(" ","_"))) %>%
+        drop_na() %>% filter(sp %in% no_WGD_tree$tip.label & bodyshape==1) %>% 
+        mutate(bodyshape= case_when(bodyshape==1 ~ "elongated", 
+                                    .default = "other")),
+      
+      tibble(bodyshape=FishBase_and_Morphometrics$Y_ij[,27]) %>%
+        mutate(sp=(rownames(FishBase_and_Morphometrics$Y_ij) %>% str_replace_all(" ","_"))) %>%
+        drop_na() %>% filter(sp %in% no_WGD_tree$tip.label & bodyshape==1) %>% 
+        mutate(bodyshape= case_when(bodyshape==1 ~ "short_and_or_deep", 
+                                    .default = "other")),
+      
+      tibble(bodyshape=FishBase_and_Morphometrics$Y_ij[,28]) %>%
+        mutate(sp=(rownames(FishBase_and_Morphometrics$Y_ij) %>% str_replace_all(" ","_"))) %>%
+        drop_na() %>% filter(sp %in% no_WGD_tree$tip.label & bodyshape==1) %>% 
+        mutate(bodyshape= case_when(bodyshape==1 ~ "eellike", 
+                                    .default = "other")),
+      
+      tibble(bodyshape=FishBase_and_Morphometrics$Y_ij[,29]) %>%
+        mutate(sp=(rownames(FishBase_and_Morphometrics$Y_ij) %>% str_replace_all(" ","_"))) %>%
+        drop_na() %>% filter(sp %in% no_WGD_tree$tip.label & bodyshape==1) %>% 
+        mutate(bodyshape= case_when(bodyshape==1 ~ "other", 
+                                    .default = "other")))->fishbase_bodyshape_dat
+    
+    #join the datasets
+    #Remove spare "other" category
+    
+    left_join(pca_gene,
+              fishbase_bodyshape_dat %>% filter(bodyshape!="other")) %>% drop_na()->model_dat
+    
+    #Prune the pglmm tree
+    pglmm_tree_fishbase<-drop.tip(pglmm_tree,pglmm_tree$tip.label[-match(model_dat$sp, pglmm_tree$tip.label)])
+    is.rooted(pglmm_tree_fishbase)
+    is.ultrametric(pglmm_tree_fishbase)
+    #Must pass namecheck
+    geiger::name.check(pglmm_tree_fishbase,model_dat %>% column_to_rownames("sp"))
+    
+    #plots to visualise response and predictors
+    model_dat %>% ggplot(aes(x=PC1.cpy, PC2.cpy))+
+      geom_point(aes(fill=bodyshape), size=3, alpha=0.8, shape=21,
+                 position = position_jitter(width = 2, height = 2))+
+      scale_fill_bmj()+
+      theme_linedraw()->bodyshape_plots
+  
+    #Phylogenetic covariance matrix
+    A<-MCMCglmm::inverseA(pglmm_tree_fishbase,scale = TRUE,nodes = "TIPS")
+    A<-A$Ainv
+    #Priors; use the following prior set
+    #Most of the are default values, except the prior for the phylogenetic effect
+    #this tight prior ensures better model convergence 
+    
+   priors <- c(brms::prior("normal(0, 1.5)", class = "b", dpar = "muelongated"),
+               brms::prior("normal(0, 1.5)", class = "b", dpar = "mushortandordeep"),
+               brms::prior("student_t(3, 0, 1.5)", class = "Intercept", dpar = "muelongated"),
+               brms::prior("student_t(3, 0, 1.5)", class = "Intercept", dpar = "mushortandordeep"),
+               brms::prior("student_t(3, 0, 0.5)", class = "sd", group = "sp", dpar = "muelongated"),brms::prior("student_t(3, 0, 0.5)", class = "sd", group = "sp", dpar = "mushortandordeep")
+)
+
+
+  
+    #Model
+    model_brms_bodyshape <- brm(bodyshape ~ PC1.cpy + PC2.cpy + (1 |gr(sp, cov = A)),
+      data = model_dat,
+      data2   = list(A = A),
+      prior = priors,
+      family = categorical(),
+      chains = 4, 
+      cores = 4,
+      iter = 4000, 
+      warmup = 1000,
+      backend = "cmdstanr",
+      control = list(adapt_delta=0.99, max_treedepth = 12)
+    )
+    
+    
+    return(list(pca_gene_pca=pca_gene_pca,
+                bodyshape_plots=bodyshape_plots,
+                model_brms_bodyshape=model_brms_bodyshape))
+  }
+
+cafe_cols<-cafe_sig %>% filter(is_sig=="y" & mod_type=="Homologous") %>%
+  janitor::get_dupes(mod) %>% distinct(mod) %>% pull(mod)
+purrr::map(cafe_cols, brms_model_bodyshape)->model_bodyshape
+names(model_bodyshape)<-cafe_cols
+model_bodyshape %>% saveRDS("./RDS/model_bodyshape.rds")
+```
+
+#### Significance table
+```{r 09_pglmm-chunk-041, cache=TRUE, cache.path="cache/09_pglmm/"}
+model_bodyshape<-readRDS("./RDS/model_bodyshape.rds")
+brms_significance_plot(model_list = model_bodyshape,
+                  submodel = "model_brms_bodyshape",
+                  trait = "bodyshape",
+                  var_type = "categorical") %>%  
+  kableExtra::kbl() %>% kableExtra::kable_styling() %>%
+  kableExtra::scroll_box(width = "700px", height = "400px")
+```
+
+##### Aerobic respiration {.tabset}
+
+###### Trait and PCA plot
+```{r 09_pglmm-chunk-042, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/"}
+model_bodyshape$salmon$model_brms_bodyshape
+make_pca_trait_model_plot(model = model_bodyshape$salmon$model_brms_bodyshape,
+                            pca_dat = model_bodyshape$salmon$pca_gene_pca,
+                            trait = "bodyshape",
+                            arrow_scale = 20,
+                            fill_label = "bodyshape")
+```
+
+###### Diagnostics
+The posteriors probability checks looks fine with ample overlap between sample predictor distribution and sampled posterior space. The ECDF overlays shows good coverage.
+```{r 09_pglmm-chunk-043, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/", fig.height=5}
+pp_check(model_bodyshape$salmon$model_brms_bodyshape, type = "bars",ndraws = 200)
+```
+
+```{r, fig.height=10}
+plot(model_bodyshape$salmon$model_brms_bodyshape, nvariables = 8, ask = FALSE)
+
+#Additional diagnostic plots.
+#Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
+#pairs(model_brms, regex = "^b_")
+#plot(loo(model_brms))
+```
+
+##### Cell cycle process module (unreliable) {.tabset}
+
+###### Trait and PCA plot
+```{r 09_pglmm-chunk-044, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/"}
+model_bodyshape$magenta$model_brms_bodyshape
+make_pca_trait_model_plot(model = model_bodyshape$magenta$model_brms_bodyshape,
+                            pca_dat = model_bodyshape$magenta$pca_gene_pca,
+                            trait = "bodyshape",
+                            arrow_scale = 20,
+                            fill_label = "bodyshape")
+```
+
+###### Diagnostics
+```{r 09_pglmm-chunk-045, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/", fig.height=5}
+pp_check(model_bodyshape$magenta$model_brms_bodyshape, type = "bars",ndraws = 200)
+```
+
+```{r, fig.height=10}
+plot(model_bodyshape$magenta$model_brms_bodyshape, nvariables = 8, ask = FALSE)
+
+#Additional diagnostic plots.
+#Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
+#pairs(model_brms, regex = "^b_")
+#plot(loo(model_brms))
+```
+
+##### DNA replication module {.tabset}
+
+###### Trait and PCA plot
+```{r 09_pglmm-chunk-046, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/"}
+model_bodyshape$green$model_brms_bodyshape
+make_pca_trait_model_plot(model = model_bodyshape$green$model_brms_bodyshape,
+                            pca_dat = model_bodyshape$green$pca_gene_pca,
+                            trait = "bodyshape",
+                            arrow_scale = 40,
+                            fill_label = "bodyshape")
+```
+
+###### Diagnostics
+```{r 09_pglmm-chunk-047, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/", fig.height=5}
+pp_check(model_bodyshape$green$model_brms_bodyshape, type = "bars",ndraws = 200)
+```
+
+```{r, fig.height=10}
+plot(model_bodyshape$green$model_brms_bodyshape, nvariables = 8, ask = FALSE)
+
+#Additional diagnostic plots.
+#Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
+#pairs(model_brms, regex = "^b_")
+#plot(loo(model_brms))
+```
+
+##### Hormone response module (unreliable) {.tabset}
+
+###### Trait and PCA plot
+```{r 09_pglmm-chunk-048, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/"}
+model_bodyshape$midnightblue$model_brms_bodyshape
+make_pca_trait_model_plot(model = model_bodyshape$midnightblue$model_brms_bodyshape,
+                            pca_dat = model_bodyshape$midnightblue$pca_gene_pca,
+                            trait = "bodyshape",
+                            arrow_scale = 30,
+                            fill_label = "bodyshape")
+```
+
+###### Diagnostics
+```{r 09_pglmm-chunk-049, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/", fig.height=5}
+pp_check(model_bodyshape$midnightblue$model_brms_bodyshape, type = "bars",ndraws = 200)
+```
+
+```{r, fig.height=10}
+plot(model_bodyshape$midnightblue$model_brms_bodyshape, nvariables = 8, ask = FALSE)
+
+#Additional diagnostic plots.
+#Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
+#pairs(model_brms, regex = "^b_")
+#plot(loo(model_brms))
+```
+
+##### Immune system module {.tabset}
+
+###### Trait and PCA plot
+```{r 09_pglmm-chunk-050, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/"}
+model_bodyshape$brown$model_brms_bodyshape
+make_pca_trait_model_plot(model = model_bodyshape$brown$model_brms_bodyshape,
+                            pca_dat = model_bodyshape$brown$pca_gene_pca,
+                            trait = "bodyshape",
+                            arrow_scale = 30,
+                            fill_label = "bodyshape")
+```
+
+###### Diagnostics
+```{r 09_pglmm-chunk-051, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/", fig.height=5}
+pp_check(model_bodyshape$brown$model_brms_bodyshape, type = "bars",ndraws = 200)
+```
+
+```{r, fig.height=10}
+plot(model_bodyshape$brown$model_brms_bodyshape, nvariables = 8, ask = FALSE)
+
+#Additional diagnostic plots.
+#Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
+#pairs(model_brms, regex = "^b_")
+#plot(loo(model_brms))
+```
+
+##### Muscle system module {.tabset}
+
+###### Trait and PCA plot
+```{r 09_pglmm-chunk-052, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/"}
+model_bodyshape$red$model_brms_bodyshape
+make_pca_trait_model_plot(model = model_bodyshape$red$model_brms_bodyshape,
+                            pca_dat = model_bodyshape$red$pca_gene_pca,
+                            trait = "bodyshape",
+                            arrow_scale = 20,
+                            fill_label = "bodyshape")
+```
+
+###### Diagnostics
+```{r 09_pglmm-chunk-053, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/", fig.height=5}
+pp_check(model_bodyshape$red$model_brms_bodyshape, type = "bars",ndraws = 200)
+```
+
+```{r, fig.height=10}
+plot(model_bodyshape$red$model_brms_bodyshape, nvariables = 8, ask = FALSE)
+
+#Additional diagnostic plots.
+#Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
+#pairs(model_brms, regex = "^b_")
+#plot(loo(model_brms))
+```
+
+##### Neuron migration and placode module {.tabset}
+(unreliable)
+
+###### Trait and PCA plot
+```{r 09_pglmm-chunk-054, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/"}
+model_bodyshape$lightgreen$model_brms_bodyshape
+make_pca_trait_model_plot(model = model_bodyshape$lightgreen$model_brms_bodyshape,
+                            pca_dat = model_bodyshape$lightgreen$pca_gene_pca,
+                            trait = "bodyshape",
+                            arrow_scale = 20,
+                            fill_label = "bodyshape")
+```
+
+###### Diagnostics
+```{r 09_pglmm-chunk-055, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/", fig.height=5}
+pp_check(model_bodyshape$lightgreen$model_brms_bodyshape, type = "bars",ndraws = 200)
+```
+
+```{r, fig.height=10}
+plot(model_bodyshape$lightgreen$model_brms_bodyshape, nvariables = 8, ask = FALSE)
+
+#Additional diagnostic plots.
+#Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
+#pairs(model_brms, regex = "^b_")
+#plot(loo(model_brms))
+```
+
+##### Peroxisome process module {.tabset}
+
+###### Trait and PCA plot
+```{r 09_pglmm-chunk-056, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/"}
+model_bodyshape$black$model_brms_bodyshape
+make_pca_trait_model_plot(model = model_bodyshape$black$model_brms_bodyshape,
+                            pca_dat = model_bodyshape$black$pca_gene_pca,
+                            trait = "bodyshape",
+                            arrow_scale = 20,
+                            fill_label = "bodyshape")
+```
+
+###### Diagnostics
+```{r 09_pglmm-chunk-057, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/", fig.height=5}
+pp_check(model_bodyshape$black$model_brms_bodyshape, type = "bars",ndraws = 200)
+```
+
+```{r, fig.height=10}
+plot(model_bodyshape$black$model_brms_bodyshape, nvariables = 8, ask = FALSE)
+
+#Additional diagnostic plots.
+#Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
+#pairs(model_brms, regex = "^b_")
+#plot(loo(model_brms))
+```
+
+##### Translation module {.tabset}
+
+###### Trait and PCA plot
+```{r 09_pglmm-chunk-058, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/"}
+model_bodyshape$pink$model_brms_bodyshape
+make_pca_trait_model_plot(model = model_bodyshape$pink$model_brms_bodyshape,
+                            pca_dat = model_bodyshape$pink$pca_gene_pca,
+                            trait = "bodyshape",
+                            arrow_scale = 20,
+                            fill_label = "bodyshape")
+```
+
+###### Diagnostics
+```{r 09_pglmm-chunk-059, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/", fig.height=5}
+pp_check(model_bodyshape$pink$model_brms_bodyshape, type = "bars",ndraws = 200)
+```
+
+```{r, fig.height=10}
+plot(model_bodyshape$pink$model_brms_bodyshape, nvariables = 8, ask = FALSE)
+
+#Additional diagnostic plots.
+#Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
+#pairs(model_brms, regex = "^b_")
+#plot(loo(model_brms))
+```
+
+
+### Habitat ~ gene copy variation {.tabset}
+Demersal type for habitat category 
+```{r 09_pglmm-chunk-060, cache=TRUE, cache.path="cache/09_pglmm/", eval=FALSE}
+  brms_model_habitat<-function(col){
+    library(brms)
+    
+    cafe_genefamily_outs<-cafe_genefamily_outs %>% filter(is_sig=="y" & mod_type=="Homologous")
+    #lead the genecopy data
+    orth_gene_copy %>% filter(Orthogroup %in% (cafe_genefamily_outs %>% filter(mod==col) %>% 
+                                                 pull(genes))) %>% 
+      filter(sp %in% pglmm_tree$tip.label) %>% 
+      dplyr::select(-c(Family, Order, SpecCode)) %>% 
+      pivot_wider(names_from = Orthogroup, values_from = no_of_gene_copies) %>% 
+      replace(is.na(.), 0) %>% filter(sp %in% shapes_dat$sp)->sp_genes_wide
+    #colnames(sp_genes_wide)<-c("sp", paste0("gene",seq(1:(ncol(sp_genes_wide)-1))))
+    
+    expr_scaled<-sp_genes_wide %>% column_to_rownames("sp")->pca_dat_gene
+    scale(pca_dat_gene, center = FALSE,scale = TRUE)->pca_dat_gene
+    pca_gene_pca <- phytools::phyl.pca(pglmm_tree, pca_dat_gene, method = "lambda", mode = "corr")
+    pca_gene <- as.data.frame(pca_gene_pca$S) %>% dplyr::rename_with(~paste0(.,".cpy")) %>% 
+      rownames_to_column("sp")
+    
+    #Get this data from FishLife
+    data(FishBase_and_Morphometrics)
+    rbind( 
+      tibble(habitat=FishBase_and_Morphometrics$Y_ij[,20]) %>%
+        mutate(sp=(rownames(FishBase_and_Morphometrics$Y_ij) %>% str_replace_all(" ","_"))) %>%
+        drop_na() %>% filter(sp %in% no_WGD_tree$tip.label & habitat==1) %>% 
+        mutate(habitat= case_when(habitat==1 ~ "bathymetric", 
+                                  .default = "other")),
+      
+      tibble(habitat=FishBase_and_Morphometrics$Y_ij[,21]) %>%
+        mutate(sp=(rownames(FishBase_and_Morphometrics$Y_ij) %>% str_replace_all(" ","_"))) %>%
+        drop_na() %>% filter(sp %in% no_WGD_tree$tip.label & habitat==1) %>% 
+        mutate(habitat= case_when(habitat==1 ~ "benthopelagic", 
+                                  .default = "other")),
+      
+      tibble(habitat=FishBase_and_Morphometrics$Y_ij[,22]) %>%
+        mutate(sp=(rownames(FishBase_and_Morphometrics$Y_ij) %>% str_replace_all(" ","_"))) %>%
+        drop_na() %>% filter(sp %in% no_WGD_tree$tip.label & habitat==1) %>% 
+        mutate(habitat= case_when(habitat==1 ~ "reefassociated", 
+                                  .default = "other")),
+      
+      tibble(habitat=FishBase_and_Morphometrics$Y_ij[,23]) %>%
+        mutate(sp=(rownames(FishBase_and_Morphometrics$Y_ij) %>% str_replace_all(" ","_"))) %>%
+        drop_na() %>% filter(sp %in% no_WGD_tree$tip.label & habitat==1) %>% 
+        mutate(habitat= case_when(habitat==1 ~ "pelagic", 
+                                  .default = "other")))->fishbase_habitat_dat
+    
+    #join the datasets
+    left_join(pca_gene,fishbase_habitat_dat) %>% drop_na()->model_dat
+    
+    #Prune the pglmm tree
+    pglmm_tree_fishbase<-drop.tip(pglmm_tree,pglmm_tree$tip.label[-match(model_dat$sp, pglmm_tree$tip.label)])
+    is.rooted(pglmm_tree_fishbase)
+    is.ultrametric(pglmm_tree_fishbase)
+    #Must pass namecheck
+    geiger::name.check(pglmm_tree_fishbase,model_dat %>% column_to_rownames("sp"))
+    
+    #plots to visualise response and predictors
+    model_dat %>% ggplot(aes(x=PC1.cpy, PC2.cpy))+
+      geom_point(aes(fill=habitat), size=3, alpha=0.8, shape=21,
+                 position = position_jitter(width = 2, height = 2))+
+      scale_fill_bmj()+
+      theme_linedraw()->habitat_plots
+    
+    #Phylogenetic covariance matrix
+    A<-MCMCglmm::inverseA(pglmm_tree_fishbase,scale = TRUE,nodes = "TIPS")
+    A<-A$Ainv
+    #Priors
+    priors<-get_prior(habitat ~  
+                        PC1.cpy + PC2.cpy +(1 |gr(sp, cov = A)),  
+                      data = model_dat,
+                      data2   = list(A = A),
+                      family = categorical())
+    #Model
+    model_brms_habitat <- brm(
+      habitat ~  PC1.cpy + PC2.cpy + (1 |gr(sp, cov = A)),
+      data = model_dat,
+      data2   = list(A = A),
+      prior = priors,
+      family = categorical(),
+      chains = 4, 
+      cores = 4,
+      iter = 4000, 
+      warmup = 1000,
+      backend = "cmdstanr",
+      control = list(adapt_delta=0.999, max_treedepth = 12)
+    )
+    
+    
+    return(list(pca_gene_pca=pca_gene_pca,
+                habitat_plots=habitat_plots,
+                model_brms_habitat=model_brms_habitat))
+  }
+  
+  cafe_cols<-cafe_sig %>% filter(is_sig=="y" & mod_type=="Homologous") %>% 
+    janitor::get_dupes(mod) %>% distinct(mod) %>% pull(mod)
+  purrr::map(cafe_cols, brms_model_habitat)->model_habitat
+  names(model_habitat)<-cafe_cols
+  model_habitat %>% saveRDS("./RDS/model_habitat.rds")
+```
+
+#### Significance table
+```{r 09_pglmm-chunk-061, cache=TRUE, cache.path="cache/09_pglmm/"}
+model_habitat<-readRDS("./RDS/model_habitat.rds")
+brms_significance_plot(model_list = model_habitat,
+                  submodel = "model_brms_habitat",
+                  trait = "habitat",
+                  var_type = "categorical") %>%  
+  kableExtra::kbl() %>% kableExtra::kable_styling() %>%
+  kableExtra::scroll_box(width = "700px", height = "400px")
+```
+
+
+### Aspect ratio ~ gene copy variation {.tabset}
+Caudal fin height and length divided by area (dimensionless)
+```{r 09_pglmm-chunk-063, eval=FALSE}
+
+
+  brms_model_aspect_ratio<-function(col){
+    library(brms)
+    
+    cafe_genefamily_outs<-cafe_genefamily_outs %>% filter(is_sig=="y" & mod_type=="Homologous")
+    #lead the genecopy data
+    orth_gene_copy %>% filter(Orthogroup %in% (cafe_genefamily_outs %>% filter(mod==col) %>% 
+                                                 pull(genes))) %>% 
+      filter(sp %in% pglmm_tree$tip.label) %>% 
+      dplyr::select(-c(Family, Order, SpecCode)) %>% 
+      pivot_wider(names_from = Orthogroup, values_from = no_of_gene_copies) %>% 
+      replace(is.na(.), 0) %>% filter(sp %in% shapes_dat$sp)->sp_genes_wide
+    #colnames(sp_genes_wide)<-c("sp", paste0("gene",seq(1:(ncol(sp_genes_wide)-1))))
+    
+    expr_scaled<-sp_genes_wide %>% column_to_rownames("sp")->pca_dat_gene
+    scale(pca_dat_gene, center = FALSE,scale = TRUE)->pca_dat_gene
+    pca_gene_pca <- phytools::phyl.pca(pglmm_tree, pca_dat_gene, method = "lambda", mode = "corr")
+    pca_gene <- as.data.frame(pca_gene_pca$S) %>% dplyr::rename_with(~paste0(.,".cpy")) %>% 
+      rownames_to_column("sp")
+    
+    #Get this data from FishLife
+    data(FishBase_and_Morphometrics)
+    tibble(aspect_ratio=FishBase_and_Morphometrics$Y_ij[,3]) %>%
+      mutate(sp=(rownames(FishBase_and_Morphometrics$Y_ij) %>% str_replace_all(" ","_"))) %>%
+      drop_na() %>% filter(sp %in% no_WGD_tree$tip.label) %>% 
+      summarise(aspect_ratio=mean(aspect_ratio), .by = "sp")->fishbase_aspect_ratio
+    
+    #join the datasets
+    left_join(pca_gene,fishbase_aspect_ratio) %>% drop_na()->model_dat
+    
+    #Prune the pglmm tree
+    pglmm_tree_fishbase<-drop.tip(pglmm_tree,pglmm_tree$tip.label[-match(model_dat$sp, pglmm_tree$tip.label)])
+    is.rooted(pglmm_tree_fishbase)
+    is.ultrametric(pglmm_tree_fishbase)
+    #Must pass namecheck
+    geiger::name.check(pglmm_tree_fishbase,model_dat %>% column_to_rownames("sp"))
+    
+    #plots to visualise response and predictors
+    ggarrange(
+      model_dat %>% 
+        ggplot(aes(y=PC1.cpy, x=aspect_ratio))+
+        geom_point(shape=21, fill="#8BAE06", size=3)+
+        geom_smooth(method = "lm", se = TRUE,colour = "#F0710F")+
+        theme_linedraw(),
+      
+      model_dat %>% 
+        ggplot(aes(y=PC2.cpy, x=aspect_ratio))+
+        geom_point(shape=21, fill="#8BAE06", size=3)+
+        geom_smooth(method = "lm", se = TRUE,colour = "#F0710F")+
+        theme_linedraw(),
+      nrow = 1, ncol = 2)->aspect_ratio_plots
+    
+    
+    #Phylogenetic covariance matrix
+    A<-MCMCglmm::inverseA(pglmm_tree_fishbase,scale = TRUE,nodes = "TIPS")
+    A<-A$Ainv
+    #Priors
+    priors<-get_prior(aspect_ratio ~  
+                        PC1.cpy + PC2.cpy +(1 |gr(sp, cov = A)),  
+                      data = model_dat,
+                      data2   = list(A = A),
+                      family = skew_normal())
+    #Model
+    model_brms_aspect_ratio <- brm(
+      aspect_ratio ~  
+        PC1.cpy + PC2.cpy +(1 |gr(sp, cov = A)),
+      data = model_dat,
+      data2   = list(A = A),
+      prior = priors,
+      family = skew_normal(),
+      chains = 4, 
+      cores = 4,
+      iter = 5000, 
+      warmup = 1000,
+      backend = "cmdstanr",
+      control = list(adapt_delta=0.999, max_treedepth = 12)
+    )
+    
+    
+    return(list(pca_gene_pca=pca_gene_pca,
+                aspect_ratio_plots=aspect_ratio_plots,
+                model_brms_aspect_ratio=model_brms_aspect_ratio))
+  }
+
+  cafe_cols<-cafe_sig %>% filter(is_sig=="y" & mod_type=="Homologous") %>% 
+    janitor::get_dupes(mod) %>% distinct(mod) %>% pull(mod)
+  purrr::map(cafe_cols, brms_model_aspect_ratio)->model_aspect_ratio
+  names(model_aspect_ratio)<-cafe_cols
+  model_aspect_ratio %>% saveRDS("./RDS/model_aspect_ratio.rds")
+```
+
+#### Significance tables
+```{r 09_pglmm-chunk-064, cache=TRUE, cache.path="cache/09_pglmm/"}
+model_aspect_ratio<-readRDS("./RDS/model_aspect_ratio.rds")
+brms_significance_plot(model_list = model_aspect_ratio,
+                         submodel = "model_brms_aspect_ratio",
+                         trait = "aspect_ratio",
+                         var_type = "continuous") %>%  
+  kableExtra::kbl() %>% kableExtra::kable_styling() %>%
+  kableExtra::scroll_box(width = "700px", height = "400px")
+```
+
+##### Aerobic respiraton {.tabset}
+
+###### Trait and PCA plot
+```{r 09_pglmm-chunk-065, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/", fig.height=5, fig.width=4, out.width="60%", out.height="60%"}
+model_aspect_ratio$salmon$model_brms_aspect_ratio
+make_pca_trait_model_plot(model = model_aspect_ratio$salmon$model_brms_aspect_ratio,
+                            pca_dat = model_aspect_ratio$salmon$pca_gene_pca,
+                            trait = "aspect_ratio",
+                            arrow_scale = 30,
+                            fill_label = "Scaled aspect ratio")
+```
+
+###### Diagnostics
+The posteriors probability checks looks fine with ample overlap between sample predictor distribution and sampled posterior space. The ECDF overlays shows good coverage.
+```{r 09_pglmm-chunk-066, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/"}
+ggarrange(
+  pp_check(model_aspect_ratio$salmon$model_brms_aspect_ratio,ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_aspect_ratio$salmon$model_brms_aspect_ratio,ndraws = 200, resp = "PC2cpy"),
+  pp_check(model_aspect_ratio$salmon$model_brms_aspect_ratio, type = "ecdf_overlay", ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_aspect_ratio$salmon$model_brms_aspect_ratio, type = "ecdf_overlay", ndraws = 200, resp = "PC2cpy")
+)
+```
+
+```{r, fig.height=10}
+plot(model_aspect_ratio$salmon$model_brms_aspect_ratio, nvariables = 8, ask = FALSE)
+
+#Additional diagnostic plots.
+#Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
+#pairs(model_brms, regex = "^b_")
+#plot(loo(model_brms))
+```
+
+
+##### Synaptic signalling 1 module {.tabset}
+
+###### Trait and PCA plot
+```{r 09_pglmm-chunk-067, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/", fig.height=5, fig.width=4, out.width="60%", out.height="60%"}
+model_aspect_ratio$blue$model_brms_aspect_ratio
+make_pca_trait_model_plot(model = model_aspect_ratio$blue$model_brms_aspect_ratio,
+                            pca_dat = model_aspect_ratio$blue$pca_gene_pca,
+                            trait = "aspect_ratio",
+                            arrow_scale = 40,
+                            fill_label = "Scaled aspect ratio")
+```
+
+###### Diagnostics
+The posteriors probability checks looks fine with ample overlap between sample predictor distribution and sampled posterior space. The ECDF overlays shows good coverage.
+```{r 09_pglmm-chunk-068, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/"}
+ggarrange(
+  pp_check(model_aspect_ratio$blue$model_brms_aspect_ratio,ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_aspect_ratio$blue$model_brms_aspect_ratio,ndraws = 200, resp = "PC2cpy"),
+  pp_check(model_aspect_ratio$blue$model_brms_aspect_ratio, type = "ecdf_overlay", ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_aspect_ratio$blue$model_brms_aspect_ratio, type = "ecdf_overlay", ndraws = 200, resp = "PC2cpy")
+)
+```
+
+```{r, fig.height=10}
+plot(model_aspect_ratio$blue$model_brms_aspect_ratio, nvariables = 8, ask = FALSE)
+
+#Additional diagnostic plots.
+#Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
+#pairs(model_brms, regex = "^b_")
+#plot(loo(model_brms))
+```
+
+
+##### Translation module {.tabset}
+
+###### Trait and PCA plot
+```{r 09_pglmm-chunk-069, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/", fig.height=5, fig.width=4, out.width="60%", out.height="60%"}
+model_aspect_ratio$pink$model_brms_aspect_ratio
+make_pca_trait_model_plot(model = model_aspect_ratio$pink$model_brms_aspect_ratio,
+                            pca_dat = model_aspect_ratio$pink$pca_gene_pca,
+                            trait = "aspect_ratio",
+                            arrow_scale = 30,
+                            fill_label = "Scaled aspect ratio")
+```
+
+###### Diagnostics
+The posteriors probability checks looks fine with ample overlap between sample predictor distribution and sampled posterior space. The ECDF overlays shows good coverage.
+```{r 09_pglmm-chunk-070, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/"}
+ggarrange(
+  pp_check(model_aspect_ratio$blue$model_brms_aspect_ratio,ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_aspect_ratio$blue$model_brms_aspect_ratio,ndraws = 200, resp = "PC2cpy"),
+  pp_check(model_aspect_ratio$blue$model_brms_aspect_ratio, type = "ecdf_overlay", ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_aspect_ratio$blue$model_brms_aspect_ratio, type = "ecdf_overlay", ndraws = 200, resp = "PC2cpy")
+)
+```
+
+```{r, fig.height=10}
+plot(model_aspect_ratio$blue$model_brms_aspect_ratio, nvariables = 8, ask = FALSE)
+
+#Additional diagnostic plots.
+#Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
+#pairs(model_brms, regex = "^b_")
+#plot(loo(model_brms))
+```
+
+### Lower jaw length ~ gene copy variation {.tabset}
+Length of lower jaw (cm)
+```{r 09_pglmm-chunk-071, cache=TRUE, cache.path="cache/09_pglmm/", eval=FALSE}
+  brms_model_lower_jaw_length<-function(col){
+    library(brms)
+    
+    cafe_genefamily_outs<-cafe_genefamily_outs %>% filter(is_sig=="y" & mod_type=="Homologous")
+    #lead the genecopy data
+    orth_gene_copy %>% filter(Orthogroup %in% (cafe_genefamily_outs %>% filter(mod==col) %>% 
+                                                 pull(genes))) %>% 
+      filter(sp %in% pglmm_tree$tip.label) %>% 
+      dplyr::select(-c(Family, Order, SpecCode)) %>% 
+      pivot_wider(names_from = Orthogroup, values_from = no_of_gene_copies) %>% 
+      replace(is.na(.), 0) %>% filter(sp %in% shapes_dat$sp)->sp_genes_wide
+    #colnames(sp_genes_wide)<-c("sp", paste0("gene",seq(1:(ncol(sp_genes_wide)-1))))
+    
+    expr_scaled<-sp_genes_wide %>% column_to_rownames("sp")->pca_dat_gene
+    scale(pca_dat_gene, center = FALSE,scale = TRUE)->pca_dat_gene
+    pca_gene_pca <- phytools::phyl.pca(pglmm_tree, pca_dat_gene, method = "lambda", mode = "corr")
+    pca_gene <- as.data.frame(pca_gene_pca$S) %>% dplyr::rename_with(~paste0(.,".cpy")) %>% 
+      rownames_to_column("sp")
+    
+    #Get this data from FishLife
+    data(FishBase_and_Morphometrics)
+    tibble(lower_jaw_length=FishBase_and_Morphometrics$Y_ij[,15]) %>%
+      mutate(sp=(rownames(FishBase_and_Morphometrics$Y_ij) %>% str_replace_all(" ","_"))) %>%
+      drop_na() %>% filter(sp %in% no_WGD_tree$tip.label) %>% 
+      summarise(lower_jaw_length=mean(lower_jaw_length), .by = "sp")->fishbase_lower_jaw_length
+    
+    #join the datasets
+    left_join(pca_gene,fishbase_lower_jaw_length) %>% drop_na()->model_dat
+    
+    #Prune the pglmm tree
+    pglmm_tree_fishbase<-drop.tip(pglmm_tree,pglmm_tree$tip.label[-match(model_dat$sp, pglmm_tree$tip.label)])
+    is.rooted(pglmm_tree_fishbase)
+    is.ultrametric(pglmm_tree_fishbase)
+    #Must pass namecheck
+    geiger::name.check(pglmm_tree_fishbase,model_dat %>% column_to_rownames("sp"))
+    
+    #plots to visualise response and predictors
+    ggarrange(
+      model_dat %>% 
+        ggplot(aes(y=PC1.cpy, x=lower_jaw_length))+
+        geom_point(shape=21, fill="#8BAE06", size=3)+
+        geom_smooth(method = "lm", se = TRUE,colour = "#F0710F")+
+        theme_linedraw(),
+      
+      model_dat %>% 
+        ggplot(aes(y=PC2.cpy, x=lower_jaw_length))+
+        geom_point(shape=21, fill="#8BAE06", size=3)+
+        geom_smooth(method = "lm", se = TRUE,colour = "#F0710F")+
+        theme_linedraw(),
+      nrow = 1, ncol = 2)->lower_jaw_length_plots
+    
+    
+    #Phylogenetic covariance matrix
+    A<-MCMCglmm::inverseA(pglmm_tree_fishbase,scale = TRUE,nodes = "TIPS")
+    A<-A$Ainv
+    #Priors
+    priors<-get_prior(lower_jaw_length ~  
+                        PC1.cpy + PC2.cpy +(1 |gr(sp, cov = A)),  
+                      data = model_dat,
+                      data2   = list(A = A),
+                      family = skew_normal())
+    #Model
+    model_brms_lower_jaw_length <- brm(lower_jaw_length ~ PC1.cpy + PC2.cpy +(1 |gr(sp, cov = A)),
+      data = model_dat,
+      data2   = list(A = A),
+      prior = priors,
+      family = skew_normal(),
+      chains = 4, 
+      cores = 4,
+      iter = 5000, 
+      warmup = 1000,
+      backend = "cmdstanr",
+      control = list(adapt_delta=0.999, max_treedepth = 12)
+    )
+    
+    
+    return(list(pca_gene_pca=pca_gene_pca,
+                lower_jaw_length_plots=lower_jaw_length_plots,
+                model_brms_lower_jaw_length=model_brms_lower_jaw_length))
+  }
+
+cafe_cols<-cafe_sig %>% filter(is_sig=="y" & mod_type=="Homologous") %>%
+  janitor::get_dupes(mod) %>% distinct(mod) %>% pull(mod)
+  purrr::map(cafe_cols, brms_model_lower_jaw_length)->model_lower_jaw_length
+  names(model_lower_jaw_length)<-cafe_cols
+  model_lower_jaw_length %>% saveRDS("./RDS/model_lower_jaw_length.rds")
+```
+
+#### Significance tables
+```{r 09_pglmm-chunk-072, cache=TRUE, cache.path="cache/09_pglmm/"}
+  model_lower_jaw_length<-readRDS("./RDS/model_lower_jaw_length.rds")
+brms_significance_plot(model_list = model_lower_jaw_length,
+                         submodel = "model_brms_lower_jaw_length",
+                         trait = "lower_jaw_length",
+                         var_type = "continuous") %>%  
+  kableExtra::kbl() %>% kableExtra::kable_styling() %>%
+  kableExtra::scroll_box(width = "700px", height = "400px")
+```
+
+##### Cell cycle process module (unreliable) {.tabset}
+
+
+###### Trait and PCA plot
+```{r 09_pglmm-chunk-073, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/", fig.height=5, fig.width=4, out.width="60%", out.height="60%"}
+model_lower_jaw_length$magenta$model_brms_lower_jaw_length
+make_pca_trait_model_plot(model = model_lower_jaw_length$magenta$model_brms_lower_jaw_length,
+                            pca_dat = model_lower_jaw_length$magenta$pca_gene_pca,
+                            trait = "lower_jaw_length",
+                            arrow_scale = 30,
+                            fill_label = "Scaled lower jaw length")
+```
+
+###### Diagnostics
+The posteriors probability checks looks fine with ample overlap between sample predictor distribution and sampled posterior space. The ECDF overlays shows good coverage.
+```{r 09_pglmm-chunk-074, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/"}
+ggarrange(
+  pp_check(model_lower_jaw_length$magenta$model_brms_lower_jaw_length,ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_lower_jaw_length$magenta$model_brms_lower_jaw_length,ndraws = 200, resp = "PC2cpy"),
+  pp_check(model_lower_jaw_length$magenta$model_brms_lower_jaw_length, type = "ecdf_overlay", ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_lower_jaw_length$magenta$model_brms_lower_jaw_length, type = "ecdf_overlay", ndraws = 200, resp = "PC2cpy")
+)
+```
+
+```{r, fig.height=10}
+plot(model_lower_jaw_length$magenta$model_brms_lower_jaw_length, nvariables = 8, ask = FALSE)
+
+#Additional diagnostic plots.
+#Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
+#pairs(model_brms, regex = "^b_")
+#plot(loo(model_brms))
+```
+
+##### Neuron migration and placode module {.tabset}
+
+###### Trait and PCA plot
+```{r 09_pglmm-chunk-075, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/", fig.height=5, fig.width=4, out.width="60%", out.height="60%"}
+model_lower_jaw_length$lightgreen$model_brms_lower_jaw_length
+make_pca_trait_model_plot(model = model_lower_jaw_length$lightgreen$model_brms_lower_jaw_length,
+                            pca_dat = model_lower_jaw_length$lightgreen$pca_gene_pca,
+                            trait = "lower_jaw_length",
+                            arrow_scale = 30,
+                            fill_label = "Scaled lower jaw length")
+```
+
+###### Diagnostics
+The posteriors probability checks looks fine with ample overlap between sample predictor distribution and sampled posterior space. The ECDF overlays shows good coverage.
+```{r 09_pglmm-chunk-076, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/"}
+ggarrange(
+  pp_check(model_lower_jaw_length$lightgreen$model_brms_lower_jaw_length,ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_lower_jaw_length$lightgreen$model_brms_lower_jaw_length,ndraws = 200, resp = "PC2cpy"),
+  pp_check(model_lower_jaw_length$lightgreen$model_brms_lower_jaw_length, type = "ecdf_overlay", ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_lower_jaw_length$lightgreen$model_brms_lower_jaw_length, type = "ecdf_overlay", ndraws = 200, resp = "PC2cpy")
+)
+```
+
+```{r, fig.height=10}
+plot(model_lower_jaw_length$lightgreen$model_brms_lower_jaw_length, nvariables = 8, ask = FALSE)
+
+#Additional diagnostic plots.
+#Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
+#pairs(model_brms, regex = "^b_")
+#plot(loo(model_brms))
+```
+
+##### Peroxisome process module {.tabset}
+
+###### Trait and PCA plot
+```{r 09_pglmm-chunk-077, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/", fig.height=5, fig.width=4, out.width="60%", out.height="60%"}
+model_lower_jaw_length$black$model_brms_lower_jaw_length
+make_pca_trait_model_plot(model = model_lower_jaw_length$black$model_brms_lower_jaw_length,
+                            pca_dat = model_lower_jaw_length$black$pca_gene_pca,
+                            trait = "lower_jaw_length",
+                            arrow_scale = 50,
+                            fill_label = "Scaled lower jaw length")
+```
+
+###### Diagnostics
+The posteriors probability checks looks fine with ample overlap between sample predictor distribution and sampled posterior space. The ECDF overlays shows good coverage.
+```{r 09_pglmm-chunk-078, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/"}
+ggarrange(
+  pp_check(model_lower_jaw_length$black$model_brms_lower_jaw_length,ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_lower_jaw_length$black$model_brms_lower_jaw_length,ndraws = 200, resp = "PC2cpy"),
+  pp_check(model_lower_jaw_length$black$model_brms_lower_jaw_length, type = "ecdf_overlay", ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_lower_jaw_length$black$model_brms_lower_jaw_length, type = "ecdf_overlay", ndraws = 200, resp = "PC2cpy")
+)
+```
+
+```{r, fig.height=10}
+plot(model_lower_jaw_length$black$model_brms_lower_jaw_length, nvariables = 8, ask = FALSE)
+
+#Additional diagnostic plots.
+#Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
+#pairs(model_brms, regex = "^b_")
+#plot(loo(model_brms))
+```
+
+##### Ribosome related (unreliable) {.tabset}
+
+###### Trait and PCA plot
+```{r 09_pglmm-chunk-079, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/", fig.height=5, fig.width=4, out.width="60%", out.height="60%"}
+model_lower_jaw_length$orange$model_brms_lower_jaw_length
+make_pca_trait_model_plot(model = model_lower_jaw_length$orange$model_brms_lower_jaw_length,
+                            pca_dat = model_lower_jaw_length$orange$pca_gene_pca,
+                            trait = "lower_jaw_length",
+                            arrow_scale = 50,
+                            fill_label = "Scaled lower jaw length")
+```
+
+###### Diagnostics
+The posteriors probability checks looks fine with ample overlap between sample predictor distribution and sampled posterior space. The ECDF overlays shows good coverage.
+```{r 09_pglmm-chunk-080, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/"}
+ggarrange(
+  pp_check(model_lower_jaw_length$orange$model_brms_lower_jaw_length,ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_lower_jaw_length$orange$model_brms_lower_jaw_length,ndraws = 200, resp = "PC2cpy"),
+  pp_check(model_lower_jaw_length$orange$model_brms_lower_jaw_length, type = "ecdf_overlay", ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_lower_jaw_length$orange$model_brms_lower_jaw_length, type = "ecdf_overlay", ndraws = 200, resp = "PC2cpy")
+)
+```
+
+```{r, fig.height=10}
+plot(model_lower_jaw_length$orange$model_brms_lower_jaw_length, nvariables = 8, ask = FALSE)
+
+#Additional diagnostic plots.
+#Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
+#pairs(model_brms, regex = "^b_")
+#plot(loo(model_brms))
+```
+
+##### RNA processing module (unreliable) {.tabset}
+
+###### Trait and PCA plot
+```{r 09_pglmm-chunk-081, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/", fig.height=5, fig.width=4, out.width="60%", out.height="60%"}
+model_lower_jaw_length$orange$model_brms_lower_jaw_length
+make_pca_trait_model_plot(model = model_lower_jaw_length$orange$model_brms_lower_jaw_length,
+                            pca_dat = model_lower_jaw_length$orange$pca_gene_pca,
+                            trait = "lower_jaw_length",
+                            arrow_scale = 50,
+                            fill_label = "Scaled lower jaw length")
+```
+
+###### Diagnostics
+The posteriors probability checks looks fine with ample overlap between sample predictor distribution and sampled posterior space. The ECDF overlays shows good coverage.
+```{r 09_pglmm-chunk-082, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/"}
+ggarrange(
+  pp_check(model_lower_jaw_length$orange$model_brms_lower_jaw_length,ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_lower_jaw_length$orange$model_brms_lower_jaw_length,ndraws = 200, resp = "PC2cpy"),
+  pp_check(model_lower_jaw_length$orange$model_brms_lower_jaw_length, type = "ecdf_overlay", ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_lower_jaw_length$orange$model_brms_lower_jaw_length, type = "ecdf_overlay", ndraws = 200, resp = "PC2cpy")
+)
+```
+
+```{r, fig.height=10}
+plot(model_lower_jaw_length$orange$model_brms_lower_jaw_length, nvariables = 8, ask = FALSE)
+
+#Additional diagnostic plots.
+#Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
+#pairs(model_brms, regex = "^b_")
+#plot(loo(model_brms))
+```
+
+##### Synaptic signalling 1 {.tabset}
+
+###### Trait and PCA plot
+```{r 09_pglmm-chunk-083, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/", fig.height=5, fig.width=4, out.width="60%", out.height="60%"}
+model_lower_jaw_length$blue$model_brms_lower_jaw_length
+make_pca_trait_model_plot(model = model_lower_jaw_length$blue$model_brms_lower_jaw_length,
+                            pca_dat = model_lower_jaw_length$blue$pca_gene_pca,
+                            trait = "lower_jaw_length",
+                            arrow_scale = 50,
+                            fill_label = "Scaled lower jaw length")
+```
+
+###### Diagnostics
+The posteriors probability checks looks fine with ample overlap between sample predictor distribution and sampled posterior space. The ECDF overlays shows good coverage.
+```{r 09_pglmm-chunk-084, message=FALSE, cache=TRUE, cache.path="cache/09_pglmm/"}
+ggarrange(
+  pp_check(model_lower_jaw_length$blue$model_brms_lower_jaw_length,ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_lower_jaw_length$blue$model_brms_lower_jaw_length,ndraws = 200, resp = "PC2cpy"),
+  pp_check(model_lower_jaw_length$blue$model_brms_lower_jaw_length, type = "ecdf_overlay", ndraws = 200, resp = "PC1cpy"),
+  pp_check(model_lower_jaw_length$blue$model_brms_lower_jaw_length, type = "ecdf_overlay", ndraws = 200, resp = "PC2cpy")
+)
+```
+
+```{r, fig.height=10}
+plot(model_lower_jaw_length$blue$model_brms_lower_jaw_length, nvariables = 8, ask = FALSE)
+
+#Additional diagnostic plots.
+#Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
+#pairs(model_brms, regex = "^b_")
+#plot(loo(model_brms))
+```
