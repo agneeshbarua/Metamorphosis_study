@@ -1,5 +1,4 @@
-# Conserved developmental networks underlie post-embryonic remodelling in teleosts
-
+# An evolvable and functionally partitioned network underlies developmental remodelling in teleosts
 Agneesh Barua<sup>1,2,*</sup>, Giulia Campli<sup>1,2</sup>, Marcela Herrera<sup>3</sup>, Saori Miura<sup>3</sup>, Ken Maeda<sup>3</sup>, ,Yo Yamasaki<sup>4</sup>, Yann Gibert<sup>5</sup>, Vincent Laudet<sup>3,6</sup>, Marc Robinson-Rechavi<sup>1,2</sup>
 
 <sup>1</sup>Department of Ecology and Evolution, University of Lausanne, Lausanne, Switzerland.  
