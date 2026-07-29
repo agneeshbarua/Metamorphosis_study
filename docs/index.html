@@ -327,27 +327,27 @@ expression_matrix_and_pca_danio()-&gt;danio</code></pre>
 <div id="clownfish" class="section level4" number="1.2.1">
 <h4><span class="header-section-number">1.2.1</span> Clownfish</h4>
 <pre class="r"><code>clown$plot</code></pre>
-<p><img src=".site-assets/figures/02_getting_data-chunk-002-1.png" alt="" width="70%" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/02_getting_data-chunk-002-1.png" alt="" width="70%" style="display: block; margin: auto;" /></p>
 </div>
 <div id="manini" class="section level4" number="1.2.2">
 <h4><span class="header-section-number">1.2.2</span> Manini</h4>
 <pre class="r"><code>manini$plot</code></pre>
-<p><img src=".site-assets/figures/02_getting_data-chunk-003-1.png" alt="" width="70%" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/02_getting_data-chunk-003-1.png" alt="" width="70%" style="display: block; margin: auto;" /></p>
 </div>
 <div id="goby" class="section level4" number="1.2.3">
 <h4><span class="header-section-number">1.2.3</span> Goby</h4>
 <pre class="r"><code>goby$plot</code></pre>
-<p><img src=".site-assets/figures/02_getting_data-chunk-004-1.png" alt="" width="70%" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/02_getting_data-chunk-004-1.png" alt="" width="70%" style="display: block; margin: auto;" /></p>
 </div>
 <div id="grouper" class="section level4" number="1.2.4">
 <h4><span class="header-section-number">1.2.4</span> Grouper</h4>
 <pre class="r"><code>grouper$plot</code></pre>
-<p><img src=".site-assets/figures/02_getting_data-chunk-005-1.png" alt="" width="70%" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/02_getting_data-chunk-005-1.png" alt="" width="70%" style="display: block; margin: auto;" /></p>
 </div>
 <div id="zebrafish" class="section level4" number="1.2.5">
 <h4><span class="header-section-number">1.2.5</span> Zebrafish</h4>
 <pre class="r"><code>danio$plot</code></pre>
-<p><img src=".site-assets/figures/02_getting_data-chunk-006-1.png" alt="" width="70%" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/02_getting_data-chunk-006-1.png" alt="" width="70%" style="display: block; margin: auto;" /></p>
 </div>
 </div>
 </div>
@@ -428,7 +428,7 @@ expression.</p>
 check_orth_exp_sumarries(exp_dat = clown_orth_exp,
                          a = (clown_orth_exp %&gt;% janitor::get_dupes(Orthogroup) %&gt;% distinct(Orthogroup))[runif(n = 1,min = 1,max =1835),1],
                          b = (clown_orth_exp %&gt;% janitor::get_dupes(Orthogroup) %&gt;% distinct(Orthogroup))[runif(n = 1,min = 1,max =1835),1])</code></pre>
-<p><img src=".site-assets/figures/04_ortholog_expression_matrix-chunk-002-1.png" alt="" width="200%" style="display: block; margin: auto auto auto 0;" /></p>
+<p><img src="site-assets/figures/04_ortholog_expression_matrix-chunk-002-1.png" alt="" width="200%" style="display: block; margin: auto auto auto 0;" /></p>
 </div>
 <div id="making-ortholog-expression-matrix" class="section level3"
 number="2.2">
@@ -1520,27 +1520,27 @@ module_heatmaps(dat=danio_orth_net_in$dge_keep,
 <div id="clownfish-1" class="section level4" number="3.5.1">
 <h4><span class="header-section-number">3.5.1</span> Clownfish</h4>
 <pre class="r"><code>clown_orth_heatmap$heat</code></pre>
-<p><img src=".site-assets/figures/05_ortholog_networks_and_validation-chunk-006-1.png" alt="" width="65%" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/05_ortholog_networks_and_validation-chunk-006-1.png" alt="" width="65%" style="display: block; margin: auto;" /></p>
 </div>
 <div id="manini-1" class="section level4" number="3.5.2">
 <h4><span class="header-section-number">3.5.2</span> Manini</h4>
 <pre class="r"><code>manini_orth_heatmap$heat</code></pre>
-<p><img src=".site-assets/figures/05_ortholog_networks_and_validation-chunk-007-1.png" alt="" width="65%" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/05_ortholog_networks_and_validation-chunk-007-1.png" alt="" width="65%" style="display: block; margin: auto;" /></p>
 </div>
 <div id="goby-1" class="section level4" number="3.5.3">
 <h4><span class="header-section-number">3.5.3</span> Goby</h4>
 <pre class="r"><code>goby_orth_heatmap$heat</code></pre>
-<p><img src=".site-assets/figures/05_ortholog_networks_and_validation-chunk-008-1.png" alt="" width="65%" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/05_ortholog_networks_and_validation-chunk-008-1.png" alt="" width="65%" style="display: block; margin: auto;" /></p>
 </div>
 <div id="grouper-1" class="section level4" number="3.5.4">
 <h4><span class="header-section-number">3.5.4</span> Grouper</h4>
 <pre class="r"><code>grouper_orth_heatmap$heat</code></pre>
-<p><img src=".site-assets/figures/05_ortholog_networks_and_validation-chunk-009-1.png" alt="" width="65%" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/05_ortholog_networks_and_validation-chunk-009-1.png" alt="" width="65%" style="display: block; margin: auto;" /></p>
 </div>
 <div id="zebrafish-1" class="section level4" number="3.5.5">
 <h4><span class="header-section-number">3.5.5</span> Zebrafish</h4>
 <pre class="r"><code>danio_orth_heatmap$heat</code></pre>
-<p><img src=".site-assets/figures/05_ortholog_networks_and_validation-chunk-010-1.png" alt="" width="65%" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/05_ortholog_networks_and_validation-chunk-010-1.png" alt="" width="65%" style="display: block; margin: auto;" /></p>
 </div>
 </div>
 </div>
@@ -1833,7 +1833,11 @@ rbind(clown_orth_net$connectivity %&gt;% mutate(species=&quot;clown&quot;),manin
 Clownfish~Grouper</h5>
 <pre class="r"><code>mp_plot_clown_ref_grouper</code></pre>
 <pre><code>## $plot</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-31-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-60-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre><code>## 
 ## $dat
 ## # A tibble: 273 × 7
@@ -1856,7 +1860,11 @@ Clownfish~Grouper</h5>
 Clownfish~Manini</h5>
 <pre class="r"><code>mp_plot_clown_ref_manini</code></pre>
 <pre><code>## $plot</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-32-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-61-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre><code>## 
 ## $dat
 ## # A tibble: 273 × 7
@@ -1879,7 +1887,11 @@ Clownfish~Manini</h5>
 Clownfish~Goby</h5>
 <pre class="r"><code>mp_plot_clown_ref_goby</code></pre>
 <pre><code>## $plot</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-33-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-62-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre><code>## 
 ## $dat
 ## # A tibble: 273 × 7
@@ -1902,7 +1914,11 @@ Clownfish~Goby</h5>
 Clownfish~Danio</h5>
 <pre class="r"><code>mp_plot_clown_ref_danio</code></pre>
 <pre><code>## $plot</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-34-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-63-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre><code>## 
 ## $dat
 ## # A tibble: 273 × 7
@@ -1925,7 +1941,11 @@ Clownfish~Danio</h5>
 Manini~Clownfish</h5>
 <pre class="r"><code>mp_plot_manini_ref_clown</code></pre>
 <pre><code>## $plot</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-35-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-64-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre><code>## 
 ## $dat
 ## # A tibble: 128 × 7
@@ -1948,7 +1968,11 @@ Manini~Clownfish</h5>
 Manini~Grouper</h5>
 <pre class="r"><code>mp_plot_manini_ref_grouper</code></pre>
 <pre><code>## $plot</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-36-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-65-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre><code>## 
 ## $dat
 ## # A tibble: 128 × 7
@@ -1970,7 +1994,11 @@ Manini~Grouper</h5>
 <h5><span class="header-section-number">4.1.1.7</span> Manini~Goby</h5>
 <pre class="r"><code>mp_plot_manini_ref_goby</code></pre>
 <pre><code>## $plot</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-37-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-66-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre><code>## 
 ## $dat
 ## # A tibble: 128 × 7
@@ -1992,7 +2020,11 @@ Manini~Grouper</h5>
 <h5><span class="header-section-number">4.1.1.8</span> Manini~Danio</h5>
 <pre class="r"><code>mp_plot_manini_ref_danio</code></pre>
 <pre><code>## $plot</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-38-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-67-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre><code>## 
 ## $dat
 ## # A tibble: 128 × 7
@@ -2015,7 +2047,11 @@ Manini~Grouper</h5>
 Grouper~Clownfish</h5>
 <pre class="r"><code>mp_plot_grouper_ref_clown</code></pre>
 <pre><code>## $plot</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-39-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-68-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre><code>## 
 ## $dat
 ## # A tibble: 328 × 7
@@ -2038,7 +2074,11 @@ Grouper~Clownfish</h5>
 Grouper~Manini</h5>
 <pre class="r"><code>mp_plot_grouper_ref_manini</code></pre>
 <pre><code>## $plot</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-40-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-69-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre><code>## 
 ## $dat
 ## # A tibble: 328 × 7
@@ -2061,7 +2101,11 @@ Grouper~Manini</h5>
 Grouper~Goby</h5>
 <pre class="r"><code>mp_plot_grouper_ref_goby</code></pre>
 <pre><code>## $plot</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-41-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-70-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre><code>## 
 ## $dat
 ## # A tibble: 328 × 7
@@ -2084,7 +2128,11 @@ Grouper~Goby</h5>
 Grouper~Danio</h5>
 <pre class="r"><code>mp_plot_grouper_ref_danio</code></pre>
 <pre><code>## $plot</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-42-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-71-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre><code>## 
 ## $dat
 ## # A tibble: 328 × 7
@@ -2107,7 +2155,11 @@ Grouper~Danio</h5>
 Goby~Clownfish</h5>
 <pre class="r"><code>mp_plot_goby_ref_clown</code></pre>
 <pre><code>## $plot</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-43-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-72-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre><code>## 
 ## $dat
 ## # A tibble: 245 × 7
@@ -2129,7 +2181,11 @@ Goby~Clownfish</h5>
 <h5><span class="header-section-number">4.1.1.14</span> Goby~Manini</h5>
 <pre class="r"><code>mp_plot_goby_ref_manini</code></pre>
 <pre><code>## $plot</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-44-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-73-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre><code>## 
 ## $dat
 ## # A tibble: 245 × 7
@@ -2152,7 +2208,11 @@ Goby~Clownfish</h5>
 Goby~Grouper</h5>
 <pre class="r"><code>mp_plot_goby_ref_grouper</code></pre>
 <pre><code>## $plot</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-45-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-74-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre><code>## 
 ## $dat
 ## # A tibble: 245 × 7
@@ -2174,7 +2234,11 @@ Goby~Grouper</h5>
 <h5><span class="header-section-number">4.1.1.16</span> Goby~Danio</h5>
 <pre class="r"><code>mp_plot_goby_ref_danio</code></pre>
 <pre><code>## $plot</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-46-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-75-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre><code>## 
 ## $dat
 ## # A tibble: 245 × 7
@@ -2197,7 +2261,11 @@ Goby~Grouper</h5>
 Danio~Clownfish</h5>
 <pre class="r"><code>mp_plot_danio_ref_clown</code></pre>
 <pre><code>## $plot</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-47-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-76-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre><code>## 
 ## $dat
 ## # A tibble: 231 × 7
@@ -2220,7 +2288,11 @@ Danio~Clownfish</h5>
 Danio~Manini</h5>
 <pre class="r"><code>mp_plot_danio_ref_manini</code></pre>
 <pre><code>## $plot</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-48-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-77-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre><code>## 
 ## $dat
 ## # A tibble: 231 × 7
@@ -2243,7 +2315,11 @@ Danio~Manini</h5>
 Danio~Grouper</h5>
 <pre class="r"><code>mp_plot_danio_ref_grouper</code></pre>
 <pre><code>## $plot</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-49-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-78-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre><code>## 
 ## $dat
 ## # A tibble: 231 × 7
@@ -2265,7 +2341,11 @@ Danio~Grouper</h5>
 <h5><span class="header-section-number">4.1.1.20</span> Danio~Goby</h5>
 <pre class="r"><code>mp_plot_danio_ref_goby</code></pre>
 <pre><code>## $plot</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-50-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-79-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre><code>## 
 ## $dat
 ## # A tibble: 231 × 7
@@ -2323,7 +2403,7 @@ mp_plot_danio_ref_manini$dat %&gt;% distinct(mods, .keep_all = T) %&gt;% mutate(
   theme(axis.text.y = element_text(angle=0,size=8,hjust = 1, vjust = 0.5),
         axis.text.x = element_text(size=8),
         strip.background = element_rect(fill = &quot;grey95&quot;))</code></pre>
-<p><img src=".site-assets/figures/06_homologous_modules_and_gene_lists-chunk-003-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/06_homologous_modules_and_gene_lists-chunk-003-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
 <p>The following plots show the Jaccard indices for all the module
 comparisons with the significant higher than expected overlaps marked in
 red. I pick the module pairs with the highest Jaccard similarity and
@@ -2467,7 +2547,7 @@ membership_stats2 %&gt;%
   
 wrap_plots(p1,p3,p2,nrow = 2,ncol = 2, heights = c(1,0.05), widths = c(1, 0.05))-&gt;wrapped_plot_clown_goby
 wrapped_plot_clown_goby</code></pre>
-<p><img src=".site-assets/figures/06_homologous_modules_and_gene_lists-chunk-004-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/06_homologous_modules_and_gene_lists-chunk-004-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 </div>
 <div id="clownfish-and-grouper" class="section level4" number="4.2.2">
 <h4><span class="header-section-number">4.2.2</span> Clownfish and
@@ -2607,7 +2687,7 @@ membership_stats2 %&gt;%
   
 wrap_plots(p1,p3,p2,nrow = 2,ncol = 2, heights = c(1,0.05), widths = c(1, 0.05))-&gt;wrapped_plot_clown_grouper
 wrapped_plot_clown_grouper</code></pre>
-<p><img src=".site-assets/figures/06_homologous_modules_and_gene_lists-chunk-005-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/06_homologous_modules_and_gene_lists-chunk-005-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 </div>
 <div id="clownfish-and-manini" class="section level4" number="4.2.3">
 <h4><span class="header-section-number">4.2.3</span> Clownfish and
@@ -2745,7 +2825,7 @@ membership_stats2 %&gt;%
   
 wrap_plots(p1,p3,p2,nrow = 2,ncol = 2, heights = c(1,0.05), widths = c(1, 0.05))-&gt;wrapped_plot_clown_manini
 wrapped_plot_clown_manini</code></pre>
-<p><img src=".site-assets/figures/06_homologous_modules_and_gene_lists-chunk-006-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/06_homologous_modules_and_gene_lists-chunk-006-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 </div>
 <div id="clownfish-and-danio" class="section level4" number="4.2.4">
 <h4><span class="header-section-number">4.2.4</span> Clownfish and
@@ -2883,7 +2963,7 @@ membership_stats2 %&gt;%
   
 wrap_plots(p1,p3,p2,nrow = 2,ncol = 2, heights = c(1,0.05), widths = c(1, 0.05))-&gt;wrapped_plot_clown_danio
 wrapped_plot_clown_danio</code></pre>
-<p><img src=".site-assets/figures/06_homologous_modules_and_gene_lists-chunk-007-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/06_homologous_modules_and_gene_lists-chunk-007-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 </div>
 <div id="grouper-and-manini" class="section level4" number="4.2.5">
 <h4><span class="header-section-number">4.2.5</span> Grouper and
@@ -3021,7 +3101,7 @@ membership_stats2 %&gt;%
   
 wrap_plots(p1,p3,p2,nrow = 2,ncol = 2, heights = c(1,0.05), widths = c(1, 0.05))-&gt;wrapped_plot_grouper_manini
 wrapped_plot_grouper_manini</code></pre>
-<p><img src=".site-assets/figures/06_homologous_modules_and_gene_lists-chunk-008-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/06_homologous_modules_and_gene_lists-chunk-008-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 </div>
 <div id="grouper-and-goby" class="section level4" number="4.2.6">
 <h4><span class="header-section-number">4.2.6</span> Grouper and
@@ -3160,7 +3240,7 @@ membership_stats2 %&gt;%
   
 wrap_plots(p1,p3,p2,nrow = 2,ncol = 2, heights = c(1,0.05), widths = c(1, 0.05))-&gt;wrapped_plot_grouper_goby
 wrapped_plot_grouper_goby</code></pre>
-<p><img src=".site-assets/figures/06_homologous_modules_and_gene_lists-chunk-009-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/06_homologous_modules_and_gene_lists-chunk-009-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 </div>
 <div id="grouper-and-danio" class="section level4" number="4.2.7">
 <h4><span class="header-section-number">4.2.7</span> Grouper and
@@ -3299,7 +3379,7 @@ membership_stats2 %&gt;%
   
 wrap_plots(p1,p3,p2,nrow = 2,ncol = 2, heights = c(1,0.05), widths = c(1, 0.05))-&gt;wrapped_plot_grouper_danio
 wrapped_plot_grouper_danio</code></pre>
-<p><img src=".site-assets/figures/06_homologous_modules_and_gene_lists-chunk-010-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/06_homologous_modules_and_gene_lists-chunk-010-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 </div>
 <div id="manini-and-goby" class="section level4" number="4.2.8">
 <h4><span class="header-section-number">4.2.8</span> Manini and
@@ -3443,7 +3523,7 @@ membership_stats2 %&gt;%
   
 wrap_plots(p1,p3,p2,nrow = 2,ncol = 2, heights = c(1,0.05), widths = c(1, 0.05))-&gt;wrapped_plot_manini_goby
 wrapped_plot_manini_goby</code></pre>
-<p><img src=".site-assets/figures/06_homologous_modules_and_gene_lists-chunk-011-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/06_homologous_modules_and_gene_lists-chunk-011-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 </div>
 <div id="manini-and-danio" class="section level4" number="4.2.9">
 <h4><span class="header-section-number">4.2.9</span> Manini and
@@ -3587,7 +3667,7 @@ membership_stats2 %&gt;%
   
 wrap_plots(p1,p3,p2,nrow = 2,ncol = 2, heights = c(1,0.05), widths = c(1, 0.05))-&gt;wrapped_plot_manini_danio
 wrapped_plot_manini_danio</code></pre>
-<p><img src=".site-assets/figures/06_homologous_modules_and_gene_lists-chunk-012-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/06_homologous_modules_and_gene_lists-chunk-012-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 </div>
 <div id="goby-and-danio" class="section level4" number="4.2.10">
 <h4><span class="header-section-number">4.2.10</span> Goby and
@@ -3731,7 +3811,7 @@ membership_stats2 %&gt;%
   
 wrap_plots(p1,p3,p2,nrow = 2,ncol = 2, heights = c(1,0.05), widths = c(1, 0.05))-&gt;wrapped_plot_goby_danio
 wrapped_plot_goby_danio</code></pre>
-<p><img src=".site-assets/figures/06_homologous_modules_and_gene_lists-chunk-013-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/06_homologous_modules_and_gene_lists-chunk-013-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 </div>
 <div id="extract-homologous-modules" class="section level4"
 number="4.2.11">
@@ -13607,7 +13687,7 @@ connect_dat %&gt;% filter(sp==&quot;grouper&quot;) %&gt;%
   theme(axis.text.y = element_blank(),
         axis.text.x = element_text(size = 10)),
 ncol = 3, nrow = 2)</code></pre>
-<p><img src=".site-assets/figures/06_homologous_modules_and_gene_lists-chunk-020-1.png" alt="" width="70%" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/06_homologous_modules_and_gene_lists-chunk-020-1.png" alt="" width="70%" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>wil_test_boot&lt;-function(dat,species){
   rbind(
     dat$connectivity %&gt;% filter(gene %in% homologous_genes$genes) %&gt;% dplyr::select(gene, degree) %&gt;% mutate(type=&quot;homologous&quot;),
@@ -13732,7 +13812,11 @@ preservation in all the species.</p>
         panel.grid.minor = element_line(colour = &quot;grey95&quot;))-&gt;homo_pres_plots
 
 homo_pres_plots</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-51-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-80-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 </div>
 <div id="gene-copy-number-of-conserved-network-genes"
 class="section level3" number="5.4">
@@ -13769,7 +13853,7 @@ wilcox.test(x = ss_test %&gt;%
         axis.ticks.x = element_blank())-&gt;gene_copy_number_homologous
 
 gene_copy_number_homologous</code></pre>
-<p><img src=".site-assets/figures/06_homologous_modules_and_gene_lists-chunk-023-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/06_homologous_modules_and_gene_lists-chunk-023-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 </div>
 </div>
 <div id="annotate-the-conserved-modules" class="section level2 tabset"
@@ -28955,7 +29039,11 @@ danio_orth_net$connectivity %&gt;%
           legend.position = &quot;none&quot;,
           strip.text.x.top = element_text(size=5),
           strip.background = element_rect(colour = &quot;black&quot;, fill = &quot;#eee&quot;))</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-54-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-83-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 </div>
 <div id="goby-2" class="section level3" number="7.3">
 <h3><span class="header-section-number">7.3</span> Goby</h3>
@@ -28972,7 +29060,11 @@ danio_orth_net$connectivity %&gt;%
           legend.position = &quot;none&quot;,
           strip.text.x.top = element_text(size=5),
           strip.background = element_rect(colour = &quot;black&quot;, fill = &quot;#eee&quot;))</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-55-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-84-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 </div>
 <div id="grouper-2" class="section level3" number="7.4">
 <h3><span class="header-section-number">7.4</span> Grouper</h3>
@@ -28997,7 +29089,11 @@ danio_orth_net$connectivity %&gt;%
           legend.position = &quot;none&quot;,
           strip.text.x.top = element_text(size=5),
           strip.background = element_rect(colour = &quot;black&quot;, fill = &quot;#eee&quot;))</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-56-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-85-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 </div>
 <div id="manini-2" class="section level3" number="7.5">
 <h3><span class="header-section-number">7.5</span> Manini</h3>
@@ -29014,7 +29110,11 @@ danio_orth_net$connectivity %&gt;%
           legend.position = &quot;none&quot;,
           strip.text.x.top = element_text(size=5),
           strip.background = element_rect(colour = &quot;black&quot;, fill = &quot;#eee&quot;))</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-57-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-86-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 </div>
 <div id="danio" class="section level3" number="7.6">
 <h3><span class="header-section-number">7.6</span> Danio</h3>
@@ -29035,7 +29135,11 @@ danio_orth_net$connectivity %&gt;%
           legend.position = &quot;none&quot;,
           strip.text.x.top = element_text(size=5),
           strip.background = element_rect(colour = &quot;black&quot;, fill = &quot;#eee&quot;))</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-58-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-87-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 </div>
 </div>
 <div id="t3-and-mpi-treatments" class="section level2 tabset"
@@ -29207,7 +29311,11 @@ rbind(
 
 
 patchwork::wrap_plots(dge_dist_treatments,  dge_fishers_plot, nrow = 2)</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-60-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-89-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 </div>
 <div id="volcano-plots-for-partitions" class="section level3"
 number="8.3">
@@ -29222,7 +29330,11 @@ treatments.</p>
   scale_fill_manual(values=c(&quot;#E1D79D&quot;,&quot;#F22F4D&quot;))+
   theme_bw()+
   theme(strip.text.x.top = element_text(size=5))</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-61-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-90-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre class="r"><code>plot_dat.mpi |&gt; mutate(annot=stringr::str_wrap(annot, width = 25)) |&gt; 
   ggplot(aes(x=logFC, y=-log10(fdr), fill=dge))+
   facet_wrap(~annot, scales=&quot;free_y&quot;)+
@@ -29230,7 +29342,11 @@ treatments.</p>
   scale_fill_manual(values=c(&quot;#E1D79D&quot;,&quot;#F22F4D&quot;))+
   theme_bw()+
   theme(strip.text.x.top = element_text(size=5))</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-61-2.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-90-2.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 </div>
 <div id="fishers-exact-test-for-enrichment-of-degs-in-conserved-network"
 class="section level3" number="8.4">
@@ -29531,27 +29647,47 @@ rbind(
 <div id="clownfish-3" class="section level3" number="9.2">
 <h3><span class="header-section-number">9.2</span> Clownfish</h3>
 <pre class="r"><code>make_lines_plot_for_the_candidates(TH_Cort_clown_dat %&gt;% filter(gene_name %in% TH_Cort_common_genes$gene_name),sp=&quot;clown&quot;)</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-65-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-94-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 </div>
 <div id="goby-3" class="section level3" number="9.3">
 <h3><span class="header-section-number">9.3</span> Goby</h3>
 <pre class="r"><code>make_lines_plot_for_the_candidates(TH_Cort_goby_dat %&gt;% filter(gene_name %in% TH_Cort_common_genes$gene_name),sp=&quot;goby&quot;)</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-66-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-95-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 </div>
 <div id="grouper-3" class="section level3" number="9.4">
 <h3><span class="header-section-number">9.4</span> Grouper</h3>
 <pre class="r"><code>make_lines_plot_for_the_candidates(TH_Cort_grouper_dat %&gt;% filter(gene_name %in% TH_Cort_common_genes$gene_name),sp=&quot;grouper&quot;)</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-67-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-96-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 </div>
 <div id="manini-3" class="section level3" number="9.5">
 <h3><span class="header-section-number">9.5</span> Manini</h3>
 <pre class="r"><code>make_lines_plot_for_the_candidates(TH_Cort_manini_dat %&gt;% filter(gene_name %in% TH_Cort_common_genes$gene_name),sp=&quot;manini&quot;)</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-68-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-97-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 </div>
 <div id="danio-1" class="section level3" number="9.6">
 <h3><span class="header-section-number">9.6</span> Danio</h3>
 <pre class="r"><code>make_lines_plot_for_the_candidates(TH_Cort_danio_dat %&gt;% filter(gene_name %in% TH_Cort_common_genes$gene_name),sp=&quot;danio&quot;)</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-69-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-98-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 </div>
 </div>
 <div id="evolutionary-dynamics-of-copy-number-variation"
@@ -30060,7 +30196,11 @@ the data sampling and results.</p>
     labs(subtitle = &quot;CAFE5 analysis&quot;,x=&quot;Gene class&quot;, fill=&quot;Is significant&quot;) +
     theme_bw()+
     theme(axis.text.x = element_text(angle = 45, hjust = 1))</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-147-1.png" alt="" width="70%" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-178-1.png" alt="" width="70%" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre class="r"><code>#Test with all data
 rbind(
     cafe_genefamily_outs %&gt;% filter(mod_type==&quot;Homologous&quot;),
@@ -30107,7 +30247,7 @@ fisher_boot_test_res %&gt;%
   geom_vline(xintercept = 0.05, color=&quot;red&quot;, linetype=&quot;dashed&quot;)+
   geom_vline(xintercept = median(fisher_boot_test_res$padj), color=&quot;blue&quot;, linetype=&quot;dashed&quot;)+
   theme_bw()</code></pre>
-<p><img src=".site-assets/figures/07_comparative_genomics_phylogenomics_cafe-chunk-023-1.png" alt="" width="50%" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/07_comparative_genomics_phylogenomics_cafe-chunk-023-1.png" alt="" width="50%" style="display: block; margin: auto;" /></p>
 <p>The median, multiple testing adjusted <em>P=0.036</em> (in blue),
 lower than significance threshold of 0.05 (in red).</p>
 <p>Gene families involved in synaptic signalling, neuron migration, and
@@ -30141,7 +30281,7 @@ left_join(num_gene_per_change,annot_count, by=&quot;annot&quot;) %&gt;%
                                      size = 9),
           axis.text.x = element_text(angle = 0,hjust = 1, vjust = 0.3, 
                                      size = 6))</code></pre>
-<p><img src=".site-assets/figures/07_comparative_genomics_phylogenomics_cafe-chunk-024-1.png" alt="" width="80%" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/07_comparative_genomics_phylogenomics_cafe-chunk-024-1.png" alt="" width="80%" style="display: block; margin: auto;" /></p>
 </div>
 <div id="difference-in-number-of-expansions-and-contractions"
 class="section level5" number="10.1.4.4">
@@ -30217,7 +30357,7 @@ rbind(
   geom_density(alpha=0.5)+
   scale_fill_aaas()+
   theme_bw()</code></pre>
-<p><img src=".site-assets/figures/08_selection_analysis-chunk-002-1.png" alt="" width="50%" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/08_selection_analysis-chunk-002-1.png" alt="" width="50%" style="display: block; margin: auto;" /></p>
 <p>Prior to running analyses I checked for any group level differences
 in gene length or orthology copy number between the conserved and null
 class. I found no evidence of differences in average gene length or copy
@@ -30285,7 +30425,11 @@ seq_stats  %&gt;%
 knitr::include_graphics(&quot;./Figures_for_report/len_num_diff_selection.png&quot;)</code></pre>
 <p><img src="../Figures_for_report/len_num_diff_selection.png" alt="" width="100%" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>pvaldist</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-171-1.png" alt="" width="50%" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-208-1.png" alt="" width="50%" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 </div>
 <div id="global-dnds-using-mg94-model" class="section level3 tabset"
 number="11.2">
@@ -30339,7 +30483,7 @@ dN/dS</h4>
   ggsci::scale_fill_bmj()+
   theme_bw()+
   theme(axis.text.x = element_blank())</code></pre>
-<p><img src=".site-assets/figures/08_selection_analysis-chunk-008-1.png" alt="" width="50%" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/08_selection_analysis-chunk-008-1.png" alt="" width="50%" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>test_wil&lt;-function(){
   
   rbind(fitmg94_res %&gt;% filter(pval_adj &lt; 0.05) %&gt;% slice_sample(n=200))-&gt;test_dat
@@ -30474,7 +30618,11 @@ cramers_v&lt;-sqrt(x2/(n * min(r - 1, c - 1)))</code></pre>
        fill = &quot;Selection type&quot;)+
   theme_bw()+
   theme(axis.text.x = element_text(angle = 45, hjust = 1))</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-175-1.png" alt="" width="100%" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-212-1.png" alt="" width="100%" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 </div>
 <div id="busted" class="section level3" number="11.4">
 <h3><span class="header-section-number">11.4</span> BUSTED</h3>
@@ -30551,7 +30699,7 @@ position = position_dodge(width = 0.7))+
   scale_fill_manual(values = c(&quot;#B39E88&quot;,&quot;#4EB5AA&quot;))+
   labs(subtitle = &quot;BUSTED analysis&quot;,x=&quot;Gene class&quot;, fill=&quot;Is significant&quot;) +
   theme_bw()</code></pre>
-<p><img src=".site-assets/figures/08_selection_analysis-chunk-013-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/08_selection_analysis-chunk-013-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 </div>
 </div>
 <div id="pglmm" class="section level2 tabset" number="12">
@@ -31517,7 +31665,7 @@ plot</h6>
                             trait = &quot;mean_log_age&quot;,
                             arrow_scale = 60,
                             fill_label = &quot;Scaled max age&quot;)</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-004-1.png" alt="" width="60%" height="60%" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-004-1.png" alt="" width="60%" height="60%" style="display: block; margin: auto;" /></p>
 </div>
 <div id="diagnostics" class="section level6" number="12.2.1.1.2">
 <h6><span class="header-section-number">12.2.1.1.2</span>
@@ -31528,9 +31676,13 @@ Diagnostics</h6>
   pp_check(model_age$brown$model_brms_age, type = &quot;ecdf_overlay&quot;, ndraws = 200, resp = &quot;PC1cpy&quot;),
   pp_check(model_age$brown$model_brms_age, type = &quot;ecdf_overlay&quot;, ndraws = 200, resp = &quot;PC2cpy&quot;)
 )</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-005-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-005-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>plot(model_age$brown$model_brms_age, nvariables = 8, ask = FALSE)</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-193-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-230-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre class="r"><code>#Additional diagnostic plots.
 #Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
 #pairs(model_brms, regex = &quot;^b_&quot;)
@@ -31576,7 +31728,7 @@ plot</h6>
                             trait = &quot;mean_log_age&quot;,
                             arrow_scale = 60,
                             fill_label = &quot;Scaled max age&quot;)</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-006-1.png" alt="" width="60%" height="60%" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-006-1.png" alt="" width="60%" height="60%" style="display: block; margin: auto;" /></p>
 </div>
 <div id="diagnostics-1" class="section level6" number="12.2.1.2.2">
 <h6><span class="header-section-number">12.2.1.2.2</span>
@@ -31587,9 +31739,13 @@ Diagnostics</h6>
   pp_check(model_age$midnightblue$model_brms_age, type = &quot;ecdf_overlay&quot;, ndraws = 200, resp = &quot;PC1cpy&quot;),
   pp_check(model_age$midnightblue$model_brms_age, type = &quot;ecdf_overlay&quot;, ndraws = 200, resp = &quot;PC2cpy&quot;)
 )</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-007-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-007-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>plot(model_age$midnightblue$model_brms_age, nvariables = 8, ask = FALSE)</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-194-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-231-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre class="r"><code>#Additional diagnostic plots.
 #Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
 #pairs(model_brms, regex = &quot;^b_&quot;)
@@ -32508,7 +32664,7 @@ plot</h6>
                           trait = &quot;age_maturity&quot;,
                           arrow_scale = 20,
                           fill_label = &quot;Scaled age of maturity&quot;)</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-010-1.png" alt="" width="60%" height="60%" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-010-1.png" alt="" width="60%" height="60%" style="display: block; margin: auto;" /></p>
 </div>
 <div id="diagnostics-2" class="section level6" number="12.3.1.1.2">
 <h6><span class="header-section-number">12.3.1.1.2</span>
@@ -32522,9 +32678,13 @@ ECDF overlays shows good coverage.</p>
   pp_check(model_age_maturity$greenyellow$model_brms_age_maturity, type = &quot;ecdf_overlay&quot;, ndraws = 200, resp = &quot;PC1cpy&quot;),
   pp_check(model_age_maturity$greenyellow$model_brms_age_maturity, type = &quot;ecdf_overlay&quot;, ndraws = 200, resp = &quot;PC2cpy&quot;)
 )</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-011-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-011-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>plot(model_age_maturity$greenyellow$model_brms_age_maturity, nvariables = 8, ask = FALSE)</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-195-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-232-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre class="r"><code>#Additional diagnostic plots.
 #Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
 #pairs(model_brms, regex = &quot;^b_&quot;)
@@ -32571,7 +32731,7 @@ plot</h6>
                             trait = &quot;age_maturity&quot;,
                             arrow_scale = 20,
                             fill_label = &quot;Scaled age of maturity&quot;)</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-012-1.png" alt="" width="60%" height="60%" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-012-1.png" alt="" width="60%" height="60%" style="display: block; margin: auto;" /></p>
 </div>
 <div id="diagnostics-3" class="section level6" number="12.3.1.2.2">
 <h6><span class="header-section-number">12.3.1.2.2</span>
@@ -32585,9 +32745,13 @@ ECDF overlays shows good coverage.</p>
   pp_check(model_age_maturity$magenta$model_brms_age_maturity, type = &quot;ecdf_overlay&quot;, ndraws = 200, resp = &quot;PC1cpy&quot;),
   pp_check(model_age_maturity$magenta$model_brms_age_maturity, type = &quot;ecdf_overlay&quot;, ndraws = 200, resp = &quot;PC2cpy&quot;)
 )</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-013-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-013-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>plot(model_age_maturity$magenta$model_brms_age_maturity, nvariables = 8, ask = FALSE)</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-196-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-233-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre class="r"><code>#Additional diagnostic plots.
 #Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
 #pairs(model_brms, regex = &quot;^b_&quot;)
@@ -32634,7 +32798,7 @@ plot</h6>
                             trait = &quot;age_maturity&quot;,
                             arrow_scale = 30,
                             fill_label = &quot;Scaled age of maturity&quot;)</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-014-1.png" alt="" width="60%" height="60%" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-014-1.png" alt="" width="60%" height="60%" style="display: block; margin: auto;" /></p>
 </div>
 <div id="diagnostics-4" class="section level6" number="12.3.1.3.2">
 <h6><span class="header-section-number">12.3.1.3.2</span>
@@ -32645,9 +32809,13 @@ Diagnostics</h6>
   pp_check(model_age_maturity$midnightblue$model_brms_age_maturity, type = &quot;ecdf_overlay&quot;, ndraws = 200, resp = &quot;PC1cpy&quot;),
   pp_check(model_age_maturity$midnightblue$model_brms_age_maturity, type = &quot;ecdf_overlay&quot;, ndraws = 200, resp = &quot;PC2cpy&quot;)
 )</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-015-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-015-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>plot(model_age_maturity$midnightblue$model_brms_age_maturity, nvariables = 8, ask = FALSE)</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-197-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-234-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre class="r"><code>#Additional diagnostic plots.
 #Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
 #pairs(model_brms, regex = &quot;^b_&quot;)
@@ -32694,7 +32862,7 @@ plot</h6>
                             trait = &quot;age_maturity&quot;,
                             arrow_scale = 20,
                             fill_label = &quot;Scaled age of maturity&quot;)</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-016-1.png" alt="" width="60%" height="60%" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-016-1.png" alt="" width="60%" height="60%" style="display: block; margin: auto;" /></p>
 </div>
 <div id="diagnostics-5" class="section level6" number="12.3.1.4.2">
 <h6><span class="header-section-number">12.3.1.4.2</span>
@@ -32705,9 +32873,13 @@ Diagnostics</h6>
   pp_check(model_age_maturity$black$model_brms_age_maturity, type = &quot;ecdf_overlay&quot;, ndraws = 200, resp = &quot;PC1cpy&quot;),
   pp_check(model_age_maturity$black$model_brms_age_maturity, type = &quot;ecdf_overlay&quot;, ndraws = 200, resp = &quot;PC2cpy&quot;)
 )</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-017-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-017-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>plot(model_age_maturity$black$model_brms_age_maturity, nvariables = 8, ask = FALSE)</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-198-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-235-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre class="r"><code>#Additional diagnostic plots.
 #Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
 #pairs(model_brms, regex = &quot;^b_&quot;)
@@ -32754,7 +32926,7 @@ plot</h6>
                             trait = &quot;age_maturity&quot;,
                             arrow_scale = 40,
                             fill_label = &quot;Scaled age of maturity&quot;)</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-018-1.png" alt="" width="60%" height="60%" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-018-1.png" alt="" width="60%" height="60%" style="display: block; margin: auto;" /></p>
 </div>
 <div id="diagnostics-6" class="section level6" number="12.3.1.5.2">
 <h6><span class="header-section-number">12.3.1.5.2</span>
@@ -32765,9 +32937,13 @@ Diagnostics</h6>
   pp_check(model_age_maturity$orange$model_brms_age_maturity, type = &quot;ecdf_overlay&quot;, ndraws = 200, resp = &quot;PC1cpy&quot;),
   pp_check(model_age_maturity$orange$model_brms_age_maturity, type = &quot;ecdf_overlay&quot;, ndraws = 200, resp = &quot;PC2cpy&quot;)
 )</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-019-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-019-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>plot(model_age_maturity$orange$model_brms_age_maturity, nvariables = 8, ask = FALSE)</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-199-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-236-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre class="r"><code>#Additional diagnostic plots.
 #Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
 #pairs(model_brms, regex = &quot;^b_&quot;)
@@ -33686,7 +33862,7 @@ plot</h6>
                             trait = &quot;mean_temp&quot;,
                             arrow_scale = 40,
                             fill_label = &quot;Scaled temperature&quot;)</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-022-1.png" alt="" width="60%" height="60%" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-022-1.png" alt="" width="60%" height="60%" style="display: block; margin: auto;" /></p>
 </div>
 <div id="diagnostics-7" class="section level6" number="12.4.1.1.2">
 <h6><span class="header-section-number">12.4.1.1.2</span>
@@ -33700,9 +33876,13 @@ ECDF overlays shows good coverage.</p>
   pp_check(model_temp$magenta$model_brms_temp, type = &quot;ecdf_overlay&quot;, ndraws = 200, resp = &quot;PC1cpy&quot;),
   pp_check(model_temp$magenta$model_brms_temp, type = &quot;ecdf_overlay&quot;, ndraws = 200, resp = &quot;PC2cpy&quot;)
 )</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-023-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-023-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>plot(model_temp$magenta$model_brms_temp, nvariables = 8, ask = FALSE)</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-200-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-237-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre class="r"><code>#Additional diagnostic plots.
 #Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
 #pairs(model_brms, regex = &quot;^b_&quot;)
@@ -33749,7 +33929,7 @@ plot</h6>
                             trait = &quot;mean_temp&quot;,
                             arrow_scale = 30,
                             fill_label = &quot;Scaled temperature&quot;)</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-024-1.png" alt="" width="60%" height="60%" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-024-1.png" alt="" width="60%" height="60%" style="display: block; margin: auto;" /></p>
 </div>
 <div id="diagnostics-8" class="section level6" number="12.4.1.2.2">
 <h6><span class="header-section-number">12.4.1.2.2</span>
@@ -33763,9 +33943,13 @@ ECDF overlays shows good coverage.</p>
   pp_check(model_temp$lightgreen$model_brms_temp, type = &quot;ecdf_overlay&quot;, ndraws = 200, resp = &quot;PC1cpy&quot;),
   pp_check(model_temp$lightgreen$model_brms_temp, type = &quot;ecdf_overlay&quot;, ndraws = 200, resp = &quot;PC2cpy&quot;)
 )</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-025-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-025-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>plot(model_temp$lightgreen$model_brms_temp, nvariables = 8, ask = FALSE)</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-201-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-238-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre class="r"><code>#Additional diagnostic plots.
 #Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
 #pairs(model_brms, regex = &quot;^b_&quot;)
@@ -33812,7 +33996,7 @@ plot</h6>
                             trait = &quot;mean_temp&quot;,
                             arrow_scale = 40,
                             fill_label = &quot;Scaled temperature&quot;)</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-026-1.png" alt="" width="60%" height="60%" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-026-1.png" alt="" width="60%" height="60%" style="display: block; margin: auto;" /></p>
 </div>
 <div id="diagnostics-9" class="section level6" number="12.4.1.3.2">
 <h6><span class="header-section-number">12.4.1.3.2</span>
@@ -33826,9 +34010,13 @@ ECDF overlays shows good coverage.</p>
   pp_check(model_temp$orange$model_brms_temp, type = &quot;ecdf_overlay&quot;, ndraws = 200, resp = &quot;PC1cpy&quot;),
   pp_check(model_temp$orange$model_brms_temp, type = &quot;ecdf_overlay&quot;, ndraws = 200, resp = &quot;PC2cpy&quot;)
 )</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-027-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-027-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>plot(model_temp$orange$model_brms_temp, nvariables = 8, ask = FALSE)</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-202-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-239-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre class="r"><code>#Additional diagnostic plots.
 #Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
 #pairs(model_brms, regex = &quot;^b_&quot;)
@@ -34744,7 +34932,7 @@ plot</h6>
                             trait = &quot;trophic_level&quot;,
                             arrow_scale = 30,
                             fill_label = &quot;Scaled trophic_level&quot;)</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-030-1.png" alt="" width="60%" height="60%" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-030-1.png" alt="" width="60%" height="60%" style="display: block; margin: auto;" /></p>
 </div>
 <div id="diagnostics-10" class="section level6" number="12.5.1.1.2">
 <h6><span class="header-section-number">12.5.1.1.2</span>
@@ -34758,9 +34946,13 @@ ECDF overlays shows good coverage.</p>
   pp_check(model_trophic$blue$model_brms_trophic, type = &quot;ecdf_overlay&quot;, ndraws = 200, resp = &quot;PC1cpy&quot;),
   pp_check(model_trophic$blue$model_brms_trophic, type = &quot;ecdf_overlay&quot;, ndraws = 200, resp = &quot;PC2cpy&quot;)
 )</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-031-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-031-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>plot(model_trophic$blue$model_brms_trophic, nvariables = 8, ask = FALSE)</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-203-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-240-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre class="r"><code>#Additional diagnostic plots.
 #Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
 #pairs(model_brms, regex = &quot;^b_&quot;)
@@ -34807,7 +34999,7 @@ plot</h6>
                             trait = &quot;trophic_level&quot;,
                             arrow_scale = 30,
                             fill_label = &quot;Scaled trophic_level&quot;)</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-032-1.png" alt="" width="60%" height="60%" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-032-1.png" alt="" width="60%" height="60%" style="display: block; margin: auto;" /></p>
 </div>
 <div id="diagnostics-11" class="section level6" number="12.5.1.2.2">
 <h6><span class="header-section-number">12.5.1.2.2</span>
@@ -34821,9 +35013,13 @@ ECDF overlays shows good coverage.</p>
   pp_check(model_trophic$midnightblue$model_brms_trophic, type = &quot;ecdf_overlay&quot;, ndraws = 200, resp = &quot;PC1cpy&quot;),
   pp_check(model_trophic$midnightblue$model_brms_trophic, type = &quot;ecdf_overlay&quot;, ndraws = 200, resp = &quot;PC2cpy&quot;)
 )</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-033-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-033-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>plot(model_trophic$midnightblue$model_brms_trophic, nvariables = 8, ask = FALSE)</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-204-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-241-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre class="r"><code>#Additional diagnostic plots.
 #Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
 #pairs(model_brms, regex = &quot;^b_&quot;)
@@ -35740,7 +35936,7 @@ plot</h6>
                             trait = &quot;growth_coefficient&quot;,
                             arrow_scale = 20,
                             fill_label = &quot;Scaled growth coefficient&quot;)</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-036-1.png" alt="" width="60%" height="60%" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-036-1.png" alt="" width="60%" height="60%" style="display: block; margin: auto;" /></p>
 </div>
 <div id="diagnostics-12" class="section level6" number="12.6.1.1.2">
 <h6><span class="header-section-number">12.6.1.1.2</span>
@@ -35750,9 +35946,13 @@ Diagnostics</h6>
   pp_check(model_growthcoeff$midnightblue$model_brms_growthcoeff,ndraws = 200, resp = &quot;PC2cpy&quot;),
   pp_check(model_growthcoeff$midnightblue$model_brms_growthcoeff, type = &quot;ecdf_overlay&quot;, ndraws = 200, resp = &quot;PC1cpy&quot;),
   pp_check(model_growthcoeff$midnightblue$model_brms_growthcoeff, type = &quot;ecdf_overlay&quot;, ndraws = 200, resp = &quot;PC2cpy&quot;))</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-037-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-037-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>plot(model_growthcoeff$brown$model_brms_growthcoeff, nvariables = 8, ask = FALSE)</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-205-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-242-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre class="r"><code>#Additional diagnostic plots.
 #Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
 #pairs(model_brms, regex = &quot;^b_&quot;)
@@ -35799,7 +35999,7 @@ plot</h6>
                             trait = &quot;growth_coefficient&quot;,
                             arrow_scale = 40,
                             fill_label = &quot;Scaled growth coefficient&quot;)</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-038-1.png" alt="" width="60%" height="60%" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-038-1.png" alt="" width="60%" height="60%" style="display: block; margin: auto;" /></p>
 </div>
 <div id="diagnostics-13" class="section level6" number="12.6.1.2.2">
 <h6><span class="header-section-number">12.6.1.2.2</span>
@@ -35813,9 +36013,13 @@ ECDF overlays shows good coverage.</p>
   pp_check(model_temp$blue$model_brms_temp, type = &quot;ecdf_overlay&quot;, ndraws = 200, resp = &quot;PC1cpy&quot;),
   pp_check(model_temp$blue$model_brms_temp, type = &quot;ecdf_overlay&quot;, ndraws = 200, resp = &quot;PC2cpy&quot;)
 )</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-039-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-039-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>plot(model_temp$blue$model_brms_temp, nvariables = 8, ask = FALSE)</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-206-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-243-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre class="r"><code>#Additional diagnostic plots.
 #Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
 #pairs(model_brms, regex = &quot;^b_&quot;)
@@ -37490,7 +37694,7 @@ plot</h6>
                             trait = &quot;bodyshape&quot;,
                             arrow_scale = 20,
                             fill_label = &quot;bodyshape&quot;)</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-042-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-042-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 </div>
 <div id="diagnostics-14" class="section level6" number="12.7.1.1.2">
 <h6><span class="header-section-number">12.7.1.1.2</span>
@@ -37499,9 +37703,13 @@ Diagnostics</h6>
 between sample predictor distribution and sampled posterior space. The
 ECDF overlays shows good coverage.</p>
 <pre class="r"><code>pp_check(model_bodyshape$salmon$model_brms_bodyshape, type = &quot;bars&quot;,ndraws = 200)</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-043-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-043-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>plot(model_bodyshape$salmon$model_brms_bodyshape, nvariables = 8, ask = FALSE)</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-207-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-244-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre class="r"><code>#Additional diagnostic plots.
 #Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
 #pairs(model_brms, regex = &quot;^b_&quot;)
@@ -37547,15 +37755,19 @@ plot</h6>
                             trait = &quot;bodyshape&quot;,
                             arrow_scale = 20,
                             fill_label = &quot;bodyshape&quot;)</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-044-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-044-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 </div>
 <div id="diagnostics-15" class="section level6" number="12.7.1.2.2">
 <h6><span class="header-section-number">12.7.1.2.2</span>
 Diagnostics</h6>
 <pre class="r"><code>pp_check(model_bodyshape$magenta$model_brms_bodyshape, type = &quot;bars&quot;,ndraws = 200)</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-045-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-045-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>plot(model_bodyshape$magenta$model_brms_bodyshape, nvariables = 8, ask = FALSE)</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-208-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-245-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre class="r"><code>#Additional diagnostic plots.
 #Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
 #pairs(model_brms, regex = &quot;^b_&quot;)
@@ -37601,15 +37813,19 @@ plot</h6>
                             trait = &quot;bodyshape&quot;,
                             arrow_scale = 40,
                             fill_label = &quot;bodyshape&quot;)</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-046-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-046-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 </div>
 <div id="diagnostics-16" class="section level6" number="12.7.1.3.2">
 <h6><span class="header-section-number">12.7.1.3.2</span>
 Diagnostics</h6>
 <pre class="r"><code>pp_check(model_bodyshape$green$model_brms_bodyshape, type = &quot;bars&quot;,ndraws = 200)</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-047-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-047-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>plot(model_bodyshape$green$model_brms_bodyshape, nvariables = 8, ask = FALSE)</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-209-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-246-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre class="r"><code>#Additional diagnostic plots.
 #Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
 #pairs(model_brms, regex = &quot;^b_&quot;)
@@ -37655,15 +37871,19 @@ plot</h6>
                             trait = &quot;bodyshape&quot;,
                             arrow_scale = 30,
                             fill_label = &quot;bodyshape&quot;)</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-048-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-048-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 </div>
 <div id="diagnostics-17" class="section level6" number="12.7.1.4.2">
 <h6><span class="header-section-number">12.7.1.4.2</span>
 Diagnostics</h6>
 <pre class="r"><code>pp_check(model_bodyshape$midnightblue$model_brms_bodyshape, type = &quot;bars&quot;,ndraws = 200)</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-049-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-049-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>plot(model_bodyshape$midnightblue$model_brms_bodyshape, nvariables = 8, ask = FALSE)</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-210-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-247-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre class="r"><code>#Additional diagnostic plots.
 #Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
 #pairs(model_brms, regex = &quot;^b_&quot;)
@@ -37709,15 +37929,19 @@ plot</h6>
                             trait = &quot;bodyshape&quot;,
                             arrow_scale = 30,
                             fill_label = &quot;bodyshape&quot;)</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-050-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-050-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 </div>
 <div id="diagnostics-18" class="section level6" number="12.7.1.5.2">
 <h6><span class="header-section-number">12.7.1.5.2</span>
 Diagnostics</h6>
 <pre class="r"><code>pp_check(model_bodyshape$brown$model_brms_bodyshape, type = &quot;bars&quot;,ndraws = 200)</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-051-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-051-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>plot(model_bodyshape$brown$model_brms_bodyshape, nvariables = 8, ask = FALSE)</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-211-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-248-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre class="r"><code>#Additional diagnostic plots.
 #Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
 #pairs(model_brms, regex = &quot;^b_&quot;)
@@ -37763,15 +37987,19 @@ plot</h6>
                             trait = &quot;bodyshape&quot;,
                             arrow_scale = 20,
                             fill_label = &quot;bodyshape&quot;)</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-052-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-052-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 </div>
 <div id="diagnostics-19" class="section level6" number="12.7.1.6.2">
 <h6><span class="header-section-number">12.7.1.6.2</span>
 Diagnostics</h6>
 <pre class="r"><code>pp_check(model_bodyshape$red$model_brms_bodyshape, type = &quot;bars&quot;,ndraws = 200)</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-053-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-053-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>plot(model_bodyshape$red$model_brms_bodyshape, nvariables = 8, ask = FALSE)</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-212-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-249-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre class="r"><code>#Additional diagnostic plots.
 #Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
 #pairs(model_brms, regex = &quot;^b_&quot;)
@@ -37818,15 +38046,19 @@ plot</h6>
                             trait = &quot;bodyshape&quot;,
                             arrow_scale = 20,
                             fill_label = &quot;bodyshape&quot;)</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-054-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-054-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 </div>
 <div id="diagnostics-20" class="section level6" number="12.7.1.7.2">
 <h6><span class="header-section-number">12.7.1.7.2</span>
 Diagnostics</h6>
 <pre class="r"><code>pp_check(model_bodyshape$lightgreen$model_brms_bodyshape, type = &quot;bars&quot;,ndraws = 200)</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-055-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-055-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>plot(model_bodyshape$lightgreen$model_brms_bodyshape, nvariables = 8, ask = FALSE)</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-213-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-250-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre class="r"><code>#Additional diagnostic plots.
 #Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
 #pairs(model_brms, regex = &quot;^b_&quot;)
@@ -37872,15 +38104,19 @@ plot</h6>
                             trait = &quot;bodyshape&quot;,
                             arrow_scale = 20,
                             fill_label = &quot;bodyshape&quot;)</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-056-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-056-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 </div>
 <div id="diagnostics-21" class="section level6" number="12.7.1.8.2">
 <h6><span class="header-section-number">12.7.1.8.2</span>
 Diagnostics</h6>
 <pre class="r"><code>pp_check(model_bodyshape$black$model_brms_bodyshape, type = &quot;bars&quot;,ndraws = 200)</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-057-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-057-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>plot(model_bodyshape$black$model_brms_bodyshape, nvariables = 8, ask = FALSE)</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-214-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-251-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre class="r"><code>#Additional diagnostic plots.
 #Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
 #pairs(model_brms, regex = &quot;^b_&quot;)
@@ -37926,15 +38162,19 @@ plot</h6>
                             trait = &quot;bodyshape&quot;,
                             arrow_scale = 20,
                             fill_label = &quot;bodyshape&quot;)</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-058-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-058-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 </div>
 <div id="diagnostics-22" class="section level6" number="12.7.1.9.2">
 <h6><span class="header-section-number">12.7.1.9.2</span>
 Diagnostics</h6>
 <pre class="r"><code>pp_check(model_bodyshape$pink$model_brms_bodyshape, type = &quot;bars&quot;,ndraws = 200)</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-059-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-059-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>plot(model_bodyshape$pink$model_brms_bodyshape, nvariables = 8, ask = FALSE)</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-215-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-252-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre class="r"><code>#Additional diagnostic plots.
 #Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
 #pairs(model_brms, regex = &quot;^b_&quot;)
@@ -41209,7 +41449,7 @@ plot</h6>
                             trait = &quot;aspect_ratio&quot;,
                             arrow_scale = 30,
                             fill_label = &quot;Scaled aspect ratio&quot;)</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-065-1.png" alt="" width="60%" height="60%" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-065-1.png" alt="" width="60%" height="60%" style="display: block; margin: auto;" /></p>
 </div>
 <div id="diagnostics-23" class="section level6" number="12.9.1.1.2">
 <h6><span class="header-section-number">12.9.1.1.2</span>
@@ -41223,9 +41463,13 @@ ECDF overlays shows good coverage.</p>
   pp_check(model_aspect_ratio$salmon$model_brms_aspect_ratio, type = &quot;ecdf_overlay&quot;, ndraws = 200, resp = &quot;PC1cpy&quot;),
   pp_check(model_aspect_ratio$salmon$model_brms_aspect_ratio, type = &quot;ecdf_overlay&quot;, ndraws = 200, resp = &quot;PC2cpy&quot;)
 )</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-066-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-066-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>plot(model_aspect_ratio$salmon$model_brms_aspect_ratio, nvariables = 8, ask = FALSE)</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-216-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-253-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre class="r"><code>#Additional diagnostic plots.
 #Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
 #pairs(model_brms, regex = &quot;^b_&quot;)
@@ -41272,7 +41516,7 @@ plot</h6>
                             trait = &quot;aspect_ratio&quot;,
                             arrow_scale = 40,
                             fill_label = &quot;Scaled aspect ratio&quot;)</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-067-1.png" alt="" width="60%" height="60%" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-067-1.png" alt="" width="60%" height="60%" style="display: block; margin: auto;" /></p>
 </div>
 <div id="diagnostics-24" class="section level6" number="12.9.1.2.2">
 <h6><span class="header-section-number">12.9.1.2.2</span>
@@ -41286,9 +41530,13 @@ ECDF overlays shows good coverage.</p>
   pp_check(model_aspect_ratio$blue$model_brms_aspect_ratio, type = &quot;ecdf_overlay&quot;, ndraws = 200, resp = &quot;PC1cpy&quot;),
   pp_check(model_aspect_ratio$blue$model_brms_aspect_ratio, type = &quot;ecdf_overlay&quot;, ndraws = 200, resp = &quot;PC2cpy&quot;)
 )</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-068-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-068-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>plot(model_aspect_ratio$blue$model_brms_aspect_ratio, nvariables = 8, ask = FALSE)</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-217-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-254-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre class="r"><code>#Additional diagnostic plots.
 #Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
 #pairs(model_brms, regex = &quot;^b_&quot;)
@@ -41335,7 +41583,7 @@ plot</h6>
                             trait = &quot;aspect_ratio&quot;,
                             arrow_scale = 30,
                             fill_label = &quot;Scaled aspect ratio&quot;)</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-069-1.png" alt="" width="60%" height="60%" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-069-1.png" alt="" width="60%" height="60%" style="display: block; margin: auto;" /></p>
 </div>
 <div id="diagnostics-25" class="section level6" number="12.9.1.3.2">
 <h6><span class="header-section-number">12.9.1.3.2</span>
@@ -41349,9 +41597,13 @@ ECDF overlays shows good coverage.</p>
   pp_check(model_aspect_ratio$blue$model_brms_aspect_ratio, type = &quot;ecdf_overlay&quot;, ndraws = 200, resp = &quot;PC1cpy&quot;),
   pp_check(model_aspect_ratio$blue$model_brms_aspect_ratio, type = &quot;ecdf_overlay&quot;, ndraws = 200, resp = &quot;PC2cpy&quot;)
 )</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-070-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-070-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>plot(model_aspect_ratio$blue$model_brms_aspect_ratio, nvariables = 8, ask = FALSE)</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-218-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-255-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre class="r"><code>#Additional diagnostic plots.
 #Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
 #pairs(model_brms, regex = &quot;^b_&quot;)
@@ -42269,7 +42521,7 @@ plot</h6>
                             trait = &quot;lower_jaw_length&quot;,
                             arrow_scale = 30,
                             fill_label = &quot;Scaled lower jaw length&quot;)</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-073-1.png" alt="" width="60%" height="60%" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-073-1.png" alt="" width="60%" height="60%" style="display: block; margin: auto;" /></p>
 </div>
 <div id="diagnostics-26" class="section level6" number="12.10.1.1.2">
 <h6><span class="header-section-number">12.10.1.1.2</span>
@@ -42283,9 +42535,13 @@ ECDF overlays shows good coverage.</p>
   pp_check(model_lower_jaw_length$magenta$model_brms_lower_jaw_length, type = &quot;ecdf_overlay&quot;, ndraws = 200, resp = &quot;PC1cpy&quot;),
   pp_check(model_lower_jaw_length$magenta$model_brms_lower_jaw_length, type = &quot;ecdf_overlay&quot;, ndraws = 200, resp = &quot;PC2cpy&quot;)
 )</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-074-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-074-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>plot(model_lower_jaw_length$magenta$model_brms_lower_jaw_length, nvariables = 8, ask = FALSE)</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-219-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-256-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre class="r"><code>#Additional diagnostic plots.
 #Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
 #pairs(model_brms, regex = &quot;^b_&quot;)
@@ -42332,7 +42588,7 @@ plot</h6>
                             trait = &quot;lower_jaw_length&quot;,
                             arrow_scale = 30,
                             fill_label = &quot;Scaled lower jaw length&quot;)</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-075-1.png" alt="" width="60%" height="60%" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-075-1.png" alt="" width="60%" height="60%" style="display: block; margin: auto;" /></p>
 </div>
 <div id="diagnostics-27" class="section level6" number="12.10.1.2.2">
 <h6><span class="header-section-number">12.10.1.2.2</span>
@@ -42346,9 +42602,13 @@ ECDF overlays shows good coverage.</p>
   pp_check(model_lower_jaw_length$lightgreen$model_brms_lower_jaw_length, type = &quot;ecdf_overlay&quot;, ndraws = 200, resp = &quot;PC1cpy&quot;),
   pp_check(model_lower_jaw_length$lightgreen$model_brms_lower_jaw_length, type = &quot;ecdf_overlay&quot;, ndraws = 200, resp = &quot;PC2cpy&quot;)
 )</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-076-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-076-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>plot(model_lower_jaw_length$lightgreen$model_brms_lower_jaw_length, nvariables = 8, ask = FALSE)</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-220-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-257-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre class="r"><code>#Additional diagnostic plots.
 #Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
 #pairs(model_brms, regex = &quot;^b_&quot;)
@@ -42395,7 +42655,7 @@ plot</h6>
                             trait = &quot;lower_jaw_length&quot;,
                             arrow_scale = 50,
                             fill_label = &quot;Scaled lower jaw length&quot;)</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-077-1.png" alt="" width="60%" height="60%" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-077-1.png" alt="" width="60%" height="60%" style="display: block; margin: auto;" /></p>
 </div>
 <div id="diagnostics-28" class="section level6" number="12.10.1.3.2">
 <h6><span class="header-section-number">12.10.1.3.2</span>
@@ -42409,9 +42669,13 @@ ECDF overlays shows good coverage.</p>
   pp_check(model_lower_jaw_length$black$model_brms_lower_jaw_length, type = &quot;ecdf_overlay&quot;, ndraws = 200, resp = &quot;PC1cpy&quot;),
   pp_check(model_lower_jaw_length$black$model_brms_lower_jaw_length, type = &quot;ecdf_overlay&quot;, ndraws = 200, resp = &quot;PC2cpy&quot;)
 )</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-078-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-078-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>plot(model_lower_jaw_length$black$model_brms_lower_jaw_length, nvariables = 8, ask = FALSE)</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-221-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-258-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre class="r"><code>#Additional diagnostic plots.
 #Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
 #pairs(model_brms, regex = &quot;^b_&quot;)
@@ -42458,7 +42722,7 @@ plot</h6>
                             trait = &quot;lower_jaw_length&quot;,
                             arrow_scale = 50,
                             fill_label = &quot;Scaled lower jaw length&quot;)</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-079-1.png" alt="" width="60%" height="60%" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-079-1.png" alt="" width="60%" height="60%" style="display: block; margin: auto;" /></p>
 </div>
 <div id="diagnostics-29" class="section level6" number="12.10.1.4.2">
 <h6><span class="header-section-number">12.10.1.4.2</span>
@@ -42472,9 +42736,13 @@ ECDF overlays shows good coverage.</p>
   pp_check(model_lower_jaw_length$orange$model_brms_lower_jaw_length, type = &quot;ecdf_overlay&quot;, ndraws = 200, resp = &quot;PC1cpy&quot;),
   pp_check(model_lower_jaw_length$orange$model_brms_lower_jaw_length, type = &quot;ecdf_overlay&quot;, ndraws = 200, resp = &quot;PC2cpy&quot;)
 )</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-080-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-080-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>plot(model_lower_jaw_length$orange$model_brms_lower_jaw_length, nvariables = 8, ask = FALSE)</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-222-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-259-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre class="r"><code>#Additional diagnostic plots.
 #Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
 #pairs(model_brms, regex = &quot;^b_&quot;)
@@ -42521,7 +42789,7 @@ plot</h6>
                             trait = &quot;lower_jaw_length&quot;,
                             arrow_scale = 50,
                             fill_label = &quot;Scaled lower jaw length&quot;)</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-081-1.png" alt="" width="60%" height="60%" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-081-1.png" alt="" width="60%" height="60%" style="display: block; margin: auto;" /></p>
 </div>
 <div id="diagnostics-30" class="section level6" number="12.10.1.5.2">
 <h6><span class="header-section-number">12.10.1.5.2</span>
@@ -42535,9 +42803,13 @@ ECDF overlays shows good coverage.</p>
   pp_check(model_lower_jaw_length$orange$model_brms_lower_jaw_length, type = &quot;ecdf_overlay&quot;, ndraws = 200, resp = &quot;PC1cpy&quot;),
   pp_check(model_lower_jaw_length$orange$model_brms_lower_jaw_length, type = &quot;ecdf_overlay&quot;, ndraws = 200, resp = &quot;PC2cpy&quot;)
 )</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-082-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-082-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>plot(model_lower_jaw_length$orange$model_brms_lower_jaw_length, nvariables = 8, ask = FALSE)</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-223-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-260-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre class="r"><code>#Additional diagnostic plots.
 #Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
 #pairs(model_brms, regex = &quot;^b_&quot;)
@@ -42584,7 +42856,7 @@ plot</h6>
                             trait = &quot;lower_jaw_length&quot;,
                             arrow_scale = 50,
                             fill_label = &quot;Scaled lower jaw length&quot;)</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-083-1.png" alt="" width="60%" height="60%" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-083-1.png" alt="" width="60%" height="60%" style="display: block; margin: auto;" /></p>
 </div>
 <div id="diagnostics-31" class="section level6" number="12.10.1.6.2">
 <h6><span class="header-section-number">12.10.1.6.2</span>
@@ -42598,9 +42870,13 @@ ECDF overlays shows good coverage.</p>
   pp_check(model_lower_jaw_length$blue$model_brms_lower_jaw_length, type = &quot;ecdf_overlay&quot;, ndraws = 200, resp = &quot;PC1cpy&quot;),
   pp_check(model_lower_jaw_length$blue$model_brms_lower_jaw_length, type = &quot;ecdf_overlay&quot;, ndraws = 200, resp = &quot;PC2cpy&quot;)
 )</code></pre>
-<p><img src=".site-assets/figures/09_pglmm-chunk-084-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/09_pglmm-chunk-084-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>plot(model_lower_jaw_length$blue$model_brms_lower_jaw_length, nvariables = 8, ask = FALSE)</code></pre>
+<<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-224-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+=======
+<p><img src="site-assets/figures/unnamed-chunk-261-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+>>>>>>> c9b08aeb6e9b20e954d026638b52c1369cd72ac5
 <pre class="r"><code>#Additional diagnostic plots.
 #Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
 #pairs(model_brms, regex = &quot;^b_&quot;)
@@ -42844,11 +43120,11 @@ Bgee.</h5>
 <p>No clear pattern of specific gene expression as the genes are
 expressed across multiple tissue systems.</p>
 <pre class="r"><code>phylo_bgee_plot(col = &quot;pink&quot;)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-005-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-005-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
 <pre class="r"><code> bgee_cafe_genes_plots(orths_in = (cafe_sig %&gt;% filter(mod==&quot;pink&quot;) %&gt;% pull(genes)),
                        system = &quot;Translation&quot;,
                        slice_size = 10,ncol = 4,nrow =4)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-006-1.png" alt="" width="4500" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-006-1.png" alt="" width="4500" style="display: block; margin: auto;" /></p>
 </div>
 <div id="expression-during-embryonic-and-post-embryonic-development"
 class="section level5" number="13.4.1.2">
@@ -42857,7 +43133,7 @@ during embryonic and post-embryonic development</h5>
 <p>These genes have high expression at 24hpf during embryogenesis, and
 high expression in later stages of post-embryonic development.</p>
 <pre class="r"><code>comp_dev_danio_heatmap(system_proc = &quot;Translation&quot;)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-007-1.png" alt="" width="2400" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-007-1.png" alt="" width="2400" style="display: block; margin: auto;" /></p>
 </div>
 <div id="expression-during-metamorphosis" class="section level5"
 number="13.4.1.3">
@@ -42889,7 +43165,7 @@ perturbation has multiple phenotypic effects. They range from arresting
 development of immune cells, decreasing blood cell count, to decrease in
 whole body morphology.</p>
 <pre class="r"><code>pheno_terms_plot(col = &quot;pink&quot;)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-010-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-010-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 </div>
 </div>
 <div id="synaptic-signalling" class="section level4 tabset"
@@ -42905,11 +43181,11 @@ Bgee</h5>
 <p>High expression in brain and eye, with additional expression in
 muscle and bone.</p>
 <pre class="r"><code>phylo_bgee_plot(col = &quot;blue&quot;)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-011-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-011-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
 <pre class="r"><code> bgee_cafe_genes_plots(orths_in = (cafe_sig %&gt;% filter(mod==&quot;blue&quot;) %&gt;% pull(genes)),
                        system = &quot;Translation&quot;,
                        slice_size = 10,ncol = 4,nrow =4)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-012-1.png" alt="" width="4500" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-012-1.png" alt="" width="4500" style="display: block; margin: auto;" /></p>
 </div>
 <div id="expression-during-embryonic-and-post-embryonic-development-1"
 class="section level5" number="13.4.2.2">
@@ -42919,7 +43195,7 @@ during embryonic and post-embryonic development</h5>
 3dpf. In posr=t-embryonic, there is high expression during the earlier
 stages which then reduced as the fish matures.</p>
 <pre class="r"><code>comp_dev_danio_heatmap(system_proc = &quot;Synaptic signalling 1&quot;)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-013-1.png" alt="" width="2400" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-013-1.png" alt="" width="2400" style="display: block; margin: auto;" /></p>
 </div>
 <div id="expression-during-metamorphosis-1" class="section level5"
 number="13.4.2.3">
@@ -42936,16 +43212,16 @@ purrr::map2(.x=&quot;Epinephelus_malabaricus&quot;,
             .y=(cafe_sig  %&gt;% filter(mod==&quot;blue&quot;) %&gt;% pull(genes)),
             ~meta_exp_cafe_genes(species = .x, orthogroup = .y))-&gt;grouper_meta_cafe_exp</code></pre>
 <pre class="r"><code>patchwork::wrap_plots(clown_meta_cafe_exp)+plot_annotation(subtitle = &quot;Expression during metamorphosis in clownfish&quot;)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-015-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-015-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>patchwork::wrap_plots(grouper_meta_cafe_exp)+plot_annotation(subtitle = &quot;Expression during metamorphosis in grouper&quot;)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-015-2.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-015-2.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 </div>
 <div id="zfin-data-1" class="section level5" number="13.4.2.4">
 <h5><span class="header-section-number">13.4.2.4</span> ZFIN data</h5>
 <p>Perturbation of this module affects structures across the nervous
 system.</p>
 <pre class="r"><code>pheno_terms_plot(col = &quot;blue&quot;)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-016-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-016-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 </div>
 </div>
 <div id="aerobic-respiration-2" class="section level4 tabset"
@@ -42962,11 +43238,11 @@ Bgee.</h5>
 <p>The top five tissues with the highest expression across fishes are
 generally, muscle tissue, liver, other digestive tissues.</p>
 <pre class="r"><code>phylo_bgee_plot(col = &quot;salmon&quot;)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-017-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-017-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
 <pre class="r"><code> bgee_cafe_genes_plots(orths_in = (cafe_sig %&gt;% filter(mod==&quot;salmon&quot;) %&gt;% pull(genes)),
                        system = &quot;Translation&quot;,
                        slice_size = 10,ncol = 4,nrow =4)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-018-1.png" alt="" width="4500" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-018-1.png" alt="" width="4500" style="display: block; margin: auto;" /></p>
 </div>
 <div id="expression-during-embryonic-and-post-embryonic-development."
 class="section level5" number="13.4.3.2">
@@ -42978,7 +43254,7 @@ stage in the zebrafish embryo. During post-embryonic development, their
 expression was less restricted but was elevated at later stages of
 development.</p>
 <pre class="r"><code>comp_dev_danio_heatmap(system_proc = &quot;Aerobic respiration&quot;)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-019-1.png" alt="" width="2400" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-019-1.png" alt="" width="2400" style="display: block; margin: auto;" /></p>
 </div>
 <div id="expression-during-metamorphosis-2" class="section level5"
 number="13.4.3.3">
@@ -42997,16 +43273,16 @@ purrr::map2(.x=&quot;Epinephelus_malabaricus&quot;,
             .y=(cafe_sig  %&gt;% filter(mod==&quot;salmon&quot;) %&gt;% pull(genes)),
             ~meta_exp_cafe_genes(species = .x, orthogroup = .y))-&gt;grouper_meta_cafe_exp</code></pre>
 <pre class="r"><code>patchwork::wrap_plots(clown_meta_cafe_exp)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-021-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-021-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>patchwork::wrap_plots(grouper_meta_cafe_exp)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-021-2.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-021-2.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 </div>
 <div id="zfin-data-2" class="section level5" number="13.4.3.4">
 <h5><span class="header-section-number">13.4.3.4</span> ZFIN data</h5>
 <p>Perturbation data of thjis module shows multiple affects across heart
 and brain.</p>
 <pre class="r"><code>pheno_terms_plot(col = &quot;salmon&quot;)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-022-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-022-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 </div>
 </div>
 <div id="peroxisome-process" class="section level4 tabset"
@@ -43021,11 +43297,11 @@ Bgee</h5>
 <p>These genes are highly expressed in the brain and eye of the
 different fishes, with moderate expression in gonads.</p>
 <pre class="r"><code>phylo_bgee_plot(col = &quot;black&quot;)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-023-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-023-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
 <pre class="r"><code> bgee_cafe_genes_plots(orths_in = (cafe_sig %&gt;% filter(mod==&quot;black&quot;) %&gt;% pull(genes)),
                        system = &quot;Translation&quot;,
                        slice_size = 10,ncol = 4,nrow =4)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-024-1.png" alt="" width="4500" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-024-1.png" alt="" width="4500" style="display: block; margin: auto;" /></p>
 </div>
 <div id="expression-during-embryonic-and-post-embryonic-development-2"
 class="section level5" number="13.4.4.2">
@@ -43036,7 +43312,7 @@ development with a peak expression at 3dpf. During pot-embryonic
 development the genes have generally flat expression, with a tapering
 off towards the end.</p>
 <pre class="r"><code>comp_dev_danio_heatmap(system_proc = &quot;Peroxisome process&quot;)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-025-1.png" alt="" width="2400" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-025-1.png" alt="" width="2400" style="display: block; margin: auto;" /></p>
 </div>
 <div id="expression-during-metamorphosis-3" class="section level5"
 number="13.4.4.3">
@@ -43050,14 +43326,14 @@ thyroid hormone peaks.</p>
             .y=(cafe_sig %&gt;% filter(mod==&quot;black&quot;) %&gt;% pull(genes)),
             ~meta_exp_cafe_genes(species = .x, orthogroup = .y))-&gt;clown_meta_cafe_exp
 patchwork::wrap_plots(clown_meta_cafe_exp)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-026-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-026-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>purrr::map2(.x=&quot;Epinephelus_malabaricus&quot;, 
             .y=(cafe_sig  %&gt;% filter(mod==&quot;black&quot;) %&gt;% pull(genes)),
             ~meta_exp_cafe_genes(species = .x, orthogroup = .y))-&gt;grouper_meta_cafe_exp</code></pre>
 <pre class="r"><code>patchwork::wrap_plots(clown_meta_cafe_exp)+plot_annotation(subtitle = &quot;Expression during metamorphosis in clownfish&quot;)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-027-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-027-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>patchwork::wrap_plots(grouper_meta_cafe_exp)+plot_annotation(subtitle = &quot;Expression during metamorphosis in grouper&quot;)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-027-2.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-027-2.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 </div>
 <div id="zfin-data-3" class="section level5" number="13.4.4.4">
 <h5><span class="header-section-number">13.4.4.4</span> ZFIN data</h5>
@@ -43067,7 +43343,7 @@ perturbation tends to disrupt the embryo, decrease eye formation,
 affects trunk morphology, and influences swimming quality. There is also
 evidence of inducing a delay in hatching.</p>
 <pre class="r"><code>pheno_terms_plot(col = &quot;black&quot;)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-028-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-028-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 </div>
 </div>
 <div id="immune-system-process" class="section level4 tabset"
@@ -43086,11 +43362,11 @@ Furthermore, the expression of these immune genes in the pharyngeal
 gills potentially denotes the presence of gill-associated lymphoid
 tissues (GIALT) PMID: 32549335.</p>
 <pre class="r"><code>phylo_bgee_plot(col = &quot;brown&quot;)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-029-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-029-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
 <pre class="r"><code> bgee_cafe_genes_plots(orths_in = (cafe_sig %&gt;% filter(mod==&quot;brown&quot;) %&gt;% pull(genes)),
                        system = &quot;Translation&quot;,
                        slice_size = 10,ncol = 4,nrow =4)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-030-1.png" alt="" width="4500" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-030-1.png" alt="" width="4500" style="display: block; margin: auto;" /></p>
 </div>
 <div id="expression-during-embryonic-and-post-embryonic-development-3"
 class="section level5" number="13.4.5.2">
@@ -43100,7 +43376,7 @@ during embryonic and post-embryonic development</h5>
 5dpf. In posrt-embryonic, there is high expression throughout most
 stages with slight reduction towards the end.</p>
 <pre class="r"><code>comp_dev_danio_heatmap(system_proc = &quot;Immune system&quot;)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-031-1.png" alt="" width="2400" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-031-1.png" alt="" width="2400" style="display: block; margin: auto;" /></p>
 </div>
 <div id="expression-during-metamorphosis-4" class="section level5"
 number="13.4.5.3">
@@ -43119,15 +43395,15 @@ purrr::map2(.x=&quot;Epinephelus_malabaricus&quot;,
             .y=(cafe_sig  %&gt;% filter(mod==&quot;brown&quot;) %&gt;% pull(genes)),
             ~meta_exp_cafe_genes(species = .x, orthogroup = .y))-&gt;grouper_meta_cafe_exp</code></pre>
 <pre class="r"><code>patchwork::wrap_plots(clown_meta_cafe_exp)+plot_annotation(subtitle = &quot;Expression during metamorphosis in clownfish&quot;)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-033-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-033-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>patchwork::wrap_plots(grouper_meta_cafe_exp)+plot_annotation(subtitle = &quot;Expression during metamorphosis in grouper&quot;)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-033-2.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-033-2.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 </div>
 <div id="zfin-data-4" class="section level5" number="13.4.5.4">
 <h5><span class="header-section-number">13.4.5.4</span> ZFIN data</h5>
 <p>Perturbation of this module has effects across tissues.</p>
 <pre class="r"><code>pheno_terms_plot(col = &quot;brown&quot;)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-034-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-034-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 </div>
 </div>
 <div id="muscle-system" class="section level4 tabset" number="13.4.6">
@@ -43141,11 +43417,11 @@ Bgee</h5>
 <p>These genes are highest expressed in muscle tissue, followed by
 either bone, skin, or heart.</p>
 <pre class="r"><code>phylo_bgee_plot(col = &quot;red&quot;)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-035-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-035-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
 <pre class="r"><code> bgee_cafe_genes_plots(orths_in = (cafe_sig %&gt;% filter(mod==&quot;red&quot;) %&gt;% pull(genes)),
                        system = &quot;Translation&quot;,
                        slice_size = 10,ncol = 4,nrow =4)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-036-1.png" alt="" width="4500" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-036-1.png" alt="" width="4500" style="display: block; margin: auto;" /></p>
 </div>
 <div id="expression-during-embryonic-and-post-embryonic-development-4"
 class="section level5" number="13.4.6.2">
@@ -43156,7 +43432,7 @@ substantial peak at 24hpf. In posrt-embryonic, two out of three genes
 are primarily expressed towards the later stages of development, while
 one is expressed towards to middle.</p>
 <pre class="r"><code>comp_dev_danio_heatmap(system_proc = &quot;Muscle system&quot;)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-037-1.png" alt="" width="2400" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-037-1.png" alt="" width="2400" style="display: block; margin: auto;" /></p>
 </div>
 <div id="expression-during-metamorphosis-5" class="section level5"
 number="13.4.6.3">
@@ -43174,9 +43450,9 @@ purrr::map2(.x=&quot;Epinephelus_malabaricus&quot;,
             .y=(cafe_sig  %&gt;% filter(mod==&quot;red&quot;) %&gt;% pull(genes)),
             ~meta_exp_cafe_genes(species = .x, orthogroup = .y))-&gt;grouper_meta_cafe_exp</code></pre>
 <pre class="r"><code>patchwork::wrap_plots(clown_meta_cafe_exp)+plot_annotation(subtitle = &quot;Expression during metamorphosis in clownfish&quot;)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-039-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-039-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>patchwork::wrap_plots(grouper_meta_cafe_exp)+plot_annotation(subtitle = &quot;Expression during metamorphosis in grouper&quot;)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-039-2.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-039-2.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 </div>
 <div id="zfin-data-5" class="section level5" number="13.4.6.4">
 <h5><span class="header-section-number">13.4.6.4</span> ZFIN data</h5>
@@ -43185,7 +43461,7 @@ both lead whole organism being curved, decreased occurrence of muscle
 attachment, decrease in the quality of sensory epithelium generation and
 skeletal muscle development.</p>
 <pre class="r"><code>pheno_terms_plot(col = &quot;red&quot;)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-040-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-040-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 </div>
 </div>
 <div id="cell-cycle-process" class="section level4 tabset"
@@ -43199,11 +43475,11 @@ with variation in age of mturity.</p>
 Bgee</h5>
 <p>These genes are highest expressed in gonads and blastula.</p>
 <pre class="r"><code>phylo_bgee_plot(col = &quot;magenta&quot;)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-041-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-041-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
 <pre class="r"><code> bgee_cafe_genes_plots(orths_in = (cafe_sig %&gt;% filter(mod==&quot;magenta&quot;) %&gt;% pull(genes)),
                        system = &quot;Translation&quot;,
                        slice_size = 10,ncol = 4,nrow =4)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-042-1.png" alt="" width="4500" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-042-1.png" alt="" width="4500" style="display: block; margin: auto;" /></p>
 </div>
 <div id="expression-during-embryonic-and-post-embryonic-development-5"
 class="section level5" number="13.4.7.2">
@@ -43214,7 +43490,7 @@ substantial peak at 24hpf. In posrt-embryonic, two out of three genes
 are primarily expressed towards the later stages of development, while
 one is expressed towards to middle.</p>
 <pre class="r"><code>comp_dev_danio_heatmap(system_proc = &quot;Cell cycle process&quot;)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-043-1.png" alt="" width="2400" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-043-1.png" alt="" width="2400" style="display: block; margin: auto;" /></p>
 </div>
 <div id="expression-during-metamorphosis-6" class="section level5"
 number="13.4.7.3">
@@ -43230,9 +43506,9 @@ purrr::map2(.x=&quot;Epinephelus_malabaricus&quot;,
             .y=(cafe_sig  %&gt;% filter(mod==&quot;magenta&quot;) %&gt;% pull(genes)),
             ~meta_exp_cafe_genes(species = .x, orthogroup = .y))-&gt;grouper_meta_cafe_exp</code></pre>
 <pre class="r"><code>patchwork::wrap_plots(clown_meta_cafe_exp)+plot_annotation(subtitle = &quot;Expression during metamorphosis in clownfish&quot;)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-045-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-045-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>patchwork::wrap_plots(grouper_meta_cafe_exp)+plot_annotation(subtitle = &quot;Expression during metamorphosis in grouper&quot;)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-045-2.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-045-2.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 </div>
 <div id="zfin-data-6" class="section level5" number="13.4.7.4">
 <h5><span class="header-section-number">13.4.7.4</span> ZFIN data</h5>
@@ -43241,7 +43517,7 @@ genes affect multiple biological tissues and systems like the brain,
 retina, neural tube, blood vessel development, and gut. The reported
 phenotypes primarily affect morphology of the tissues.</p>
 <pre class="r"><code>pheno_terms_plot(col = &quot;magenta&quot;)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-046-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-046-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 </div>
 </div>
 <div id="rna-processing-2" class="section level4 tabset"
@@ -43255,11 +43531,11 @@ with variation in age of mturity.</p>
 Bgee</h5>
 <p>These genes are highest expressed in gonads and blastula.</p>
 <pre class="r"><code>phylo_bgee_plot(col = &quot;royalblue&quot;)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-047-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-047-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
 <pre class="r"><code> bgee_cafe_genes_plots(orths_in = (cafe_sig %&gt;% filter(mod==&quot;royalblue&quot;) %&gt;% pull(genes)),
                        system = &quot;Translation&quot;,
                        slice_size = 10,ncol = 4,nrow =4)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-048-1.png" alt="" width="4500" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-048-1.png" alt="" width="4500" style="display: block; margin: auto;" /></p>
 </div>
 <div id="expression-during-embryonic-and-post-embryonic-development-6"
 class="section level5" number="13.4.8.2">
@@ -43270,7 +43546,7 @@ substantial gene activity between 12hpf to 24hpf. Reduction in
 expression after. During post-embryonic, one of the genes has steady
 expression while the other shows a slight increase towards the end.</p>
 <pre class="r"><code>comp_dev_danio_heatmap(system_proc = &quot;RNA processing 2&quot;)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-049-1.png" alt="" width="2400" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-049-1.png" alt="" width="2400" style="display: block; margin: auto;" /></p>
 </div>
 <div id="expression-during-metamorphosis-7" class="section level5"
 number="13.4.8.3">
@@ -43285,15 +43561,15 @@ purrr::map2(.x=&quot;Epinephelus_malabaricus&quot;,
             .y=(cafe_sig  %&gt;% filter(mod==&quot;royalblue&quot;) %&gt;% pull(genes)),
             ~meta_exp_cafe_genes(species = .x, orthogroup = .y))-&gt;grouper_meta_cafe_exp</code></pre>
 <pre class="r"><code>patchwork::wrap_plots(clown_meta_cafe_exp)+plot_annotation(subtitle = &quot;Expression during metamorphosis in clownfish&quot;)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-051-1.png" alt="" width="2400" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-051-1.png" alt="" width="2400" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>patchwork::wrap_plots(grouper_meta_cafe_exp)+plot_annotation(subtitle = &quot;Expression during metamorphosis in grouper&quot;)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-051-2.png" alt="" width="2400" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-051-2.png" alt="" width="2400" style="display: block; margin: auto;" /></p>
 </div>
 <div id="zfin-data-7" class="section level5" number="13.4.8.4">
 <h5><span class="header-section-number">13.4.8.4</span> ZFIN data</h5>
 <p>Perturbation of this module has affects across tissues.</p>
 <pre class="r"><code>pheno_terms_plot(col = &quot;royalblue&quot;)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-052-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-052-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 </div>
 </div>
 <div id="dna-replication" class="section level4 tabset" number="13.4.9">
@@ -43306,11 +43582,11 @@ variation in body shape.</p>
 Bgee</h5>
 <p>These genes are highest expressed in gonads.</p>
 <pre class="r"><code>phylo_bgee_plot(col = &quot;green&quot;)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-053-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-053-1.png" alt="" width="3000" style="display: block; margin: auto;" /></p>
 <pre class="r"><code> bgee_cafe_genes_plots(orths_in = (cafe_sig %&gt;% filter(mod==&quot;green&quot;) %&gt;% pull(genes)),
                        system = &quot;Translation&quot;,
                        slice_size = 10,ncol = 4,nrow =4)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-054-1.png" alt="" width="4500" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-054-1.png" alt="" width="4500" style="display: block; margin: auto;" /></p>
 </div>
 <div id="expression-during-embryonic-and-post-embryonic-development-7"
 class="section level5" number="13.4.9.2">
@@ -43322,7 +43598,7 @@ till 24hpf, afterward they decline in activity. In post-embryonic
 development however, they show highest activity during the later stages
 of development.</p>
 <pre class="r"><code>comp_dev_danio_heatmap(system_proc = &quot;DNA replication&quot;)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-055-1.png" alt="" width="2400" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-055-1.png" alt="" width="2400" style="display: block; margin: auto;" /></p>
 </div>
 <div id="expression-during-metamorphosis-8" class="section level5"
 number="13.4.9.3">
@@ -43338,9 +43614,9 @@ purrr::map2(.x=&quot;Epinephelus_malabaricus&quot;,
             .y=(cafe_sig  %&gt;% filter(mod==&quot;green&quot;) %&gt;% pull(genes)),
             ~meta_exp_cafe_genes(species = .x, orthogroup = .y))-&gt;grouper_meta_cafe_exp</code></pre>
 <pre class="r"><code>patchwork::wrap_plots(clown_meta_cafe_exp)+plot_annotation(subtitle = &quot;Expression during metamorphosis in clownfish&quot;)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-057-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-057-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>patchwork::wrap_plots(grouper_meta_cafe_exp)+plot_annotation(subtitle = &quot;Expression during metamorphosis in grouper&quot;)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-057-2.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-057-2.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 </div>
 <div id="zfin-data-8" class="section level5" number="13.4.9.4">
 <h5><span class="header-section-number">13.4.9.4</span> ZFIN data</h5>
@@ -43350,7 +43626,7 @@ systems. The phenotypes are generally related to morphology where
 structures are either decreased, disrupted, or in some case increased in
 number and occurence.</p>
 <pre class="r"><code>pheno_terms_plot(col = &quot;green&quot;)</code></pre>
-<p><img src=".site-assets/figures/10_functional_characterisation-chunk-058-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
+<p><img src="site-assets/figures/10_functional_characterisation-chunk-058-1.png" alt="" width="2100" style="display: block; margin: auto;" /></p>
 </div>
 </div>
 </div>
