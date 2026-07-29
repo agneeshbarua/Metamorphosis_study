@@ -29952,7 +29952,7 @@ hyper-hubs.</p>
     theme(strip.background = element_rect(fill=&quot;grey96&quot;),
           axis.text.x = element_text(angle = 90))</code></pre>
 <pre class="r"><code>knitr::include_graphics(&quot;./Figures_for_report/turnover_connect_plot.png&quot;)</code></pre>
-<p><img src="../Figures_for_report/turnover_connect_plot.png" alt="" width="100%" style="display: block; margin: auto;" /></p>
+<p><img src="Figures_for_report/turnover_connect_plot.png" alt="" width="100%" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>wil_test_boot&lt;-function(dat,species){
   rbind(
     dat$connectivity %&gt;% filter(gene %in% (cafe_genefamily_outs %&gt;% filter(is_sig==&quot;y&quot; &amp; mod_type==&quot;Homologous&quot;) %&gt;% pull(genes))) %&gt;% dplyr::select(gene, degree) %&gt;% mutate(type=&quot;homologous&quot;),
@@ -30020,9 +30020,9 @@ data.</p>
   theme(axis.text.x = element_blank(),
          strip.background = element_rect(fill = &quot;#67980C&quot;))-&gt;cafe_nonhomo_model_plots</code></pre>
 <pre class="r"><code>knitr::include_graphics(&quot;./Figures_for_report/cafe_homo_model_plots.png&quot;)</code></pre>
-<p><img src="../Figures_for_report/cafe_homo_model_plots.png" alt="" width="100%" style="display: block; margin: auto;" /></p>
+<p><img src="Figures_for_report/cafe_homo_model_plots.png" alt="" width="100%" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>knitr::include_graphics(&quot;./Figures_for_report/cafe_nonhomo_model_plots.png&quot;)</code></pre>
-<p><img src="../Figures_for_report/cafe_nonhomo_model_plots.png" alt="" width="100%" style="display: block; margin: auto;" /></p>
+<p><img src="Figures_for_report/cafe_nonhomo_model_plots.png" alt="" width="100%" style="display: block; margin: auto;" /></p>
 </div>
 <div id="processes-with-significant-expansion-and-contractions"
 class="section level4" number="10.1.3">
@@ -30038,7 +30038,7 @@ significant expansion and contractions</h4>
        y=&quot;Module annotation&quot;)+
   theme_bw()</code></pre>
 <pre class="r"><code>knitr::include_graphics(&quot;./Figures_for_report/Process_with_ex_cont.png&quot;)</code></pre>
-<p><img src="../Figures_for_report/Process_with_ex_cont.png" alt="" width="80%" style="display: block; margin: auto;" /></p>
+<p><img src="Figures_for_report/Process_with_ex_cont.png" alt="" width="80%" style="display: block; margin: auto;" /></p>
 </div>
 <div id="expansion-and-contraction-of-gene-families"
 class="section level4 tabset" number="10.1.4">
@@ -30107,7 +30107,7 @@ g+ geom_point(
     midpoint = 0, name = &quot;Net (exp−contr)&quot;, breaks=c(low_qnt_net,-4,0,4,top_qnt_net), 
     labels=c(paste0(&quot;&gt;&quot;,low_qnt_net),&quot;-4&quot;, &quot;0&quot;, &quot;4&quot;, paste0(&quot;&gt;&quot;,top_qnt_net)))-&gt;cafe_tree_expansion</code></pre>
 <pre class="r"><code>knitr::include_graphics(&quot;./Figures_for_report/cafe_tree.pdf&quot;)</code></pre>
-<embed src="../Figures_for_report/cafe_tree.pdf" width="50%" height="900px" style="display: block; margin: auto;" type="application/pdf" />
+<embed src="Figures_for_report/cafe_tree.pdf" width="50%" height="900px" style="display: block; margin: auto;" type="application/pdf" />
 <p>This code snipet is for the random genes.</p>
 <pre class="r"><code>#For the random data
 #CAFE colors
@@ -30169,7 +30169,7 @@ list of high turnover genes can be found in table S3.</p>
     theme(axis.text.x = element_text( size = 9),
           strip.background = element_rect(fill = &quot;grey95&quot;))-&gt;specific_nodes_cafe</code></pre>
 <pre class="r"><code>knitr::include_graphics(&quot;./Figures_for_report/specifc_nodes_cafe.pdf&quot;)</code></pre>
-<embed src="../Figures_for_report/specifc_nodes_cafe.pdf" width="100%" height="280px" style="display: block; margin: auto;" type="application/pdf" />
+<embed src="Figures_for_report/specifc_nodes_cafe.pdf" width="100%" height="280px" style="display: block; margin: auto;" type="application/pdf" />
 </div>
 <div id="proportion-of-turnover-between-homologous-and-random-genes"
 class="section level5" number="10.1.4.3">
@@ -30423,7 +30423,7 @@ seq_stats  %&gt;%
     theme_bw()-&gt;pvaldist
 
 knitr::include_graphics(&quot;./Figures_for_report/len_num_diff_selection.png&quot;)</code></pre>
-<p><img src="../Figures_for_report/len_num_diff_selection.png" alt="" width="100%" style="display: block; margin: auto;" /></p>
+<p><img src="Figures_for_report/len_num_diff_selection.png" alt="" width="100%" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>pvaldist</code></pre>
 <<<<<<< HEAD
 <p><img src=".site-assets/figures/unnamed-chunk-171-1.png" alt="" width="50%" style="display: block; margin: auto;" /></p>
@@ -43153,9 +43153,9 @@ purrr::map2(.x=&quot;Epinephelus_malabaricus&quot;,
 #patchwork::wrap_plots(grouper_meta_cafe_exp)+plot_annotation(subtitle = &quot;Expression during metamorphosis in grouper&quot;)
 
 knitr::include_graphics(&quot;./Figures_for_report/translation_meta_clown.png&quot;)</code></pre>
-<p><img src="../Figures_for_report/translation_meta_clown.png" alt="" width="100%" style="display: block; margin: auto;" /></p>
+<p><img src="Figures_for_report/translation_meta_clown.png" alt="" width="100%" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>knitr::include_graphics(&quot;./Figures_for_report/translation_meta_grouper.png&quot;)</code></pre>
-<p><img src="../Figures_for_report/translation_meta_grouper.png" alt="" width="100%" style="display: block; margin: auto;" /></p>
+<p><img src="Figures_for_report/translation_meta_grouper.png" alt="" width="100%" style="display: block; margin: auto;" /></p>
 </div>
 <div id="zfin-data" class="section level5" number="13.4.1.4">
 <h5><span class="header-section-number">13.4.1.4</span> ZFIN data</h5>
@@ -43791,14 +43791,14 @@ class="section level3" number="14.2">
 <h3><span class="header-section-number">14.2</span> Compare soft
 thresold between random and normal networks</h3>
 <pre class="r"><code>knitr::include_graphics(&quot;./Figures_for_report/FigS_ScaleFreePower_Permuted_Real_net.pdf&quot;)</code></pre>
-<embed src="../Figures_for_report/FigS_ScaleFreePower_Permuted_Real_net.pdf" width="100%" height="400px" style="display: block; margin: auto;" type="application/pdf" />
+<embed src="Figures_for_report/FigS_ScaleFreePower_Permuted_Real_net.pdf" width="100%" height="400px" style="display: block; margin: auto;" type="application/pdf" />
 </div>
 <div id="compare-module-preservation-between-random-and-normal-networks"
 class="section level3" number="14.3">
 <h3><span class="header-section-number">14.3</span> Compare module
 preservation between random and normal networks</h3>
 <pre class="r"><code>knitr::include_graphics(&quot;./Figures_for_report/FigS_Permuted_net_Real_net_modpres.pdf&quot;)</code></pre>
-<embed src="../Figures_for_report/FigS_Permuted_net_Real_net_modpres.pdf" width="100%" height="600px" style="display: block; margin: auto;" type="application/pdf" />
+<embed src="Figures_for_report/FigS_Permuted_net_Real_net_modpres.pdf" width="100%" height="600px" style="display: block; margin: auto;" type="application/pdf" />
 </div>
 </div>
 
