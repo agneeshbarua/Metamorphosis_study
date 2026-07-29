@@ -143,7 +143,7 @@ ggarrange(
 )
 ```
 
-```{r, fig.height=10}
+```{r, fig.height=10, eval=FALSE}
 plot(model_age$brown$model_brms_age, nvariables = 8, ask = FALSE)
 #Additional diagnostic plots.
 #Users can plot them to confirm. Pairs plot is pretty big and can take a minute or so to plot 
@@ -173,7 +173,7 @@ ggarrange(
 )
 ```
 
-```{r, fig.height=10}
+```{r, fig.height=10, eval=FALSE}
 plot(model_age$midnightblue$model_brms_age, nvariables = 8, ask = FALSE)
 
 #Additional diagnostic plots.
@@ -310,7 +310,7 @@ ggarrange(
 )
 ```
 
-```{r, fig.height=10}
+```{r, fig.height=10, eval=FALSE}
 plot(model_age_maturity$greenyellow$model_brms_age_maturity, nvariables = 8, ask = FALSE)
 
 #Additional diagnostic plots.
@@ -342,7 +342,7 @@ ggarrange(
 )
 ```
 
-```{r, fig.height=10}
+```{r, fig.height=10, eval=FALSE}
 plot(model_age_maturity$magenta$model_brms_age_maturity, nvariables = 8, ask = FALSE)
 
 #Additional diagnostic plots.
@@ -373,7 +373,7 @@ ggarrange(
 )
 ```
 
-```{r, fig.height=10}
+```{r, fig.height=10, eval=FALSE}
 plot(model_age_maturity$midnightblue$model_brms_age_maturity, nvariables = 8, ask = FALSE)
 
 #Additional diagnostic plots.
@@ -435,7 +435,7 @@ ggarrange(
 )
 ```
 
-```{r, fig.height=10}
+```{r, fig.height=10, eval=FALSE}
 plot(model_age_maturity$orange$model_brms_age_maturity, nvariables = 8, ask = FALSE)
 
 #Additional diagnostic plots.
@@ -571,7 +571,7 @@ ggarrange(
 )
 ```
 
-```{r, fig.height=10}
+```{r, fig.height=10, eval=FALSE}
 plot(model_temp$magenta$model_brms_temp, nvariables = 8, ask = FALSE)
 
 #Additional diagnostic plots.
@@ -635,7 +635,7 @@ ggarrange(
 )
 ```
 
-```{r, fig.height=10}
+```{r, fig.height=10, eval=FALSE}
 plot(model_temp$orange$model_brms_temp, nvariables = 8, ask = FALSE)
 
 #Additional diagnostic plots.
@@ -769,7 +769,7 @@ ggarrange(
 )
 ```
 
-```{r, fig.height=10}
+```{r, fig.height=10, eval=FALSE}
 plot(model_trophic$blue$model_brms_trophic, nvariables = 8, ask = FALSE)
 
 #Additional diagnostic plots.
@@ -801,7 +801,7 @@ ggarrange(
 )
 ```
 
-```{r, fig.height=10}
+```{r, fig.height=10, eval=FALSE}
 plot(model_trophic$midnightblue$model_brms_trophic, nvariables = 8, ask = FALSE)
 
 #Additional diagnostic plots.
@@ -934,7 +934,7 @@ ggarrange(
   pp_check(model_growthcoeff$midnightblue$model_brms_growthcoeff, type = "ecdf_overlay", ndraws = 200, resp = "PC2cpy"))
 ```
 
-```{r, fig.height=10}
+```{r, fig.height=10, eval=FALSE}
 plot(model_growthcoeff$brown$model_brms_growthcoeff, nvariables = 8, ask = FALSE)
 
 #Additional diagnostic plots.
@@ -966,7 +966,7 @@ ggarrange(
 )
 ```
 
-```{r, fig.height=10}
+```{r, fig.height=10, eval=FALSE}
 plot(model_temp$blue$model_brms_temp, nvariables = 8, ask = FALSE)
 
 #Additional diagnostic plots.
@@ -1117,7 +1117,7 @@ The posteriors probability checks looks fine with ample overlap between sample p
 pp_check(model_bodyshape$salmon$model_brms_bodyshape, type = "bars",ndraws = 200)
 ```
 
-```{r, fig.height=10}
+```{r, fig.height=10, eval=FALSE}
 plot(model_bodyshape$salmon$model_brms_bodyshape, nvariables = 8, ask = FALSE)
 
 #Additional diagnostic plots.
@@ -1143,7 +1143,7 @@ make_pca_trait_model_plot(model = model_bodyshape$magenta$model_brms_bodyshape,
 pp_check(model_bodyshape$magenta$model_brms_bodyshape, type = "bars",ndraws = 200)
 ```
 
-```{r, fig.height=10}
+```{r, fig.height=10, eval=FALSE}
 plot(model_bodyshape$magenta$model_brms_bodyshape, nvariables = 8, ask = FALSE)
 
 #Additional diagnostic plots.
@@ -1169,7 +1169,7 @@ make_pca_trait_model_plot(model = model_bodyshape$green$model_brms_bodyshape,
 pp_check(model_bodyshape$green$model_brms_bodyshape, type = "bars",ndraws = 200)
 ```
 
-```{r, fig.height=10}
+```{r, fig.height=10, eval=FALSE}
 plot(model_bodyshape$green$model_brms_bodyshape, nvariables = 8, ask = FALSE)
 
 #Additional diagnostic plots.
@@ -1195,7 +1195,7 @@ make_pca_trait_model_plot(model = model_bodyshape$midnightblue$model_brms_bodysh
 pp_check(model_bodyshape$midnightblue$model_brms_bodyshape, type = "bars",ndraws = 200)
 ```
 
-```{r, fig.height=10}
+```{r, fig.height=10, eval=FALSE}
 plot(model_bodyshape$midnightblue$model_brms_bodyshape, nvariables = 8, ask = FALSE)
 
 #Additional diagnostic plots.
@@ -1221,7 +1221,7 @@ make_pca_trait_model_plot(model = model_bodyshape$brown$model_brms_bodyshape,
 pp_check(model_bodyshape$brown$model_brms_bodyshape, type = "bars",ndraws = 200)
 ```
 
-```{r, fig.height=10}
+```{r, fig.height=10, eval=FALSE}
 plot(model_bodyshape$brown$model_brms_bodyshape, nvariables = 8, ask = FALSE)
 
 #Additional diagnostic plots.
@@ -1247,7 +1247,7 @@ make_pca_trait_model_plot(model = model_bodyshape$red$model_brms_bodyshape,
 pp_check(model_bodyshape$red$model_brms_bodyshape, type = "bars",ndraws = 200)
 ```
 
-```{r, fig.height=10}
+```{r, fig.height=10, eval=FALSE}
 plot(model_bodyshape$red$model_brms_bodyshape, nvariables = 8, ask = FALSE)
 
 #Additional diagnostic plots.
@@ -1274,7 +1274,7 @@ make_pca_trait_model_plot(model = model_bodyshape$lightgreen$model_brms_bodyshap
 pp_check(model_bodyshape$lightgreen$model_brms_bodyshape, type = "bars",ndraws = 200)
 ```
 
-```{r, fig.height=10}
+```{r, fig.height=10, eval=FALSE}
 plot(model_bodyshape$lightgreen$model_brms_bodyshape, nvariables = 8, ask = FALSE)
 
 #Additional diagnostic plots.
@@ -1300,7 +1300,7 @@ make_pca_trait_model_plot(model = model_bodyshape$black$model_brms_bodyshape,
 pp_check(model_bodyshape$black$model_brms_bodyshape, type = "bars",ndraws = 200)
 ```
 
-```{r, fig.height=10}
+```{r, fig.height=10, eval=FALSE}
 plot(model_bodyshape$black$model_brms_bodyshape, nvariables = 8, ask = FALSE)
 
 #Additional diagnostic plots.
@@ -1326,7 +1326,7 @@ make_pca_trait_model_plot(model = model_bodyshape$pink$model_brms_bodyshape,
 pp_check(model_bodyshape$pink$model_brms_bodyshape, type = "bars",ndraws = 200)
 ```
 
-```{r, fig.height=10}
+```{r, fig.height=10, eval=FALSE}
 plot(model_bodyshape$pink$model_brms_bodyshape, nvariables = 8, ask = FALSE)
 
 #Additional diagnostic plots.
@@ -1580,7 +1580,7 @@ ggarrange(
 )
 ```
 
-```{r, fig.height=10}
+```{r, fig.height=10, eval=FALSE}
 plot(model_aspect_ratio$salmon$model_brms_aspect_ratio, nvariables = 8, ask = FALSE)
 
 #Additional diagnostic plots.
@@ -1613,7 +1613,7 @@ ggarrange(
 )
 ```
 
-```{r, fig.height=10}
+```{r, fig.height=10, eval=FALSE}
 plot(model_aspect_ratio$blue$model_brms_aspect_ratio, nvariables = 8, ask = FALSE)
 
 #Additional diagnostic plots.
@@ -1646,7 +1646,7 @@ ggarrange(
 )
 ```
 
-```{r, fig.height=10}
+```{r, fig.height=10, eval=FALSE}
 plot(model_aspect_ratio$blue$model_brms_aspect_ratio, nvariables = 8, ask = FALSE)
 
 #Additional diagnostic plots.
@@ -1781,7 +1781,7 @@ ggarrange(
 )
 ```
 
-```{r, fig.height=10}
+```{r, fig.height=10, eval=FALSE}
 plot(model_lower_jaw_length$magenta$model_brms_lower_jaw_length, nvariables = 8, ask = FALSE)
 
 #Additional diagnostic plots.
@@ -1813,7 +1813,7 @@ ggarrange(
 )
 ```
 
-```{r, fig.height=10}
+```{r, fig.height=10, eval=FALSE}
 plot(model_lower_jaw_length$lightgreen$model_brms_lower_jaw_length, nvariables = 8, ask = FALSE)
 
 #Additional diagnostic plots.
@@ -1845,7 +1845,7 @@ ggarrange(
 )
 ```
 
-```{r, fig.height=10}
+```{r, fig.height=10, eval=FALSE}
 plot(model_lower_jaw_length$black$model_brms_lower_jaw_length, nvariables = 8, ask = FALSE)
 
 #Additional diagnostic plots.
@@ -1877,7 +1877,7 @@ ggarrange(
 )
 ```
 
-```{r, fig.height=10}
+```{r, fig.height=10, eval=FALSE}
 plot(model_lower_jaw_length$orange$model_brms_lower_jaw_length, nvariables = 8, ask = FALSE)
 
 #Additional diagnostic plots.
@@ -1909,7 +1909,7 @@ ggarrange(
 )
 ```
 
-```{r, fig.height=10}
+```{r, fig.height=10, eval=FALSE}
 plot(model_lower_jaw_length$orange$model_brms_lower_jaw_length, nvariables = 8, ask = FALSE)
 
 #Additional diagnostic plots.
@@ -1941,7 +1941,7 @@ ggarrange(
 )
 ```
 
-```{r, fig.height=10}
+```{r, fig.height=10, eval=FALSE}
 plot(model_lower_jaw_length$blue$model_brms_lower_jaw_length, nvariables = 8, ask = FALSE)
 
 #Additional diagnostic plots.
