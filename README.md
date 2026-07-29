@@ -4,9 +4,9 @@ Agneesh Barua<sup>1,2,*</sup>, Giulia Campli<sup>1,2</sup>, Marcela Herrera<sup>
 <sup>1</sup>Department of Ecology and Evolution, University of Lausanne, Lausanne, Switzerland.  
 <sup>2</sup>Evolutionary Bioinformatics, Swiss Institute of Bioinformatics, Lausanne, Switzerland.  
 <sup>3</sup>Marine Eco-Evo-Devo Unit, Okinawa Institute of Science and Technology Graduate University, Onna son, Okinawa, Japan.  
-<sup>4</sup>Ecological Genetics Laboratory, Department of Genomics and Evolutionary Biology, National Institute of Genetics, Yata 1111, Mishima, Shizuoka 411-8540, Japan. 
-<sup>5</sup>Indiana University, School of Medicine.   
-<sup>6</sup>Marine Research Station, Institute of Cellular and Organismic Biology (ICOB), Academia Sinica, 23-10, Dah-Uen Rd., Jiau Shi, I-Lan 262, Taiwan.  
+<sup>4</sup>Ecological Genetics Laboratory, Department of Genomics and Evolutionary Biology, National Institute of Genetics, Shizuoka, Japan.  
+<sup>5</sup>Indiana University, School of Medicine, Indiana, USA.   
+<sup>6</sup>Marine Research Station, Institute of Cellular and Organismic Biology (ICOB), Academia Sinica, Jiau Shi, Taiwan.  
   
   <sup>*</sup>**Corresponding author and Principal Investigator.**
 
