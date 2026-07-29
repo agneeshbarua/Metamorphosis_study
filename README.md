@@ -16,4 +16,6 @@ Comparative embryology has revealed that early animal development is based on hi
 This project is a part of the HFSP Long-Term fellowship LT0063/2022-L awarded to Agneesh Barua.  
 https://doi.org/10.52044/HFSP.LT00632022-L.pc.gr.154794
 
-Datasets used in this study can be found in 10.5281/zenodo.19693862 
+Datasets used in this study can be found here: https://doi.org/10.5281/zenodo.19693862
+
+A report showing code and output can be found here: https://agneeshbarua.github.io/Metamorphosis_study/
